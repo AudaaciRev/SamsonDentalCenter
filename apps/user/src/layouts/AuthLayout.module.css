@@ -1,0 +1,15 @@
+.wrapper {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1rem;
+}
+
+@media (min-width: 640px) {
+    .wrapper {
+        align-items: center;
+        padding: 1.5rem;
+    }
+}
