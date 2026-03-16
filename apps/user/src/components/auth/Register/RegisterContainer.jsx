@@ -1,47 +1,39 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Carousel from './components/Carousel';
+import Carousel from '../common/Carousel';
 import RegisterForm from './components/RegisterForm';
+import { X } from 'lucide-react';
 
 const RegisterContainer = ({ onSubmit, loading = false, error = null }) => {
     const navigate = useNavigate();
 
-    const handleGoHome = () => {
-        navigate('/');
-    };
-
     return (
-        <div className='w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[580px] md:h-[620px]'>
-            {/* Left — Carousel */}
-            <Carousel />
+        <div className='w-full min-h-screen md:h-screen flex flex-col md:flex-row bg-slate-50'>
+            {/* Left — Carousel (60%) */}
+            <Carousel className='md:w-[60%] lg:w-[60%]' />
 
-            {/* Right — Form */}
-            <div className='flex-grow md:w-[65%] flex flex-col p-4 sm:p-6 relative overflow-hidden'>
+            {/* Right — Form (40%) */}
+            <div className='flex-grow md:w-[40%] lg:w-[40%] flex flex-col relative bg-white shadow-2xl z-10'>
+                {/* Close Button - Floating on Parent */}
                 <button
-                    onClick={handleGoHome}
-                    className='absolute top-4 right-4 text-slate-300 hover:text-sky-500 transition-all z-20'
+                    onClick={() => navigate('/')}
+                    className='absolute top-4 right-4 md:top-6 md:right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors duration-200 z-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2'
+                    aria-label='Close'
                 >
-                    <svg
-                        className='w-5 h-5'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                    >
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth='2.5'
-                            d='M6 18L18 6M6 6l12 12'
-                        />
-                    </svg>
+                    <X size={24} />
                 </button>
 
-                <div className='flex-grow flex flex-col min-h-0 max-w-2xl mx-auto w-full px-4 sm:px-12 py-2 overflow-hidden'>
-                    <div className='flex-grow flex flex-col min-h-0'>
-                        <RegisterForm
-                            onSubmit={onSubmit}
-                            loading={loading}
-                            error={error}
-                        />
+                {/* Scrollable Container - Full Width, Scrollbar on Right */}
+                <div className='flex-grow overflow-y-auto w-full h-full custom-scrollbar'>
+                    {/* Content Wrapper - Centered Content, Padding */}
+                    <div className='min-h-full flex flex-col justify-center w-full px-6 sm:px-8 py-6 md:py-8 pb-12'>
+                        <div className='w-full max-w-lg mx-auto text-left'>
+                            <RegisterForm
+                                onSubmit={onSubmit}
+                                loading={loading}
+                                error={error}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

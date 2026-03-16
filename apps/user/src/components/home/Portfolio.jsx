@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SectionHeading from '../common/SectionHeading';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const BEFORE_AFTER_CASES = [
     {
@@ -26,24 +30,62 @@ const BEFORE_AFTER_CASES = [
 ];
 
 const BeforeAfterSlider = ({ before, after }) => {
-    const [sliderPos, setSliderPos] = useState(50);
     const containerRef = useRef(null);
+    const handleRef = useRef(null);
+    const beforeRef = useRef(null);
+    const pulseRef = useRef(null);
 
-    const handleMove = (e) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = e.clientX || (e.touches && e.touches[0].clientX);
-        const relativeX = x - rect.left;
-        const position = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
-        setSliderPos(position);
-    };
+    useEffect(() => {
+        // Create QuickTo setters for smooth lag effect
+        const xTo = gsap.quickTo(handleRef.current, 'left', { duration: 0.6, ease: 'power3.out' });
+        
+        // We use a custom object and onUpdate to animate the CSS clip-path smoothly
+        const clipState = { val: 50 };
+        const clipTo = gsap.quickTo(clipState, 'val', { 
+            duration: 0.6, 
+            ease: 'power3.out',
+            onUpdate: () => {
+                if (beforeRef.current) {
+                    beforeRef.current.style.clipPath = `inset(0 ${100 - clipState.val}% 0 0)`;
+                }
+            }
+        });
+
+        const handleMove = (e) => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = e.clientX || (e.touches && e.touches[0].clientX);
+            const relativeX = x - rect.left;
+            const position = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
+            
+            xTo(`${position}%`);
+            clipTo(position);
+        };
+
+        const currentContainer = containerRef.current;
+        currentContainer.addEventListener('mousemove', handleMove);
+        currentContainer.addEventListener('touchmove', handleMove);
+
+        // Interaction Feedback: Pulsing handle
+        const pulse = gsap.to(pulseRef.current, {
+            scale: 1.5,
+            opacity: 0,
+            duration: 1.8,
+            repeat: -1,
+            ease: 'power2.out',
+        });
+
+        return () => {
+            currentContainer.removeEventListener('mousemove', handleMove);
+            currentContainer.removeEventListener('touchmove', handleMove);
+            pulse.kill();
+        };
+    }, []);
 
     return (
         <div
             ref={containerRef}
             className='relative w-full aspect-4/3 md:aspect-video rounded-2xl overflow-hidden cursor-ew-resize group shadow-sm border border-slate-200/80'
-            onMouseMove={handleMove}
-            onTouchMove={handleMove}
         >
             {/* After Image (Background) */}
             <img
@@ -54,8 +96,9 @@ const BeforeAfterSlider = ({ before, after }) => {
 
             {/* Before Image (Clip) */}
             <div
+                ref={beforeRef}
                 className='absolute inset-0 w-full h-full overflow-hidden'
-                style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                style={{ clipPath: 'inset(0 50% 0 0)' }}
             >
                 <img
                     src={before}
@@ -66,12 +109,19 @@ const BeforeAfterSlider = ({ before, after }) => {
 
             {/* Slider Handle */}
             <div
+                ref={handleRef}
                 className='absolute top-0 bottom-0 w-1 bg-white shadow-lg pointer-events-none'
-                style={{ left: `${sliderPos}%` }}
+                style={{ left: '50%' }}
             >
-                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center border border-slate-200'>
+                {/* Pulse feedback */}
+                <div 
+                    ref={pulseRef}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-blue-500/40 rounded-full"
+                ></div>
+                
+                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center border border-slate-200 z-10'>
                     <svg
-                        className='w-6 h-6 text-slate-400'
+                        className='w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors'
                         fill='none'
                         stroke='currentColor'
                         viewBox='0 0 24 24'
@@ -97,40 +147,89 @@ const BeforeAfterSlider = ({ before, after }) => {
     );
 };
 
-const Portfolio = () => {
+const Portfolio = ({ variant = 'light' }) => {
     const [activeIndex, setActiveIndex] = useState(0);
+    const trackRef = useRef(null);
+    const sectionRef = useRef(null);
+    const headingRef = useRef(null);
+    const gridRef = useRef(null);
+
+    const isDark = variant === 'dark';
+
+    useEffect(() => {
+        let ctx = gsap.context(() => {
+            // Heading Masked Reveals
+            gsap.from('.portfolio-reveal-text', {
+                y: '100%',
+                duration: 1.2,
+                stagger: 0.1,
+                ease: 'expo.out',
+                scrollTrigger: {
+                    trigger: headingRef.current,
+                    start: 'top 85%',
+                    once: true,
+                },
+            });
+
+            // Card Entrance Stagger
+            gsap.from('.portfolio-card', {
+                y: 50,
+                opacity: 0,
+                scale: 0.98,
+                duration: 1.5,
+                ease: 'expo.out',
+                stagger: 0.15,
+                scrollTrigger: {
+                    trigger: gridRef.current,
+                    start: 'top 85%',
+                    once: true,
+                },
+            });
+        }, sectionRef);
+
+        return () => ctx.revert();
+    }, []);
 
     const handleNext = () => {
-        setActiveIndex((prev) => (prev + 1) % BEFORE_AFTER_CASES.length);
+        const nextIndex = (activeIndex + 1) % BEFORE_AFTER_CASES.length;
+        setActiveIndex(nextIndex);
+        gsap.to(trackRef.current, {
+            xPercent: -nextIndex * (100 / BEFORE_AFTER_CASES.length),
+            duration: 1.2,
+            ease: 'expo.inOut'
+        });
     };
 
     const handlePrev = () => {
-        setActiveIndex(
-            (prev) => (prev - 1 + BEFORE_AFTER_CASES.length) % BEFORE_AFTER_CASES.length,
-        );
-    };
-
-    const getVisibleCases = () => {
-        return [
-            ...BEFORE_AFTER_CASES.slice(activeIndex),
-            ...BEFORE_AFTER_CASES.slice(0, activeIndex),
-        ];
+        const prevIndex = (activeIndex - 1 + BEFORE_AFTER_CASES.length) % BEFORE_AFTER_CASES.length;
+        setActiveIndex(prevIndex);
+        gsap.to(trackRef.current, {
+            xPercent: -prevIndex * (100 / BEFORE_AFTER_CASES.length),
+            duration: 1.2,
+            ease: 'expo.inOut'
+        });
     };
 
     return (
-        <section className='py-12 sm:py-16 bg-white relative overflow-hidden'>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-                <div className='flex flex-col lg:flex-row items-center lg:items-end justify-between mb-10 md:mb-12 gap-8'>
+        <section ref={sectionRef} className={`py-12 sm:py-16 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
+                <div ref={headingRef} className='flex flex-col lg:flex-row items-center lg:items-end justify-between mb-12 md:mb-16 gap-10'>
                     <div className='max-w-2xl text-center lg:text-left'>
-                        <div className='flex items-center justify-center lg:justify-start gap-3 mb-4 text-blue-600'>
-                            <span className='h-px w-8 bg-current opacity-30'></span>
-                            <span className='font-bold uppercase tracking-widest text-[10px]'>
-                                Transformation Gallery
-                            </span>
+                        <div className='overflow-hidden mb-6'>
+                            <div className='portfolio-reveal-text flex items-center justify-center lg:justify-start gap-3 text-blue-600'>
+                                <span className='h-px w-8 bg-current opacity-30'></span>
+                                <span className='font-bold uppercase tracking-widest text-[10px]'>
+                                    Transformation Gallery
+                                </span>
+                            </div>
                         </div>
-                        <h2 className='text-[clamp(2rem,4vw,3rem)] font-bold text-slate-900 leading-tight tracking-tight'>
-                            Witness the <br />
-                            <span className='text-blue-600'>Transformation.</span>
+                        <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            <div className='overflow-hidden'>
+                                <span className='block portfolio-reveal-text'>Witness the</span>
+                            </div>
+                            <div className='overflow-hidden'>
+                                <span className='block text-blue-600 portfolio-reveal-text'>Transformation.</span>
+                            </div>
                         </h2>
                     </div>
 
@@ -174,29 +273,34 @@ const Portfolio = () => {
                     </div>
                 </div>
 
-                <div className='relative'>
-                    <div className='flex gap-6 overflow-visible transition-all duration-500 ease-in-out'>
-                        {getVisibleCases().map((item, idx) => (
-                            <div
-                                key={`${item.id}-${idx}`}
-                                className={`w-full md:w-[calc(33.333%-16px)] shrink-0 transition-all duration-500 ${idx >= 3 ? 'opacity-0' : 'opacity-100'}`}
-                            >
-                                <div className='space-y-4'>
-                                    <BeforeAfterSlider
-                                        before={item.before}
-                                        after={item.after}
-                                    />
-                                    <div className='px-1'>
-                                        <h3 className='text-sm font-bold text-slate-900 uppercase tracking-tight'>
-                                            {item.title}
-                                        </h3>
-                                        <p className='text-[10px] text-slate-500 font-bold uppercase tracking-widest'>
-                                            {item.type}
-                                        </p>
+                <div ref={gridRef} className='relative'>
+                    <div className='flex gap-6 overflow-visible transition-none'>
+                        <div 
+                            ref={trackRef}
+                            className='flex gap-6 w-full shrink-0 items-start'
+                        >
+                            {BEFORE_AFTER_CASES.map((item, idx) => (
+                                <div
+                                    key={item.id}
+                                    className='w-full md:w-[calc(33.333%-16px)] shrink-0 portfolio-card'
+                                >
+                                    <div className='space-y-4'>
+                                        <BeforeAfterSlider
+                                            before={item.before}
+                                            after={item.after}
+                                        />
+                                        <div className='px-1'>
+                                            <h3 className='text-sm font-bold text-slate-900 uppercase tracking-tight'>
+                                                {item.title}
+                                            </h3>
+                                            <p className='text-[10px] text-slate-500 font-bold uppercase tracking-widest'>
+                                                {item.type}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
 
                     {/* Left Blur Fade */}

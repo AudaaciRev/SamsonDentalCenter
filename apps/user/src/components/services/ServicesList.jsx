@@ -18,30 +18,10 @@ const ServicesList = () => {
         'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800',
     ];
 
-    const getGridClasses = (index) => {
-        // Every card takes exactly 1 slot now
-        return 'col-span-1 h-[280px] md:h-[350px]';
-    };
-
     return (
-        <section className='bg-slate-900 py-10 sm:py-13 lg:py-26 relative overflow-hidden'>
-            {/* Background Decor */}
-            <div className='absolute top-0 right-0 w-125 h-125 bg-blue-600/5 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-700 pointer-events-none'></div>
-
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div className='max-w-3xl mb-12 md:mb-20'>
-                    <div className='flex items-center gap-3 mb-6'>
-                        <span className='h-px w-8 bg-blue-600'></span>
-                        <span className='text-blue-500 font-bold tracking-wide text-sm'>
-                            Medical Services
-                        </span>
-                    </div>
-                    <h2 className='text-[clamp(2.5rem,6vw,4.5rem)] font-bold text-white leading-[1.1] tracking-tight'>
-                        Clinical <br />
-                        <span className='text-slate-500'>Solutions.</span>
-                    </h2>
-                </div>
-
+        <div className='min-h-screen bg-white pb-20'>
+            {/* Services List */}
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-32'>
                 {loading && (
                     <div className='flex flex-col items-center justify-center py-32 gap-4'>
                         <div className='w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin'></div>
@@ -52,104 +32,71 @@ const ServicesList = () => {
                 )}
 
                 {!loading && services?.length === 0 && !error && (
-                    <div className='text-center py-32 bg-slate-800/50 rounded-2xl border border-dashed border-slate-700 backdrop-blur-sm'>
-                        <p className='text-slate-400 font-medium'>
+                    <div className='text-center py-32 bg-slate-50 rounded-2xl border border-dashed border-slate-200'>
+                        <p className='text-slate-600 font-medium'>
                             Our service catalog is currently being updated.
                         </p>
                     </div>
                 )}
 
                 {services?.length > 0 && (
-                    <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-16'>
-                        {services.map((service, idx) => {
-                            const imageStr = serviceImages[idx % serviceImages.length];
+                    <div className='flex flex-col gap-32 md:gap-48'>
+                        {services.map((service, index) => {
+                            const imageStr = serviceImages[index % serviceImages.length];
+                            const numberStr = String(index + 1).padStart(2, '0');
+                            const totalStr = String(services.length).padStart(2, '0');
+
                             return (
                                 <div
                                     key={service.id}
-                                    onClick={() => navigate(`/services/${service.id}`)}
-                                    className={`group relative overflow-hidden rounded-2xl border border-white/5 transition-all duration-300 ease-in-out hover:border-blue-500/30 cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 ${getGridClasses(idx)}`}
+                                    className='relative flex flex-col md:flex-row items-center gap-8 md:gap-16 lg:gap-24 group'
                                 >
-                                    <img
-                                        src={imageStr}
-                                        className='absolute inset-0 w-full h-full object-cover grayscale-30 group-hover:grayscale-0 transition-all duration-500 ease-in-out group-hover:scale-105'
-                                        alt={service.name}
-                                    />
-
-                                    <div className='absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/20 transition-colors duration-300 ease-in-out'></div>
-                                    <div className='absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300 ease-in-out'></div>
-
-                                    <div className='absolute top-6 left-6 text-white/70 font-bold text-sm tracking-tight group-hover:text-blue-400 transition-colors duration-200 ease-in-out'>
-                                        {String(idx + 1).padStart(2, '0')}
+                                    {/* Image Section with Number */}
+                                    <div
+                                        className={`relative z-10 w-full md:w-1/2 ${index % 2 === 1 ? 'md:order-2' : ''}`}
+                                    >
+                                        {/* Number Behind Image */}
+                                        <div className='absolute -top-16 left-0 text-[90px] font-bold text-[#c9cbce] z-0 select-none leading-none'>
+                                            00/{numberStr}
+                                        </div>
+                                        <div className='relative aspect-[4/3] w-full overflow-hidden bg-slate-100 shadow-sm transition-[transform] duration-500 group-hover:-translate-y-2 z-10 rounded-2xl'>
+                                            <img
+                                                src={imageStr}
+                                                alt={service.name}
+                                                className='h-full w-full object-cover transition-transform duration-700 group-hover:scale-105'
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className='absolute top-5 right-5 w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white transform transition-all duration-300 ease-in-out group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:rotate-45'>
-                                        <svg
-                                            className='w-5 h-5'
-                                            fill='none'
-                                            stroke='currentColor'
-                                            viewBox='0 0 24 24'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth='2'
-                                                d='M5 19L19 5m0 0H8m11 0v11'
-                                            ></path>
-                                        </svg>
-                                    </div>
-
-                                    <div className='absolute bottom-6 left-6 pr-8 flex flex-col gap-2'>
-                                        <h3 className='font-bold text-white tracking-tight leading-[1.15] text-[clamp(1.125rem,2vw+0.5rem,1.5rem)] max-w-60'>
+                                    {/* Content Section */}
+                                    <div
+                                        className={`relative z-10 w-full md:w-1/2 flex flex-col justify-center ${index % 2 === 1 ? 'md:order-1' : ''}`}
+                                    >
+                                        <h2 className='text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 md:mb-6 tracking-tight'>
                                             {service.name}
-                                        </h3>
-                                        {service.duration_minutes && (
-                                            <span className='inline-block text-blue-300 font-medium text-sm drop-shadow-sm'>
-                                                ⏱ {service.duration_minutes} min
-                                            </span>
-                                        )}
+                                        </h2>
+                                        <p className='text-base md:text-lg text-slate-500 leading-relaxed mb-8 md:mb-12 max-w-lg font-light'>
+                                            {service.description ||
+                                                (service.duration_minutes
+                                                    ? `Duration: ${service.duration_minutes} minutes`
+                                                    : 'Professional service excellence.')}
+                                        </p>
+
+                                        <button
+                                            onClick={() => navigate(`/services/${service.id}`)}
+                                            className='group/btn inline-flex items-center text-[11px] font-bold uppercase tracking-[0.2em] text-slate-900 hover:text-blue-600 transition-[color] duration-200 w-fit'
+                                        >
+                                            CONTINUE READING
+                                            <span className='ml-4 w-12 h-[1px] bg-slate-900 group-hover/btn:bg-blue-600 group-hover/btn:w-16 transition-all duration-300'></span>
+                                        </button>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                 )}
-
-                {/* CTA Banner */}
-                {/* <div className='mt-16 md:mt-24 flex flex-col md:flex-row items-center justify-between bg-white backdrop-blur-md rounded-2xl border border-slate-200/80 p-4 md:p-6 shadow-sm group transition-all duration-300 ease-in-out hover:border-blue-200 hover:shadow-md'>
-                    <div className='flex flex-col md:flex-row items-center gap-6 px-6 py-6 text-center md:text-left'>
-                        <div className='w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm'>
-                            <svg
-                                className='w-7 h-7'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth='2'
-                                    d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                                ></path>
-                            </svg>
-                        </div>
-                        <div className='flex flex-col gap-1'>
-                            <p className='text-slate-900 font-bold text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] tracking-tight leading-[1.15]'>
-                                Start Your Journey Today
-                            </p>
-                            <p className='text-slate-500 font-medium text-sm tracking-wide'>
-                                Book a comprehensive diagnostic and consultation
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => navigate('/services')}
-                        className='w-full md:w-auto bg-blue-600 text-white hover:bg-blue-700 font-semibold py-3 px-8 rounded-xl text-sm transition-all duration-200 ease-in-out shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'
-                    >
-                        View All Services
-                    </button>
-                </div> */}
             </div>
-        </section>
+        </div>
     );
 };
 

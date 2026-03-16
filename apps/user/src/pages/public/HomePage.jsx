@@ -13,14 +13,27 @@ const HomePage = () => {
 
     return (
         <>
+            {/* 1. Introduction & Primary CTA */}
             <Hero />
-            <Promotions ref={promotionsRef} />
-            <HomeServices />
-            <Portfolio variant='dark' />
-            <AIChatbotPromo />
-            <Gallery />
-            <Testimonials variant='dark' />
-            <LocationHours />
+
+            {/* 2. Immediate Hooks/Offers */}
+            <Promotions ref={promotionsRef} variant='light' />
+
+            {/* 3. Core Offerings (What you do) */}
+            <HomeServices variant='dark' />
+
+            {/* 4. Visual Proof */}
+            <Gallery variant='dark' />
+            <Portfolio variant='light' />
+
+            {/* 5. Social Proof (Trust) */}
+            <Testimonials variant='light' />
+
+            {/* 6. Secondary Features/Tech */}
+            <AIChatbotPromo variant='light' />
+
+            {/* 7. Logistics (When ready to activate) */}
+            <LocationHours variant='light' />
         </>
     );
 };

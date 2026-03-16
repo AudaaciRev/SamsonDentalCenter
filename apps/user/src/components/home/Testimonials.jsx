@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SectionHeading from '../common/SectionHeading';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const REVIEWS = [
     {
@@ -40,9 +44,46 @@ const REVIEWS = [
     },
 ];
 
-const Testimonials = ({ variant = 'dark' }) => {
+const Testimonials = ({ variant = 'light' }) => {
     const [activeIndex, setActiveIndex] = useState(0);
+    const sectionRef = useRef(null);
+    const headingRef = useRef(null);
+    const cardsRef = useRef(null);
     const isDark = variant === 'dark';
+
+    // GSAP Animations
+    useEffect(() => {
+        let ctx = gsap.context(() => {
+            // Heading masked reveal
+            gsap.from('.testimonial-reveal-text', {
+                y: '100%',
+                duration: 1.2,
+                stagger: 0.15,
+                ease: 'expo.out',
+                scrollTrigger: {
+                    trigger: headingRef.current,
+                    start: 'top 85%',
+                    once: true,
+                },
+            });
+
+            // Navigation and cards stagger
+            gsap.from('.testimonial-reveal-items', {
+                y: 40,
+                opacity: 0,
+                duration: 1,
+                stagger: 0.2,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: sectionRef.current,
+                    start: 'top 80%',
+                    once: true,
+                },
+            });
+        }, sectionRef);
+
+        return () => ctx.revert();
+    }, []);
 
     const handleNext = () => {
         setActiveIndex((prev) => (prev + 1) % REVIEWS.length);
@@ -58,23 +99,30 @@ const Testimonials = ({ variant = 'dark' }) => {
 
     return (
         <section
-            className={`py-12 sm:py-16 overflow-hidden ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}
+            ref={sectionRef}
+            className={`py-12 sm:py-16 overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}
         >
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
                 <div className='flex flex-col lg:flex-row items-center gap-8 lg:gap-16'>
                     {/* Left Side: Heading */}
-                    <div className='lg:w-1/3 text-center lg:text-left'>
-                        <div className='flex items-center justify-center lg:justify-start gap-3 mb-4'>
-                            <span className='h-px w-8 bg-blue-600'></span>
-                            <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
-                                Testimonials
-                            </span>
+                    <div ref={headingRef} className='lg:w-1/3 text-center lg:text-left'>
+                        <div className='overflow-hidden mb-4'>
+                            <div className='testimonial-reveal-text flex items-center justify-center lg:justify-start gap-3'>
+                                <span className='h-px w-8 bg-blue-600'></span>
+                                <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
+                                    Testimonials
+                                </span>
+                            </div>
                         </div>
-                        <h2 className='text-[clamp(2rem,4vw,3.25rem)] font-bold mb-6 leading-[1.15] tracking-tight'>
-                            What makes <br />
-                            <span className='text-slate-500'>us smile?</span>
+                        <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            <div className='overflow-hidden'>
+                                <span className='block testimonial-reveal-text'>What makes</span>
+                            </div>
+                            <div className='overflow-hidden'>
+                                <span className='block text-slate-500 testimonial-reveal-text'>us smile.</span>
+                            </div>
                         </h2>
-                        <div className='mt-8 flex justify-center lg:justify-start gap-3'>
+                        <div className='mt-8 flex justify-center lg:justify-start gap-3 testimonial-reveal-items'>
                             <button
                                 onClick={handlePrev}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ease-in-out shadow-sm hover:shadow-md active:translate-y-0 hover:-translate-y-0.5 group border ${

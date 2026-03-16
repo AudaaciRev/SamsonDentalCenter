@@ -20,7 +20,7 @@ const ServicesPage = () => {
                 loading={loading}
                 error={error}
             />
-            <Portfolio variant='light' />
+            {/* <Portfolio variant='light' /> */}
             <Testimonials variant='light' />
         </>
     );

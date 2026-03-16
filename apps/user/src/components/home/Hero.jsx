@@ -1,12 +1,97 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
     const navigate = useNavigate();
+    const heroRef = useRef(null);
+    const bgRef = useRef(null);
+    const contentRef = useRef(null);
+
+    // Helper to split text into spans for per-letter animation
+    const splitText = (text, className = 'hero-letter', extraClasses = '') => {
+        return text.split('').map((char, i) => (
+            <span
+                key={i}
+                className={`${className} ${extraClasses} inline-block will-change-transform`}
+            >
+                {char === ' ' ? '\u00A0' : char}
+            </span>
+        ));
+    };
+
+    useEffect(() => {
+        let ctx = gsap.context(() => {
+            const tl = gsap.timeline({
+                delay: 0.7,
+                defaults: { ease: 'expo.out', duration: 1.4 }
+            });
+
+            // Line 1: Letter animation (Rising out of mask)
+            tl.from('.hero-letter-1', {
+                y: '110%',
+                opacity: 0,
+                stagger: 0.02,
+                force3D: true
+            });
+
+            // Line 2: Letter animation (Rising out of mask)
+            tl.from('.hero-letter-2', {
+                y: '110%',
+                opacity: 0,
+                stagger: 0.02,
+                force3D: true
+            }, '-=1.1'); 
+
+            // Initial load animation for subtext, buttons, etc.
+            tl.from('.hero-anim', {
+                y: 30,
+                opacity: 0,
+                duration: 1,
+                stagger: 0.1,
+                clearProps: 'all'
+            }, '-=1');
+
+            // Parallax effect with smoothing (scrub: 1.5) and hardware acceleration
+            gsap.to(bgRef.current, {
+                y: '20%', 
+                ease: 'none',
+                force3D: true,
+                scrollTrigger: {
+                    trigger: heroRef.current,
+                    start: 'top top',
+                    end: 'bottom top',
+                    scrub: 1.5, // Smooth "catch-up" lag
+                },
+            });
+
+            // Smooth fade out of content while scrolling down
+            gsap.to(contentRef.current, {
+                opacity: 0,
+                y: -100,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: heroRef.current,
+                    start: 'center top',
+                    end: 'bottom top',
+                    scrub: 1,
+                },
+            });
+        }, heroRef);
+
+        return () => ctx.revert(); 
+    }, []);
 
     return (
-        <section className='relative min-h-[100svh] flex items-center overflow-hidden bg-slate-50'>
+        <section
+            ref={heroRef}
+            className='relative min-h-[100svh] flex items-center overflow-hidden bg-slate-50'
+        >
             {/* Background with overlay */}
-            <div className='absolute inset-0 z-0'>
+            <div ref={bgRef} className='absolute inset-0 z-0 h-[125%] -top-[10%]'>
                 <img
                     src='https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=1920&auto=format&fit=crop'
                     alt='Dental Office'
@@ -15,46 +100,46 @@ const Hero = () => {
                 <div className='absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-transparent sm:from-white/98 sm:via-white/90' />
             </div>
 
-            <div className='relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12'>
-                <div className='max-w-2xl flex flex-col items-start gap-6 sm:gap-8 py-16 sm:py-24 lg:py-32'>
-                    {/* Badge */}
-                    <span className='inline-flex items-center px-4 py-2 rounded-full bg-blue-50/80 text-blue-700 text-sm font-medium tracking-wide ring-1 ring-inset ring-blue-600/10 backdrop-blur-sm'>
-                        Welcome to Samson Dental Center
-                    </span>
-
-                    {/* Headline */}
-                    <h1 className='text-[clamp(2.25rem,5vw+0.5rem,4rem)] font-bold tracking-tight text-slate-900 leading-[1.15]'>
-                        Your Smile Is Our
-                        <span className='text-blue-600 sm:block mt-1 sm:mt-2'>
-                            {' '}
-                            First Priority.
+            <div
+                ref={contentRef}
+                className='relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12'
+            >
+                <div className='max-w-4xl flex flex-col items-start gap-6 sm:gap-8 pt-32 pb-16 sm:pt-40 lg:pt-48 lg:pb-32'>
+                    {/* Headline - fluid typography taking full advantage of clamp */}
+                    <h1 className='text-[clamp(2.5rem,7vw+1rem,5.5rem)] font-extrabold tracking-tight text-slate-900 leading-[1.05]'>
+                        <span className='block overflow-hidden pb-1'>
+                            {splitText('Your Smile Is Our', 'hero-letter-1')}
+                        </span>
+                        <span className='block overflow-hidden pb-2'>
+                            {splitText('First Priority.', 'hero-letter-2', 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400')}
                         </span>
                     </h1>
 
-                    {/* Subheading */}
-                    <p className='text-[clamp(1rem,1.5vw+0.5rem,1.25rem)] text-slate-600 leading-relaxed max-w-xl'>
+                    {/* Subheading - fluid typography */}
+                    <p className='hero-anim text-[clamp(1rem,2vw+0.5rem,1.375rem)] text-slate-600 leading-relaxed max-w-xl font-medium'>
                         Experience world-class dental care with state-of-the-art technology and a
                         team dedicated to your oral health and aesthetic goals.
                     </p>
 
-                    {/* CTA Buttons */}
-                    <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto mt-2'>
+                    {/* CTA Buttons - improved sizes for tap targets */}
+                    <div className='hero-anim flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-2'>
                         <button
                             onClick={() => navigate('/book')}
-                            className='inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white transition-all duration-200 ease-in-out bg-slate-900 rounded-xl hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 w-full sm:w-auto'
+                            className='group inline-flex items-center justify-center px-8 py-4 text-[clamp(1rem,1.5vw,1.125rem)] font-bold text-white transition-all duration-300 ease-out bg-slate-900 rounded-2xl hover:bg-blue-600 hover:shadow-[0_8px_30px_rgb(37,99,235,0.2)] hover:-translate-y-1 w-full sm:w-auto'
                         >
                             Make an Appointment
+                            <svg className='w-5 h-5 ml-2 transition-transform duration-300 group-hover:translate-x-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M13 7l5 5m0 0l-5 5m5-5H6' /></svg>
                         </button>
                         <button
                             onClick={() => navigate('/services')}
-                            className='inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold transition-all duration-200 ease-in-out bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700 rounded-xl hover:bg-white hover:text-slate-900 hover:border-slate-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 w-full sm:w-auto'
+                            className='inline-flex items-center justify-center px-8 py-4 text-[clamp(1rem,1.5vw,1.125rem)] font-bold transition-all duration-300 ease-out bg-white/80 backdrop-blur-md border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-white hover:text-slate-900 hover:border-blue-200 hover:shadow-lg focus:outline-none w-full sm:w-auto'
                         >
                             Explore Services
                         </button>
                     </div>
 
                     {/* Social Proof */}
-                    <div className='flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-200/70 w-full max-w-xl'>
+                    <div className='hero-anim flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-200/70 w-full max-w-xl'>
                         <div className='flex -space-x-3'>
                             {[
                                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop',
@@ -65,26 +150,26 @@ const Hero = () => {
                                 <img
                                     key={i}
                                     src={src}
-                                    className='w-11 h-11 rounded-full border-3 border-white object-cover shadow-sm ring-1 ring-slate-900/5 transition-all duration-200 ease-in-out hover:-translate-y-1 hover:z-10 hover:shadow-md relative'
+                                    className='w-12 h-12 rounded-full border-[3px] border-white object-cover shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:z-10 hover:shadow-md hover:scale-110 relative'
                                     alt='Reviewer'
                                 />
                             ))}
                         </div>
                         <div className='flex flex-col gap-1'>
-                            <div className='flex items-center gap-0.5 text-amber-400'>
+                            <div className='flex items-center gap-1 text-amber-400'>
                                 {[1, 2, 3, 4, 5].map((s) => (
                                     <svg
                                         key={s}
-                                        className='w-4 h-4 fill-current'
+                                        className='w-5 h-5 fill-current drop-shadow-sm'
                                         viewBox='0 0 20 20'
                                     >
                                         <path d='M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z' />
                                     </svg>
                                 ))}
                             </div>
-                            <p className='text-sm text-slate-600'>
+                            <p className='text-[clamp(0.875rem,1.5vw,1rem)] text-slate-600 font-medium'>
                                 Trusted by{' '}
-                                <span className='font-semibold text-slate-900'>2,000+</span> Happy
+                                <span className='font-bold text-slate-900'>2,000+</span> Happy
                                 Patients
                             </p>
                         </div>

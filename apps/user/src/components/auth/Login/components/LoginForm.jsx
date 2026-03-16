@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, AlertCircle, ChevronRight, ArrowRight } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui';
 
 const LoginForm = ({ onSubmit, loading = false, error = null }) => {
     const [email, setEmail] = useState('');
@@ -12,131 +14,147 @@ const LoginForm = ({ onSubmit, loading = false, error = null }) => {
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        onSubmit(email, pass);
+
+        // Basic validation
+        let hasError = false;
+        if (!email) {
+            setEmailError('Email is required');
+            hasError = true;
+        }
+        if (!pass) {
+            setPassError('Password is required');
+            hasError = true;
+        }
+
+        if (!hasError) {
+            onSubmit(email, pass);
+        }
     };
 
-    const handleToggleSignup = () => {
-        navigate('/register');
-    };
+    const InputGroup = ({ label, icon: Icon, error, children }) => (
+        <div className='space-y-1.5 group text-left'>
+            <label
+                className={cn(
+                    'block text-xs font-semibold uppercase tracking-wide transition-colors',
+                    error ? 'text-red-500' : 'text-slate-400 group-focus-within:text-blue-600',
+                )}
+            >
+                {label}
+            </label>
+            <div className='relative'>
+                <div
+                    className={cn(
+                        'absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors',
+                        error ? 'text-red-400' : 'text-slate-400 group-focus-within:text-blue-600',
+                    )}
+                >
+                    <Icon size={18} />
+                </div>
+                {children}
+            </div>
+            {error && (
+                <p className='text-red-500 text-xs font-medium text-right animate-in slide-in-from-top-1'>
+                    {error}
+                </p>
+            )}
+        </div>
+    );
 
-    const handleContinueAsGuest = () => {
-        navigate('/book');
-    };
+    const inputClassName = (error, value) =>
+        cn(
+            'w-full bg-white border rounded-lg pl-10 pr-4 py-2.5 text-sm font-medium outline-none transition-all duration-200',
+            error
+                ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/10'
+                : value && value.length > 0
+                  ? 'border-blue-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20'
+                  : 'border-slate-200/60 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 placeholder:text-slate-400',
+        );
+
     return (
-        <div className='animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-full justify-center'>
-            <div className='mb-6 text-center'>
-                <h2 className='text-2xl font-brand font-black text-slate-900 mb-1 tracking-tight'>
+        <div className='flex flex-col h-full'>
+            <div className='mb-8 text-center flex-shrink-0'>
+                <h2 className='text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight'>
                     Welcome Back
                 </h2>
-                <p className='text-slate-400 text-xs font-medium'>
-                    Sign in to your account to continue.
-                </p>
+                <p className='text-slate-500 text-sm'>Sign in to your account to continue.</p>
             </div>
 
             <form
-                className='space-y-4'
                 onSubmit={handleFormSubmit}
+                className='space-y-6'
             >
-                <div className='relative group'>
-                    <label
-                        className={`block text-[11px] font-bold uppercase tracking-widest mb-1.5 transition-colors text-left ${emailError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-sky-500'}`}
-                    >
-                        Email Address
-                    </label>
-                    <div className='relative'>
-                        <div className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-sky-500 transition-colors'>
-                            <Mail size={16} />
-                        </div>
-                        <input
-                            type='email'
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                if (emailError) setEmailError('');
-                            }}
-                            className={`w-full bg-slate-50/50 border rounded-xl pl-11 pr-4 py-2 focus:bg-white outline-none text-[13px] font-medium text-left transition-all ${emailError ? 'border-red-500 bg-red-50/30' : 'border-slate-100 focus:border-sky-500 shadow-sm'}`}
-                            placeholder='email@address.com'
-                        />
-                    </div>
-                    {emailError && (
-                        <p className='text-red-500 text-[10px] font-bold mt-1 text-right animate-in fade-in slide-in-from-top-1'>
-                            {emailError}
-                        </p>
-                    )}
-                </div>
+                <InputGroup
+                    label='Email Address'
+                    icon={Mail}
+                    error={emailError}
+                >
+                    <input
+                        type='email'
+                        value={email}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (emailError) setEmailError('');
+                        }}
+                        className={inputClassName(emailError, email)}
+                        placeholder='name@example.com'
+                    />
+                </InputGroup>
 
-                <div className='relative group'>
-                    <label
-                        className={`block text-[11px] font-bold uppercase tracking-widest mb-1.5 transition-colors text-left ${passError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-sky-500'}`}
-                    >
-                        Password
-                    </label>
-                    <div className='relative'>
-                        <div className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-sky-500 transition-colors'>
-                            <Lock size={16} />
-                        </div>
-                        <input
-                            type='password'
-                            value={pass}
-                            onChange={(e) => {
-                                setPass(e.target.value);
-                                if (passError) setPassError('');
-                            }}
-                            className={`w-full bg-slate-50/50 border rounded-xl pl-11 pr-4 py-2 focus:bg-white outline-none text-[13px] font-medium text-left transition-all ${passError ? 'border-red-500 bg-red-50/30' : 'border-slate-100 focus:border-sky-500 shadow-sm'}`}
-                            placeholder='••••••••'
-                        />
-                    </div>
-                    {passError && (
-                        <p className='text-red-500 text-[10px] font-bold mt-1 text-right animate-in fade-in slide-in-from-top-1'>
-                            {passError}
-                        </p>
-                    )}
-                </div>
+                <InputGroup
+                    label='Password'
+                    icon={Lock}
+                    error={passError}
+                >
+                    <input
+                        type='password'
+                        value={pass}
+                        onChange={(e) => {
+                            setPass(e.target.value);
+                            if (passError) setPassError('');
+                        }}
+                        className={inputClassName(passError, pass)}
+                        placeholder='••••••••'
+                    />
+                </InputGroup>
 
-                {error && !emailError && !passError && (
-                    <div className='text-red-500 text-[11px] font-bold bg-red-50 p-2.5 rounded-xl border border-red-100 flex items-center justify-end space-x-2 animate-in zoom-in-95 duration-200'>
+                {error && (
+                    <div className='p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-xs font-medium flex items-center justify-between'>
                         <span>{error}</span>
                         <AlertCircle size={14} />
                     </div>
                 )}
 
-                <button
-                    type='submit'
-                    disabled={loading}
-                    className='w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all text-xs uppercase tracking-widest mt-2 shadow-lg shadow-slate-900/10 active:scale-[0.98] flex items-center justify-center space-x-2'
-                >
-                    <span>{loading ? 'Signing in...' : 'Sign In'}</span>
-                    <ChevronRight size={18} />
-                </button>
+                <div className='pt-2'>
+                    <Button
+                        type='submit'
+                        disabled={loading}
+                        className='w-full'
+                        size='lg'
+                    >
+                        {loading ? 'Signing in...' : 'Sign In'}
+                        {!loading && <ChevronRight className='ml-2 h-4 w-4' />}
+                    </Button>
+                </div>
             </form>
 
-            <div className='mt-6 pt-5 border-t border-slate-50 text-center'>
-                <p className='text-slate-400 text-xs font-medium'>
-                    New patient?{' '}
+            <div className='flex-shrink-0 pt-8 border-t border-slate-100 text-center mt-8'>
+                <p className='text-slate-500 text-sm'>
+                    Don't have an account?{' '}
                     <button
-                        onClick={handleToggleSignup}
-                        className='text-sky-500 font-bold hover:underline ml-1'
+                        onClick={() => navigate('/register')}
+                        className='text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-colors'
                     >
                         Create Account
                     </button>
                 </p>
-                <div className='flex items-center my-3'>
-                    <div className='flex-1 h-px bg-slate-50'></div>
-                    <span className='px-3 text-[9px] font-bold text-slate-200 tracking-widest'>
-                        OR
-                    </span>
-                    <div className='flex-1 h-px bg-slate-50'></div>
+                <div className='mt-4'>
+                    <button
+                        onClick={() => navigate('/book')}
+                        className='text-slate-400 text-xs font-medium hover:text-slate-600 transition-colors'
+                    >
+                        Continue as Guest
+                    </button>
                 </div>
-                <button
-                    onClick={handleContinueAsGuest}
-                    className='w-full bg-white border border-slate-100 text-slate-400 font-bold py-2.5 rounded-xl hover:bg-slate-50 hover:border-slate-200 transition-all text-[9px] uppercase tracking-widest flex items-center justify-center space-x-2 group'
-                >
-                    <span>Continue as Guest</span>
-                    <ArrowRight
-                        size={14}
-                        className='transition-transform group-hover:translate-x-1'
-                    />
-                </button>
             </div>
         </div>
     );

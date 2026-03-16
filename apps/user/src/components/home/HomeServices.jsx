@@ -1,10 +1,99 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SectionHeading from '../common/SectionHeading';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import useServices from '../../hooks/useServices';
 
-const HomeServices = () => {
+gsap.registerPlugin(ScrollTrigger);
+
+const HomeServices = ({ variant = 'light' }) => {
     const navigate = useNavigate();
     const { services, loading } = useServices();
+    const sectionRef = useRef(null);
+    const headingRef = useRef(null);
+    const gridRef = useRef(null);
+    const ctaRef = useRef(null);
+
+    const isDark = variant === 'dark';
+
+    // GSAP Animations
+    useEffect(() => {
+        // We only want to animate once the content has loaded
+        if (loading) return;
+
+        let ctx;
+        const timer = setTimeout(() => {
+            ctx = gsap.context(() => {
+                // Animate Heading Elements staggered (Masked Reveal)
+                gsap.from('.services-reveal-text', {
+                    y: '100%',
+                    duration: 1.2,
+                    stagger: 0.15,
+                    ease: 'expo.out',
+                    scrollTrigger: {
+                        trigger: headingRef.current,
+                        start: 'top 85%',
+                        once: true,
+                    },
+                });
+
+                // Animate grid cards in batches
+                gsap.set('.gsap-card', { y: 40, opacity: 0, scale: 0.95 });
+                ScrollTrigger.batch('.gsap-card', {
+                    start: 'top 95%',
+                    once: true,
+                    onEnter: (batch) => {
+                        gsap.to(batch, {
+                            y: 0,
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.7,
+                            ease: 'power3.out',
+                            stagger: 0.1,
+                        });
+                    },
+                });
+
+                // Animate list items individually sliding from left
+                gsap.utils.toArray('.gsap-list-item').forEach((item) => {
+                    gsap.from(item, {
+                        x: -20,
+                        opacity: 0,
+                        duration: 0.6,
+                        ease: 'power3.out',
+                        scrollTrigger: {
+                            trigger: item,
+                            start: 'top 95%',
+                            once: true,
+                        },
+                    });
+                });
+
+                // Animate CTA banner
+                if (ctaRef.current) {
+                    gsap.from(ctaRef.current, {
+                        y: 40,
+                        opacity: 0,
+                        duration: 0.8,
+                        ease: 'power3.out',
+                        scrollTrigger: {
+                            trigger: ctaRef.current,
+                            start: 'top 95%',
+                            once: true,
+                        },
+                    });
+                }
+            }, sectionRef);
+
+            // Force ScrollTrigger to recalculate all trigger positions now that layout is stable
+            ScrollTrigger.refresh();
+        }, 100);
+
+        return () => {
+            clearTimeout(timer);
+            if (ctx) ctx.revert();
+        };
+    }, [loading]);
 
     // Mapping services to include images if they don't have them
     const serviceImages = [
@@ -28,40 +117,46 @@ const HomeServices = () => {
     };
 
     return (
-        <section className='bg-slate-900 py-16 sm:py-24 lg:py-32 relative overflow-hidden'>
+        <section ref={sectionRef} className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
             {/* Background Decor */}
-            <div className='absolute top-0 right-0 w-200 h-200 bg-blue-600/5 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-700'></div>
+            <div className={`absolute top-0 right-0 w-200 h-200 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-700 pointer-events-none ${isDark ? 'bg-blue-600/10' : 'bg-blue-600/5'}`}></div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div className='max-w-3xl mb-12 md:mb-20'>
-                    <div className='flex items-center gap-3 mb-6'>
-                        <span className='h-px w-8 bg-blue-600'></span>
-                        <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
-                            Medical Services
-                        </span>
+                <div ref={headingRef} className='max-w-3xl mb-12 md:mb-20'>
+                    <div className='overflow-hidden mb-6'>
+                        <div className='services-reveal-text flex items-center gap-3'>
+                            <span className='h-px w-8 bg-blue-600'></span>
+                            <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
+                                Medical Services
+                            </span>
+                        </div>
                     </div>
-                    <h2 className='text-[clamp(2.5rem,6vw,4.5rem)] font-bold text-white leading-[1.1] tracking-tight'>
-                        Clinical <br />
-                        <span className='text-slate-500'>Solutions.</span>
+                    <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <div className='overflow-hidden'>
+                            <span className='block services-reveal-text'>Clinical</span>
+                        </div>
+                        <div className='overflow-hidden'>
+                            <span className='block text-slate-500 services-reveal-text'>Solutions.</span>
+                        </div>
                     </h2>
                 </div>
 
                 {loading ? (
-                    <div className='text-center text-slate-400 py-20 flex flex-col items-center gap-4'>
+                    <div className='text-center text-slate-400 py-20 flex flex-col items-center justify-center gap-4 min-h-[80vh]'>
                         <div className='w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin'></div>
-                        <span className='text-sm font-medium tracking-wide'>
-                            Loading therapeutic options...
+                        <span className='text-sm font-medium tracking-wide text-slate-500'>
+                            Loading pharmaceutical & clinical options...
                         </span>
                     </div>
                 ) : (
                     <>
                         {/* Image Grid (01-05) */}
-                        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-16'>
+                        <div ref={gridRef} className='grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-16'>
                             {gridItems.map((service, idx) => (
                                 <div
                                     key={service.id}
                                     onClick={() => navigate(`/services/${service.id}`)}
-                                    className={`group relative overflow-hidden rounded-2xl border border-white/5 transition-all duration-500 hover:border-blue-500/30 cursor-pointer ${getGridClasses(idx)} shadow-sm hover:shadow-md`}
+                                    className={`gsap-card group relative overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer ${getGridClasses(idx)} ${isDark ? 'border-white/5 hover:border-blue-500/30 shadow-sm' : 'border-slate-100 bg-white shadow-md hover:shadow-xl hover:shadow-blue-500/10'}`}
                                 >
                                     <img
                                         src={service.image}
@@ -69,32 +164,28 @@ const HomeServices = () => {
                                         alt={service.name}
                                     />
 
-                                    <div className='absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/20 transition-colors duration-500'></div>
-                                    <div className='absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity'></div>
+                                    {/* Subtler Overlays for Light Mode */}
+                                    <div className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-slate-900/40 group-hover:bg-slate-900/20' : 'bg-slate-900/20 group-hover:bg-slate-900/10'}`}></div>
+                                    <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity ${isDark ? 'from-slate-900' : 'from-slate-900/80'}`}></div>
 
-                                    <div className='absolute top-6 left-6 text-white/70 font-bold text-xs tracking-tighter group-hover:text-blue-400 transition-colors'>
+                                     <div className={`absolute top-6 left-6 font-bold text-[10px] tracking-widest transition-colors ${isDark ? 'text-white/50 group-hover:text-blue-400' : 'text-white/70 group-hover:text-white'}`}>
                                         {String(idx + 1).padStart(2, '0')}
                                     </div>
 
-                                    <div className='absolute top-5 right-5 w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transform transition-all duration-300 group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:rotate-45'>
+                                    <div className={`absolute top-5 right-5 w-10 h-10 rounded-xl backdrop-blur-md border flex items-center justify-center text-white transform transition-all duration-300 group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:rotate-45 ${isDark ? 'bg-white/10 border-white/10' : 'bg-white/20 border-white/20'}`}>
                                         <svg
                                             className='w-5 h-5'
                                             fill='none'
                                             stroke='currentColor'
                                             viewBox='0 0 24 24'
                                         >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth='2.5'
-                                                d='M5 19L19 5m0 0H8m11 0v11'
-                                            ></path>
+                                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 19L19 5m0 0H8m11 0v11'></path>
                                         </svg>
                                     </div>
 
                                     <div className='absolute bottom-6 left-6 pr-8'>
                                         <h3
-                                            className={`font-bold text-white tracking-tight leading-[1.2] ${idx === 0 ? 'text-2xl md:text-4xl max-w-lg' : 'text-lg md:text-2xl max-w-37.5'}`}
+                                            className={`font-bold text-white tracking-tight leading-[1.2] drop-shadow-sm ${idx === 0 ? 'text-2xl md:text-4xl max-w-lg' : 'text-lg md:text-2xl max-w-[150px]'}`}
                                         >
                                             {service.name}
                                         </h3>
@@ -104,37 +195,32 @@ const HomeServices = () => {
                         </div>
 
                         {/* List View (06+) */}
-                        <div className='border-t border-white/10 divide-y divide-white/10'>
+                        <div className={`gsap-list-container border-t divide-y ${isDark ? 'border-white/5 divide-white/5' : 'border-slate-100 divide-slate-100'}`}>
                             {listItems.map((service, idx) => {
                                 const displayIndex = idx + 6;
                                 return (
                                     <div
                                         key={service.id}
                                         onClick={() => navigate(`/services/${service.id}`)}
-                                        className='group flex items-center justify-between py-10 md:py-14 px-4 hover:px-8 transition-all duration-500 cursor-pointer hover:bg-white/[0.02]'
+                                        className={`gsap-list-item group flex items-center justify-between py-10 md:py-14 px-4 hover:px-8 transition-all duration-500 cursor-pointer ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/70'}`}
                                     >
                                         <div className='flex items-center gap-8 md:gap-20'>
-                                            <span className='text-white/30 font-bold text-sm md:text-base group-hover:text-blue-500 transition-colors'>
+                                            <span className={`font-bold text-sm md:text-base group-hover:text-blue-500 transition-colors ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
                                                 {String(displayIndex).padStart(2, '0')}
                                             </span>
-                                            <h3 className='text-xl md:text-4xl font-bold text-white/80 group-hover:text-white transition-colors tracking-tight'>
+                                            <h3 className={`text-xl md:text-4xl font-bold transition-colors tracking-tight ${isDark ? 'text-white/80 group-hover:text-white' : 'text-slate-800 group-hover:text-slate-900 group-hover:translate-x-1'}`}>
                                                 {service.name}
                                             </h3>
                                         </div>
 
-                                        <div className='w-12 h-12 md:w-16 md:h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all duration-500'>
+                                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl border flex items-center justify-center transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/40 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 group-hover:rotate-6' : 'bg-white border-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 shadow-sm group-hover:shadow-md'}`}>
                                             <svg
                                                 className='w-6 h-6 md:w-7 md:h-7'
                                                 fill='none'
                                                 stroke='currentColor'
                                                 viewBox='0 0 24 24'
                                             >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth='2.5'
-                                                    d='M17 8l4 4m0 0l-4 4m4-4H3'
-                                                ></path>
+                                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M17 8l4 4m0 0l-4 4m4-4H3'></path>
                                             </svg>
                                         </div>
                                     </div>
@@ -145,35 +231,27 @@ const HomeServices = () => {
                 )}
 
                 {/* CTA Banner */}
-                <div className='mt-24 flex flex-col md:flex-row items-center justify-between bg-blue-50/5 backdrop-blur-sm rounded-2xl border border-white/10 p-4 md:p-6 group'>
-                    <div className='flex flex-col md:flex-row items-center gap-6 px-6 py-6 text-center md:text-left'>
-                        <div className='w-14 h-14 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-500 shadow-sm'>
-                            <svg
-                                className='w-7 h-7'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                            >
-                                <path
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                    strokeWidth='2'
-                                    d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                                ></path>
+                <div ref={ctaRef} className={`mt-24 flex flex-col md:flex-row items-center justify-between rounded-[2.5rem] border p-6 md:p-8 group relative overflow-hidden transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10'}`}>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'bg-gradient-to-r from-blue-600/5 to-transparent' : 'bg-gradient-to-r from-slate-50 to-transparent'}`}></div>
+                    
+                    <div className='flex flex-col md:flex-row items-center gap-8 px-4 text-center md:text-left relative z-10'>
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-500 group-hover:scale-110 ${isDark ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-600 text-white shadow-blue-500/20'}`}>
+                            <svg className='w-8 h-8' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
                             </svg>
                         </div>
                         <div>
-                            <p className='text-white font-bold text-xl md:text-2xl tracking-tight'>
+                            <p className={`font-bold text-2xl md:text-3xl tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                 Start Your Journey Today
                             </p>
-                            <p className='text-slate-500 font-medium text-xs mt-1 uppercase tracking-wider'>
+                            <p className={`font-medium text-xs md:text-sm mt-2 uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                 Book a comprehensive 3D scan and diagnostic
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={() => navigate('/services')}
-                        className='w-full md:w-auto bg-blue-600 text-white hover:bg-blue-700 font-semibold py-5 px-12 rounded-xl text-sm transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'
+                        className='relative z-10 w-full md:w-auto bg-blue-600 text-white hover:bg-blue-700 font-bold py-5 px-14 rounded-2xl text-sm transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-1 mt-6 md:mt-0'
                     >
                         View All Services
                     </button>
