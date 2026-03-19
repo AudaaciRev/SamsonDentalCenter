@@ -18,10 +18,9 @@ const MobileMenu = ({ links, user, onClose }) => {
                         end={link.to === '/'}
                         onClick={onClose}
                         className={({ isActive }) =>
-                            `block px-3 py-2 rounded-lg text-sm font-medium ${
-                                isActive
-                                    ? 'bg-sky-50 text-sky-600'
-                                    : 'text-slate-600 hover:bg-slate-50'
+                            `block px-3 py-2 rounded-lg text-sm font-medium ${isActive
+                                ? 'bg-sky-50 text-sky-600'
+                                : 'text-slate-600 hover:bg-slate-50'
                             }`
                         }
                     >

@@ -1,19 +1,17 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/public/Navbar';
 import Footer from '../components/public/Footer';
-import ChatBot from '../components/public/ChatBot';
 
 const PublicLayout = () => {
-    return (
-        <div className='min-h-screen flex flex-col'>
-            <Navbar />
+    const location = useLocation();
 
-            <main className='flex-grow'>
+    return (
+        <div className='font-sans antialiased text-slate-800'>
+            <Navbar />
+            <main>
                 <Outlet />
             </main>
-
             <Footer />
-            <ChatBot />
         </div>
     );
 };

@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import { api } from './utils/api.js';
 import useSmoothScroll from './hooks/useSmoothScroll';
+import ChatBot from './components/public/ChatBot.jsx';
 
 const App = () => {
     useSmoothScroll();
@@ -9,6 +10,7 @@ const App = () => {
     return (
         <BrowserRouter>
             <AppRoutes />
+            <ChatBot />
         </BrowserRouter>
     );
 };

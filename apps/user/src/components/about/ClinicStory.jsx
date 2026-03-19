@@ -1,78 +1,104 @@
-import SectionHeading from '../common/SectionHeading';
+import React from 'react';
 
 const ClinicStory = () => {
+    const image = {
+        // Using a stable Unsplash image URL (direct link) to avoid loading issues.
+        src: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=1600',
+        alt: 'Modern dental clinic equipment and chair',
+    };
+
+    const tabs = [
+        {
+            label: 'Our Mission',
+            title: 'Care that feels personal — and clinically precise.',
+            body: 'At the heart of our practice are values that guide everything we do. We believe in delivering compassionate, patient-first care built on trust, transparency, and respect.',
+        },
+        {
+            label: 'Our Vision',
+            title: 'A future where every patient feels confident in their smile.',
+            body: 'We’re building a modern dental experience that blends advanced technology with a calm, supportive environment — making great oral health accessible for every family we serve.',
+        },
+        {
+            label: 'Our Value',
+            title: 'Integrity, empathy, and excellence — every day.',
+            body: 'We hold ourselves to global standards: honest guidance, evidence-based treatment, and a commitment to long-term outcomes, not quick fixes.',
+        },
+    ];
+
+    // "Good enough" tab state without adding dependencies
+    const [activeTab, setActiveTab] = React.useState(0);
+
     return (
-        <section className='py-24 sm:py-32 bg-white relative overflow-hidden'>
-            {/* Background Decor */}
-            <div className='absolute top-0 left-0 w-150 h-150 bg-blue-600/5 rounded-full blur-[120px] -ml-40 -mt-40 pointer-events-none'></div>
+        <section className='py-16 sm:py-20 bg-white'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+                <div className='grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start'>
+                    {/* Left: Headline + description + tabs + panel */}
+                    <div className='order-2 lg:order-1 lg:col-span-7'>
+                        <p className='inline-flex items-center gap-2 text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase'>
+                            <span className='h-1.5 w-1.5 rounded-full bg-indigo-600' />
+                            Our story
+                        </p>
+                        <h2 className='mt-4 text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.02em] text-slate-900 leading-[1.06]'>
+                            Dentistry that feels calm, clear, and genuinely premium.
+                        </h2>
+                        <p className='mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl'>
+                            No pressure. No confusing jargon. Just a modern clinic, a friendly team,
+                            and a simple plan that gets you to a healthier smile.
+                        </p>
 
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div className='grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-center'>
-                    {/* Visual Side */}
-                    <div className='lg:col-span-5'>
-                        <div className='relative group'>
-                            {/* Decorative Frame */}
-                            <div className='absolute -inset-4 bg-slate-100/80 rounded-3xl -rotate-2 transition-transform group-hover:rotate-0 duration-500'></div>
-
-                            <div className='relative aspect-4/5 rounded-2xl overflow-hidden shadow-2xl border border-white'>
-                                <img
-                                    src='https://images.unsplash.com/photo-1629909613654-2871b740801a?auto=format&fit=crop&q=80&w=800'
-                                    alt='Clinic Atmosphere'
-                                    className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-110'
-                                />
-                                <div className='absolute inset-0 bg-linear-to-t from-slate-900/40 to-transparent'></div>
+                        {/* Tabs */}
+                        <div className='mt-10'>
+                            <div className='flex flex-wrap gap-3'>
+                                {tabs.map((t, idx) => {
+                                    const isActive = idx === activeTab;
+                                    return (
+                                        <button
+                                            key={t.label}
+                                            type='button'
+                                            onClick={() => setActiveTab(idx)}
+                                            className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/30 focus-visible:ring-offset-2 ${
+                                                isActive
+                                                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                                                    : 'bg-white/80 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-white'
+                                            }`}
+                                        >
+                                            {t.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
-                            {/* Floating Achievement */}
-                            <div className='absolute -bottom-8 -right-8 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 max-w-50 animate-bounce-slow'>
-                                <p className='text-3xl font-bold text-blue-600 mb-1'>12+</p>
-                                <p className='text-xs font-bold text-slate-500 uppercase tracking-widest leading-tight'>
-                                    Years of Clinical Mastery
+                            {/* Tab panel */}
+                            <div className='mt-6 rounded-2xl border border-slate-200/70 bg-white p-6 sm:p-7 shadow-sm ring-1 ring-slate-900/3'>
+                                <h3 className='text-xl sm:text-2xl font-semibold tracking-tight text-slate-900'>
+                                    {tabs[activeTab].title}
+                                </h3>
+                                <p className='mt-3 text-base text-slate-700 leading-relaxed'>
+                                    {tabs[activeTab].body}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Narrative Side */}
-                    <div className='lg:col-span-7 space-y-8'>
-                        <div className='space-y-6'>
-                            <p className='text-xl text-slate-900 font-semibold leading-relaxed'>
-                                Founded with a singular passion for merging medical precision with
-                                patient comfort.
-                            </p>
-                            <p className='text-lg text-slate-600 leading-relaxed font-medium'>
-                                Samson Dental Center has evolved from a local practice into a
-                                premier dental hub. Our journey is defined by a relentless pursuit
-                                of the latest dental innovations, ensuring our patients receive
-                                nothing short of world-class treatment.
-                            </p>
-                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-8 py-8 border-y border-slate-100'>
-                                <div>
-                                    <h4 className='font-bold text-slate-900 mb-2'>
-                                        Patient-First Philosophy
-                                    </h4>
-                                    <p className='text-sm text-slate-500 leading-relaxed'>
-                                        We believe every smile tells a unique story. Our approach is
-                                        tailored, compassionate, and deeply personal.
-                                    </p>
-                                </div>
-                                <div>
-                                    <h4 className='font-bold text-slate-900 mb-2'>
-                                        Cutting-Edge Tech
-                                    </h4>
-                                    <p className='text-sm text-slate-500 leading-relaxed'>
-                                        From 3D imaging to painless laser therapy, we invest in the
-                                        future of your oral health today.
-                                    </p>
+                    {/* Right: Image */}
+                    <div className='order-1 lg:order-2 lg:col-span-5'>
+                        <div className='relative rounded-3xl overflow-hidden shadow-2xl bg-slate-900 ring-1 ring-slate-900/10'>
+                            <img
+                                src={image.src}
+                                alt={image.alt}
+                                className='w-full aspect-4/5 object-cover'
+                                loading='lazy'
+                            />
+                            {/* Dark overlay filter for better aesthetic and readability */}
+                            <div className='absolute inset-0 bg-slate-950/45' />
+
+                            {/* Small caption chip to match site theme */}
+                            <div className='absolute left-5 bottom-5 right-5'>
+                                <div className='inline-flex items-center gap-3 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm font-semibold text-white shadow-sm'>
+                                    <span className='h-2 w-2 rounded-full bg-indigo-400' />
+                                    Elevated care, without the stress.
                                 </div>
                             </div>
-                        </div>
-
-                        <div className='pt-4'>
-                            <button className='group flex items-center gap-3 text-blue-600 font-bold text-sm tracking-widest uppercase'>
-                                Explore Our Philosophy
-                                <span className='h-px w-8 bg-blue-600 transition-all duration-300 group-hover:w-12'></span>
-                            </button>
                         </div>
                     </div>
                 </div>

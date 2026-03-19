@@ -9,7 +9,8 @@ const SMILE_GALLERY = [
     {
         image: 'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800',
         tags: ['DENTAL IMPLANTS', 'VENEERS'],
-        classes: 'md:col-start-1 md:row-start-1 md:row-span-2 col-start-1 row-start-1 row-span-2 aspect-[1/2] md:aspect-auto',
+        classes:
+            'md:col-start-1 md:row-start-1 md:row-span-2 col-start-1 row-start-1 row-span-2 aspect-[1/2] md:aspect-auto',
     },
     {
         image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800',
@@ -54,7 +55,8 @@ const SMILE_GALLERY = [
     {
         image: 'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800',
         tags: ['VENEERS', 'THERAPY'],
-        classes: 'md:col-start-3 md:row-start-3 md:row-span-2 col-start-2 row-start-5 row-span-2 aspect-[1/2] md:aspect-auto',
+        classes:
+            'md:col-start-3 md:row-start-3 md:row-span-2 col-start-2 row-start-5 row-span-2 aspect-[1/2] md:aspect-auto',
     },
 ];
 
@@ -69,11 +71,11 @@ const Gallery = ({ variant = 'light' }) => {
         let ctx = gsap.context(() => {
             // Heading stagger (uses ref trigger to avoid conflict with HomeServices)
             gsap.from('.gallery-heading-item', {
-                y: 40,
+                x: -100,
                 opacity: 0,
-                duration: 0.8,
-                stagger: 0.15,
-                ease: 'power3.out',
+                duration: 1.5,
+                stagger: 0.2,
+                ease: 'expo.out',
                 scrollTrigger: {
                     trigger: headingRef.current,
                     start: 'top 90%',
@@ -103,21 +105,39 @@ const Gallery = ({ variant = 'light' }) => {
     }, []);
 
     return (
-        <section ref={sectionRef} className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+        <section
+            ref={sectionRef}
+            className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-[#050506]' : 'bg-white'}`}
+        >
             {/* Background Decor */}
-            <div className={`absolute bottom-0 left-0 w-150 h-150 rounded-full blur-[100px] -ml-24 -mb-24 transition-opacity pointer-events-none ${isDark ? 'bg-blue-600/10' : 'bg-blue-600/5'}`}></div>
+            <div
+                className={`absolute bottom-0 left-0 w-150 h-150 rounded-full blur-[100px] -ml-24 -mb-24 transition-opacity pointer-events-none ${isDark ? 'bg-white/5' : 'bg-blue-600/5'}`}
+            ></div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div ref={headingRef} className='max-w-3xl mb-12 md:mb-20'>
+                <div
+                    ref={headingRef}
+                    className='max-w-3xl mb-12 md:mb-20'
+                >
                     <div className='gallery-heading-item flex items-center gap-3 mb-6'>
-                        <span className='h-px w-8 bg-blue-600'></span>
-                        <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
+                        <span
+                            className={`h-px w-8 ${isDark ? 'bg-white/30' : 'bg-blue-600'}`}
+                        ></span>
+                        <span
+                            className={`${isDark ? 'text-slate-300' : 'text-blue-500'} font-bold uppercase tracking-widest text-[10px]`}
+                        >
                             Smile Gallery
                         </span>
                     </div>
-                    <h2 className={`text-[clamp(2.25rem,5vw,4rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <h2
+                        className={`text-[clamp(2.25rem,5vw,4rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                    >
                         <span className='block gallery-heading-item'>Our patients' smiles</span>
-                        <span className='block text-slate-500 gallery-heading-item'>speak for themselves.</span>
+                        <span
+                            className={`block gallery-heading-item ${isDark ? 'text-slate-300/70' : 'text-slate-500'}`}
+                        >
+                            speak for themselves.
+                        </span>
                     </h2>
                 </div>
 
@@ -130,11 +150,13 @@ const Gallery = ({ variant = 'light' }) => {
                             <img
                                 src={item.image}
                                 alt={`Patient Smile ${idx + 1}`}
-                                className='absolute inset-0 w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105'
+                                className='absolute inset-0 w-full h-full object-cover grayscale-20 group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105'
                             />
 
-                              {/* Overlay */}
-                            <div className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-black/20 group-hover:bg-transparent' : 'bg-slate-900/10 group-hover:bg-transparent'}`}></div>
+                            {/* Overlay */}
+                            <div
+                                className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-black/30 group-hover:bg-transparent' : 'bg-slate-900/10 group-hover:bg-transparent'}`}
+                            ></div>
 
                             {/* Tags/Badges */}
                             <div className='absolute bottom-3 left-3 flex flex-wrap gap-1.5 max-w-[90%] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300'>

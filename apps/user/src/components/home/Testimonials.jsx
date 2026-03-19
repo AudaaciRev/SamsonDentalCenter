@@ -47,8 +47,8 @@ const REVIEWS = [
 const Testimonials = ({ variant = 'light' }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const sectionRef = useRef(null);
+    const trackRef = useRef(null);
     const headingRef = useRef(null);
-    const cardsRef = useRef(null);
     const isDark = variant === 'dark';
 
     // GSAP Animations
@@ -56,9 +56,10 @@ const Testimonials = ({ variant = 'light' }) => {
         let ctx = gsap.context(() => {
             // Heading masked reveal
             gsap.from('.testimonial-reveal-text', {
-                y: '100%',
-                duration: 1.2,
-                stagger: 0.15,
+                x: '-100%',
+                opacity: 0,
+                duration: 1.5,
+                stagger: 0.2,
                 ease: 'expo.out',
                 scrollTrigger: {
                     trigger: headingRef.current,
@@ -80,22 +81,55 @@ const Testimonials = ({ variant = 'light' }) => {
                     once: true,
                 },
             });
+
+            // Animate the cards themselves on scroll reveal
+            gsap.from('.testimonial-card', {
+                y: 50,
+                opacity: 0,
+                duration: 0.8,
+                stagger: 0.15,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: trackRef.current, // Trigger when the card container is visible
+                    start: 'top 85%',
+                    once: true,
+                },
+            });
         }, sectionRef);
 
         return () => ctx.revert();
     }, []);
 
+    const getVisibleSlidesCount = () => (window.innerWidth < 1024 ? 1 : 2);
+
+    const goToSlide = (index) => {
+        const visibleSlides = getVisibleSlidesCount();
+        // Ensure index is within bounds
+        const newIndex = Math.max(0, Math.min(index, REVIEWS.length - visibleSlides));
+
+        setActiveIndex(newIndex);
+        const gap = window.innerWidth < 768 ? 24 : 32;
+        const percent = 100 / visibleSlides;
+
+        gsap.to(trackRef.current, {
+            xPercent: -newIndex * percent,
+            x: -newIndex * gap,
+            duration: 1.2,
+            ease: 'expo.inOut',
+        });
+    };
+
     const handleNext = () => {
-        setActiveIndex((prev) => (prev + 1) % REVIEWS.length);
+        goToSlide(activeIndex + 1);
     };
 
     const handlePrev = () => {
-        setActiveIndex((prev) => (prev - 1 + REVIEWS.length) % REVIEWS.length);
+        goToSlide(activeIndex - 1);
     };
 
-    const getVisibleReviews = () => {
-        return [...REVIEWS.slice(activeIndex), ...REVIEWS.slice(0, activeIndex)];
-    };
+    const visibleSlides = getVisibleSlidesCount();
+    const isPrevDisabled = activeIndex === 0;
+    const isNextDisabled = activeIndex >= REVIEWS.length - visibleSlides;
 
     return (
         <section
@@ -105,7 +139,10 @@ const Testimonials = ({ variant = 'light' }) => {
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
                 <div className='flex flex-col lg:flex-row items-center gap-8 lg:gap-16'>
                     {/* Left Side: Heading */}
-                    <div ref={headingRef} className='lg:w-1/3 text-center lg:text-left'>
+                    <div
+                        ref={headingRef}
+                        className='lg:w-1/3 text-center lg:text-left'
+                    >
                         <div className='overflow-hidden mb-4'>
                             <div className='testimonial-reveal-text flex items-center justify-center lg:justify-start gap-3'>
                                 <span className='h-px w-8 bg-blue-600'></span>
@@ -114,22 +151,27 @@ const Testimonials = ({ variant = 'light' }) => {
                                 </span>
                             </div>
                         </div>
-                        <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <h2
+                            className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}
+                        >
                             <div className='overflow-hidden'>
                                 <span className='block testimonial-reveal-text'>What makes</span>
                             </div>
                             <div className='overflow-hidden'>
-                                <span className='block text-slate-500 testimonial-reveal-text'>us smile.</span>
+                                <span className='block text-slate-500 testimonial-reveal-text'>
+                                    us smile.
+                                </span>
                             </div>
                         </h2>
                         <div className='mt-8 flex justify-center lg:justify-start gap-3 testimonial-reveal-items'>
                             <button
                                 onClick={handlePrev}
+                                disabled={isPrevDisabled}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ease-in-out shadow-sm hover:shadow-md active:translate-y-0 hover:-translate-y-0.5 group border ${
                                     isDark
                                         ? 'bg-white/5 border-white/10 text-white hover:bg-blue-600 hover:border-blue-500'
                                         : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-blue-600 hover:text-white hover:border-blue-600'
-                                }`}
+                                } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-inherit disabled:hover:border-inherit`}
                             >
                                 <svg
                                     className='w-5 h-5'
@@ -147,11 +189,12 @@ const Testimonials = ({ variant = 'light' }) => {
                             </button>
                             <button
                                 onClick={handleNext}
+                                disabled={isNextDisabled}
                                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ease-in-out shadow-sm hover:shadow-md active:translate-y-0 hover:-translate-y-0.5 group border ${
                                     isDark
                                         ? 'bg-white/5 border-white/10 text-white hover:bg-blue-600 hover:border-blue-500'
                                         : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-blue-600 hover:text-white hover:border-blue-600'
-                                }`}
+                                } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-inherit disabled:hover:border-inherit`}
                             >
                                 <svg
                                     className='w-5 h-5'
@@ -172,13 +215,15 @@ const Testimonials = ({ variant = 'light' }) => {
 
                     {/* Right Side: Reviews Carousel */}
                     <div className='lg:w-2/3 w-full relative'>
-                        <div className='flex transition-all duration-500 ease-in-out gap-6 md:gap-8 overflow-visible min-h-90 md:min-h-95'>
-                            {getVisibleReviews()
-                                .slice(0, 2)
-                                .map((review, idx) => (
+                        <div className='overflow-hidden'>
+                            <div
+                                ref={trackRef}
+                                className='flex gap-6 md:gap-8'
+                            >
+                                {REVIEWS.map((review, idx) => (
                                     <div
                                         key={`${review.id}-${idx}`}
-                                        className='w-full md:w-[calc(50%-12px)] shrink-0'
+                                        className='w-full lg:w-[calc(50%-16px)] shrink-0 testimonial-card' // Added 'testimonial-card' class
                                     >
                                         <div
                                             className={`rounded-2xl p-8 shadow-sm transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-0.5 h-full flex flex-col relative border ${isDark ? 'bg-slate-800/50 border-white/5' : 'bg-slate-50 border-slate-200/80'}`}
@@ -267,11 +312,23 @@ const Testimonials = ({ variant = 'light' }) => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
                         </div>
-                        {/* Fade Out Effect */}
-                        <div
-                            className={`absolute -right-4 top-0 bottom-0 w-32 bg-linear-to-l to-transparent pointer-events-none hidden lg:block ${isDark ? 'from-slate-900' : 'from-white'}`}
-                        ></div>
+
+                        {/* Progress Indicators */}
+                        <div className='flex gap-3 mt-10 justify-center items-center'>
+                            {REVIEWS.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => goToSlide(idx)}
+                                    className={`relative h-1 rounded-full transition-all duration-500 overflow-hidden ${activeIndex === idx ? 'w-12 bg-blue-500/20' : `w-4 ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}`}
+                                >
+                                    {activeIndex === idx && (
+                                        <div className='absolute inset-0 bg-blue-600 origin-left shadow-[0_0_8px_rgba(37,99,235,0.3)]'></div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

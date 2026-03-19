@@ -2,15 +2,15 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer className='bg-slate-900 text-slate-400 py-16 sm:py-24 lg:py-32 relative overflow-hidden'>
+        <footer className='bg-[#050506] text-slate-50 py-16 sm:py-24 lg:py-32 relative overflow-hidden'>
             {/* Background Decor */}
-            <div className='absolute bottom-0 right-0 w-150 h-150 bg-blue-600/5 rounded-full blur-[100px] -mr-48 -mb-48 pointer-events-none'></div>
+            <div className='absolute bottom-0 right-0 w-150 h-150 bg-white/6 rounded-full blur-[100px] -mr-48 -mb-48 pointer-events-none'></div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16 mb-20 md:mb-24'>
                     <div className='col-span-1 md:col-span-2 lg:col-span-1'>
                         <div className='flex items-center gap-3 mb-8'>
-                            <div className='w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm'>
+                            <div className='w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-sm'>
                                 <svg
                                     viewBox='0 0 100 100'
                                     className='w-6 h-6 fill-current'
@@ -19,10 +19,10 @@ const Footer = () => {
                                 </svg>
                             </div>
                             <span className='font-bold text-xl tracking-tighter text-white uppercase'>
-                                Samson <span className='text-blue-500'>Dental Center</span>
+                                Samson <span className='text-slate-200'>Dental Center</span>
                             </span>
                         </div>
-                        <p className='text-sm leading-relaxed mb-10 max-w-sm'>
+                        <p className='text-sm leading-relaxed mb-10 max-w-sm text-slate-200'>
                             Empowering communities with world-class dental solutions and
                             compassionate care since 2008. Your journey to a perfect smile starts
                             here.
@@ -32,9 +32,9 @@ const Footer = () => {
                                 <a
                                     key={i}
                                     href='#'
-                                    className='w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all duration-200 ease-in-out shadow-sm active:translate-y-0 hover:-translate-y-0.5'
+                                    className='w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200 ease-in-out shadow-sm active:translate-y-0 hover:-translate-y-0.5'
                                 >
-                                    <div className='w-4 h-4 border-2 border-current rounded-[2px]'></div>
+                                    <div className='w-4 h-4 border-2 border-current rounded-xs'></div>
                                 </a>
                             ))}
                         </div>
@@ -44,11 +44,11 @@ const Footer = () => {
                         <h4 className='font-bold text-white text-sm mb-8 tracking-wide uppercase opacity-90'>
                             Quick Links
                         </h4>
-                        <ul className='space-y-4 text-sm font-medium'>
+                        <ul className='space-y-4 text-sm font-semibold text-slate-200'>
                             <li>
                                 <Link
                                     to='/'
-                                    className='hover:text-blue-500 transition-colors duration-200'
+                                    className='hover:text-white transition-colors duration-200'
                                 >
                                     Home
                                 </Link>
@@ -56,7 +56,7 @@ const Footer = () => {
                             <li>
                                 <Link
                                     to='/about'
-                                    className='hover:text-blue-500 transition-colors duration-200'
+                                    className='hover:text-white transition-colors duration-200'
                                 >
                                     About
                                 </Link>
@@ -64,7 +64,7 @@ const Footer = () => {
                             <li>
                                 <Link
                                     to='/services'
-                                    className='hover:text-blue-500 transition-colors duration-200'
+                                    className='hover:text-white transition-colors duration-200'
                                 >
                                     Services
                                 </Link>
@@ -72,7 +72,7 @@ const Footer = () => {
                             <li>
                                 <Link
                                     to='/contact'
-                                    className='hover:text-blue-500 transition-colors duration-200'
+                                    className='hover:text-white transition-colors duration-200'
                                 >
                                     Contacts
                                 </Link>
@@ -84,17 +84,17 @@ const Footer = () => {
                         <h4 className='font-bold text-white text-sm mb-8 tracking-wide uppercase opacity-90'>
                             Specialties
                         </h4>
-                        <ul className='space-y-4 text-sm font-medium'>
-                            <li className='hover:text-blue-500 transition-colors cursor-default'>
+                        <ul className='space-y-4 text-sm font-semibold text-slate-200'>
+                            <li className='hover:text-white transition-colors cursor-default'>
                                 General Dentistry
                             </li>
-                            <li className='hover:text-blue-500 transition-colors cursor-default'>
+                            <li className='hover:text-white transition-colors cursor-default'>
                                 Orthodontics
                             </li>
-                            <li className='hover:text-blue-500 transition-colors cursor-default'>
+                            <li className='hover:text-white transition-colors cursor-default'>
                                 Oral Surgery
                             </li>
-                            <li className='hover:text-blue-500 transition-colors cursor-default'>
+                            <li className='hover:text-white transition-colors cursor-default'>
                                 Pediatric Care
                             </li>
                         </ul>
@@ -104,16 +104,16 @@ const Footer = () => {
                         <h4 className='font-bold text-white text-sm mb-8 tracking-wide uppercase opacity-90'>
                             Newsletter
                         </h4>
-                        <p className='text-sm mb-8 leading-relaxed'>
+                        <p className='text-sm mb-8 leading-relaxed text-slate-200'>
                             Stay updated with dental tips and exclusive offers.
                         </p>
                         <div className='relative group'>
                             <input
                                 type='email'
                                 placeholder='Your email'
-                                className='w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-all placeholder:text-slate-600 text-white'
+                                className='w-full bg-white/10 border border-white/20 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-white/35 focus:ring-2 focus:ring-white/15 transition-all placeholder:text-slate-300 text-white'
                             />
-                            <button className='absolute right-2 top-2 bottom-2 bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700 transition-all duration-200 ease-in-out shadow-sm active:scale-95 flex items-center justify-center'>
+                            <button className='absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-4 rounded-lg hover:bg-slate-800 transition-all duration-200 ease-in-out shadow-sm active:scale-95 flex items-center justify-center'>
                                 <svg
                                     className='w-5 h-5'
                                     fill='none'
@@ -132,7 +132,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className='pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold tracking-widest uppercase text-slate-600'>
+                <div className='pt-12 border-t border-white/12 flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-bold tracking-widest uppercase text-slate-300'>
                     <p>© {new Date().getFullYear()} Samson Dental Center. All Rights Reserved.</p>
                     <div className='flex gap-8'>
                         <Link
