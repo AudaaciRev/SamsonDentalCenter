@@ -1,47 +1,102 @@
 const Mission = () => {
+    // Reference-inspired content (update anytime)
+    const image = {
+        src: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?auto=format&fit=crop&q=80&w=1600',
+        alt: 'Dentist providing care to a patient',
+    };
+
     const values = [
         {
-            icon: '🎯',
-            title: 'Patient-First Care',
-            description: 'Your comfort and well-being are at the heart of everything we do.',
+            number: '01',
+            title: 'Patient-centered care',
+            description:
+                'Our patients are at the heart of everything we do. We listen to your concerns, understand your needs, and create personalized treatment plans that prioritize your health and comfort.',
         },
         {
-            icon: '🔬',
-            title: 'Modern Technology',
-            description: 'We use the latest dental equipment and techniques for the best results.',
+            number: '02',
+            title: 'Excellence in dentistry',
+            description:
+                'Our team uses the latest technology and techniques to ensure you receive the most effective treatments for optimal results.',
         },
         {
-            icon: '💎',
-            title: 'Quality & Precision',
-            description: 'Every procedure is performed with meticulous attention to detail.',
-        },
-        {
-            icon: '🤝',
-            title: 'Trust & Transparency',
-            description: 'Clear communication about treatments, costs, and expected outcomes.',
+            number: '03',
+            title: 'Integrity and transparency',
+            description:
+                'We believe in honesty and transparency in all aspects of our practice. From clear communication about your treatment options to ethical business practices, we strive to build trust with our patients.',
         },
     ];
 
     return (
-        <section className='py-16 sm:py-20 bg-gradient-to-br from-sky-50 to-blue-50'>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center'>
-                <h2 className='text-3xl sm:text-4xl font-bold text-slate-900 mb-4'>Our Mission</h2>
-                <p className='text-lg text-slate-600 max-w-3xl mx-auto mb-12'>
-                    To provide exceptional dental care that empowers every patient to smile with
-                    confidence, through personalized treatment, modern technology, and a
-                    compassionate team.
-                </p>
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
-                    {values.map((value) => (
-                        <div
-                            key={value.title}
-                            className='bg-white rounded-xl p-6 shadow-sm border border-slate-100'
-                        >
-                            <div className='text-3xl mb-3'>{value.icon}</div>
-                            <h3 className='font-bold text-slate-900 mb-2'>{value.title}</h3>
-                            <p className='text-sm text-slate-500'>{value.description}</p>
+        <section className='py-10 sm:py-12 bg-white'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+                <div className='grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-stretch'>
+                    {/* Left: Image card with overlay content */}
+                    <div className='lg:col-span-7'>
+                        <div className='relative h-full overflow-hidden rounded-3xl bg-slate-900 shadow-xl'>
+                            <img
+                                src={image.src}
+                                alt={image.alt}
+                                className='h-full w-full object-cover'
+                                loading='lazy'
+                            />
+
+                            {/* light dark overlay for readability (matches reference) */}
+                            <div className='absolute inset-0 bg-slate-950/50' />
+
+                            <div className='absolute inset-0 p-8 sm:p-10 flex flex-col'>
+                                <div className='grow'>
+                                    <p className='text-xs font-semibold tracking-widest text-white/90 uppercase'>
+                                        Our Services
+                                    </p>
+                                    <h2 className='mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-white leading-tight max-w-md'>
+                                        From the way we interact with our patients to the care we
+                                        provide.
+                                    </h2>
+                                    <p className='mt-4 text-sm text-white/80 leading-relaxed max-w-md'>
+                                        These values are the foundation of our practice, ensuring
+                                        that each patient receives the best possible dental care in
+                                        a welcoming environment.
+                                    </p>
+                                </div>
+
+                                <div className='mt-6 shrink-0'>
+                                    <button
+                                        type='button'
+                                        className='inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/70'
+                                    >
+                                        Meet our team
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Right: Numbered value list */}
+                    <div className='lg:col-span-5'>
+                        <div className='h-full rounded-3xl border border-slate-200/80 bg-white px-8 py-8 sm:px-9 sm:py-9 shadow-sm'>
+                            <div className='flex flex-col justify-center h-full'>
+                                {values.map((item, idx) => (
+                                    <div
+                                        key={item.number}
+                                        className={idx !== 0 ? 'mt-7' : ''}
+                                    >
+                                        <div className='text-xs font-semibold text-indigo-600'>
+                                            {item.number}
+                                        </div>
+                                        <h3 className='mt-1.5 text-2xl font-semibold tracking-tight text-slate-900'>
+                                            {item.title}
+                                        </h3>
+                                        <p className='mt-2 text-sm text-slate-600 leading-relaxed'>
+                                            {item.description}
+                                        </p>
+                                        {idx !== values.length - 1 && (
+                                            <div className='mt-7 h-px w-full bg-slate-200' />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

@@ -26,9 +26,10 @@ const HomeServices = ({ variant = 'light' }) => {
             ctx = gsap.context(() => {
                 // Animate Heading Elements staggered (Masked Reveal)
                 gsap.from('.services-reveal-text', {
-                    y: '100%',
-                    duration: 1.2,
-                    stagger: 0.15,
+                    x: '-100%',
+                    opacity: 0,
+                    duration: 1.5,
+                    stagger: 0.2,
                     ease: 'expo.out',
                     scrollTrigger: {
                         trigger: headingRef.current,
@@ -117,26 +118,44 @@ const HomeServices = ({ variant = 'light' }) => {
     };
 
     return (
-        <section ref={sectionRef} className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+        <section
+            ref={sectionRef}
+            className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-[#050506]' : 'bg-white'}`}
+        >
             {/* Background Decor */}
-            <div className={`absolute top-0 right-0 w-200 h-200 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-700 pointer-events-none ${isDark ? 'bg-blue-600/10' : 'bg-blue-600/5'}`}></div>
+            <div
+                className={`absolute top-0 right-0 w-200 h-200 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-700 pointer-events-none ${isDark ? 'bg-white/5' : 'bg-blue-600/5'}`}
+            ></div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div ref={headingRef} className='max-w-3xl mb-12 md:mb-20'>
+                <div
+                    ref={headingRef}
+                    className='max-w-3xl mb-12 md:mb-20'
+                >
                     <div className='overflow-hidden mb-6'>
                         <div className='services-reveal-text flex items-center gap-3'>
-                            <span className='h-px w-8 bg-blue-600'></span>
-                            <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
+                            <span
+                                className={`h-px w-8 ${isDark ? 'bg-white/30' : 'bg-blue-600'}`}
+                            ></span>
+                            <span
+                                className={`${isDark ? 'text-slate-300' : 'text-blue-500'} font-bold uppercase tracking-widest text-[10px]`}
+                            >
                                 Medical Services
                             </span>
                         </div>
                     </div>
-                    <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <h2
+                        className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                    >
                         <div className='overflow-hidden'>
                             <span className='block services-reveal-text'>Clinical</span>
                         </div>
                         <div className='overflow-hidden'>
-                            <span className='block text-slate-500 services-reveal-text'>Solutions.</span>
+                            <span
+                                className={`block services-reveal-text ${isDark ? 'text-slate-300/70' : 'text-slate-500'}`}
+                            >
+                                Solutions.
+                            </span>
                         </div>
                     </h2>
                 </div>
@@ -151,7 +170,10 @@ const HomeServices = ({ variant = 'light' }) => {
                 ) : (
                     <>
                         {/* Image Grid (01-05) */}
-                        <div ref={gridRef} className='grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-16'>
+                        <div
+                            ref={gridRef}
+                            className='grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-16'
+                        >
                             {gridItems.map((service, idx) => (
                                 <div
                                     key={service.id}
@@ -165,27 +187,40 @@ const HomeServices = ({ variant = 'light' }) => {
                                     />
 
                                     {/* Subtler Overlays for Light Mode */}
-                                    <div className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-slate-900/40 group-hover:bg-slate-900/20' : 'bg-slate-900/20 group-hover:bg-slate-900/10'}`}></div>
-                                    <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity ${isDark ? 'from-slate-900' : 'from-slate-900/80'}`}></div>
+                                    <div
+                                        className={`absolute inset-0 transition-colors duration-500 ${isDark ? 'bg-slate-900/40 group-hover:bg-slate-900/20' : 'bg-slate-900/20 group-hover:bg-slate-900/10'}`}
+                                    ></div>
+                                    <div
+                                        className={`absolute inset-0 bg-linear-to-t via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity ${isDark ? 'from-black' : 'from-slate-900/80'}`}
+                                    ></div>
 
-                                     <div className={`absolute top-6 left-6 font-bold text-[10px] tracking-widest transition-colors ${isDark ? 'text-white/50 group-hover:text-blue-400' : 'text-white/70 group-hover:text-white'}`}>
+                                    <div
+                                        className={`absolute top-6 left-6 font-bold text-[10px] tracking-widest transition-colors ${isDark ? 'text-white/50 group-hover:text-blue-400' : 'text-white/70 group-hover:text-white'}`}
+                                    >
                                         {String(idx + 1).padStart(2, '0')}
                                     </div>
 
-                                    <div className={`absolute top-5 right-5 w-10 h-10 rounded-xl backdrop-blur-md border flex items-center justify-center text-white transform transition-all duration-300 group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:rotate-45 ${isDark ? 'bg-white/10 border-white/10' : 'bg-white/20 border-white/20'}`}>
+                                    <div
+                                        className={`absolute top-5 right-5 w-10 h-10 rounded-xl backdrop-blur-md border flex items-center justify-center text-white transform transition-all duration-300 group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:rotate-45 ${isDark ? 'bg-white/10 border-white/10' : 'bg-white/20 border-white/20'}`}
+                                    >
                                         <svg
                                             className='w-5 h-5'
                                             fill='none'
                                             stroke='currentColor'
                                             viewBox='0 0 24 24'
                                         >
-                                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 19L19 5m0 0H8m11 0v11'></path>
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth='2.5'
+                                                d='M5 19L19 5m0 0H8m11 0v11'
+                                            ></path>
                                         </svg>
                                     </div>
 
                                     <div className='absolute bottom-6 left-6 pr-8'>
                                         <h3
-                                            className={`font-bold text-white tracking-tight leading-[1.2] drop-shadow-sm ${idx === 0 ? 'text-2xl md:text-4xl max-w-lg' : 'text-lg md:text-2xl max-w-[150px]'}`}
+                                            className={`font-bold text-white tracking-tight leading-[1.2] drop-shadow-sm ${idx === 0 ? 'text-2xl md:text-4xl max-w-lg' : 'text-lg md:text-2xl max-w-40'}`}
                                         >
                                             {service.name}
                                         </h3>
@@ -195,32 +230,45 @@ const HomeServices = ({ variant = 'light' }) => {
                         </div>
 
                         {/* List View (06+) */}
-                        <div className={`gsap-list-container border-t divide-y ${isDark ? 'border-white/5 divide-white/5' : 'border-slate-100 divide-slate-100'}`}>
+                        <div
+                            className={`gsap-list-container border-t divide-y ${isDark ? 'border-white/5 divide-white/5' : 'border-slate-100 divide-slate-100'}`}
+                        >
                             {listItems.map((service, idx) => {
                                 const displayIndex = idx + 6;
                                 return (
                                     <div
                                         key={service.id}
                                         onClick={() => navigate(`/services/${service.id}`)}
-                                        className={`gsap-list-item group flex items-center justify-between py-10 md:py-14 px-4 hover:px-8 transition-all duration-500 cursor-pointer ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/70'}`}
+                                        className={`gsap-list-item group flex items-center justify-between py-10 md:py-14 px-4 hover:px-8 transition-all duration-500 cursor-pointer ${isDark ? 'hover:bg-white/2' : 'hover:bg-slate-50/70'}`}
                                     >
                                         <div className='flex items-center gap-8 md:gap-20'>
-                                            <span className={`font-bold text-sm md:text-base group-hover:text-blue-500 transition-colors ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                                            <span
+                                                className={`font-bold text-sm md:text-base transition-colors ${isDark ? 'text-white/30 group-hover:text-white/70' : 'text-slate-400 group-hover:text-blue-500'}`}
+                                            >
                                                 {String(displayIndex).padStart(2, '0')}
                                             </span>
-                                            <h3 className={`text-xl md:text-4xl font-bold transition-colors tracking-tight ${isDark ? 'text-white/80 group-hover:text-white' : 'text-slate-800 group-hover:text-slate-900 group-hover:translate-x-1'}`}>
+                                            <h3
+                                                className={`text-xl md:text-4xl font-bold transition-colors tracking-tight ${isDark ? 'text-white/80 group-hover:text-white' : 'text-slate-800 group-hover:text-slate-900 group-hover:translate-x-1'}`}
+                                            >
                                                 {service.name}
                                             </h3>
                                         </div>
 
-                                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl border flex items-center justify-center transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/40 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 group-hover:rotate-6' : 'bg-white border-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 shadow-sm group-hover:shadow-md'}`}>
+                                        <div
+                                            className={`w-12 h-12 md:w-16 md:h-16 rounded-xl border flex items-center justify-center transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/40 group-hover:bg-white/10 group-hover:text-white group-hover:border-white/20 group-hover:rotate-6' : 'bg-white border-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 shadow-sm group-hover:shadow-md'}`}
+                                        >
                                             <svg
                                                 className='w-6 h-6 md:w-7 md:h-7'
                                                 fill='none'
                                                 stroke='currentColor'
                                                 viewBox='0 0 24 24'
                                             >
-                                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M17 8l4 4m0 0l-4 4m4-4H3'></path>
+                                                <path
+                                                    strokeLinecap='round'
+                                                    strokeLinejoin='round'
+                                                    strokeWidth='2.5'
+                                                    d='M17 8l4 4m0 0l-4 4m4-4H3'
+                                                ></path>
                                             </svg>
                                         </div>
                                     </div>
@@ -231,27 +279,52 @@ const HomeServices = ({ variant = 'light' }) => {
                 )}
 
                 {/* CTA Banner */}
-                <div ref={ctaRef} className={`mt-24 flex flex-col md:flex-row items-center justify-between rounded-[2.5rem] border p-6 md:p-8 group relative overflow-hidden transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10'}`}>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'bg-gradient-to-r from-blue-600/5 to-transparent' : 'bg-gradient-to-r from-slate-50 to-transparent'}`}></div>
-                    
+                <div
+                    ref={ctaRef}
+                    className={`mt-24 flex flex-col md:flex-row items-center justify-between rounded-[2.5rem] border p-6 md:p-8 group relative overflow-hidden transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10'}`}
+                >
+                    <div
+                        className={`absolute inset-0 transition-opacity duration-1000 ${isDark ? 'bg-linear-to-r from-white/5 to-transparent' : 'bg-linear-to-r from-slate-50 to-transparent'}`}
+                    ></div>
+
                     <div className='flex flex-col md:flex-row items-center gap-8 px-4 text-center md:text-left relative z-10'>
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-500 group-hover:scale-110 ${isDark ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-600 text-white shadow-blue-500/20'}`}>
-                            <svg className='w-8 h-8' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path>
+                        <div
+                            className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-500 group-hover:scale-110 ${isDark ? 'bg-white/10 text-white' : 'bg-blue-600 text-white shadow-blue-500/20'}`}
+                        >
+                            <svg
+                                className='w-8 h-8'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth='2'
+                                    d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                                ></path>
                             </svg>
                         </div>
                         <div>
-                            <p className={`font-bold text-2xl md:text-3xl tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            <p
+                                className={`font-bold text-2xl md:text-3xl tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                            >
                                 Start Your Journey Today
                             </p>
-                            <p className={`font-medium text-xs md:text-sm mt-2 uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            <p
+                                className={`font-medium text-xs md:text-sm mt-2 uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                            >
                                 Book a comprehensive 3D scan and diagnostic
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={() => navigate('/services')}
-                        className='relative z-10 w-full md:w-auto bg-blue-600 text-white hover:bg-blue-700 font-bold py-5 px-14 rounded-2xl text-sm transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-1 mt-6 md:mt-0'
+                        className={`relative z-10 w-full md:w-auto text-white font-bold py-5 px-14 rounded-2xl text-sm transition-all duration-300 hover:-translate-y-1 mt-6 md:mt-0 ${
+                            isDark
+                                ? 'bg-white/10 hover:bg-white/15 shadow-lg shadow-black/40 hover:shadow-xl hover:shadow-black/50'
+                                : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40'
+                        }`}
                     >
                         View All Services
                     </button>

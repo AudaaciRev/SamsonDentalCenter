@@ -26,9 +26,10 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
         let ctx = gsap.context(() => {
             // Heading masked reveal
             gsap.from('.promo-reveal-text', {
-                y: '100%',
-                duration: 1.2,
-                stagger: 0.15,
+                x: '-100%',
+                opacity: 0,
+                duration: 1.5,
+                stagger: 0.2,
                 ease: 'expo.out',
                 scrollTrigger: {
                     trigger: headingRef.current,
@@ -63,7 +64,7 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
             xPercent: -index * 100,
             duration: 1,
             ease: 'expo.inOut',
-            onComplete: () => setIsAnimating(false)
+            onComplete: () => setIsAnimating(false),
         });
     };
 
@@ -91,12 +92,17 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
         >
             {/* Background Decor - Minimal */}
             <div className='absolute inset-0 overflow-hidden pointer-events-none'>
-                <div className={`absolute -top-24 -right-24 w-96 h-96 rounded-full blur-[100px] ${isDark ? 'bg-blue-600/10' : 'bg-blue-50/50'}`}></div>
+                <div
+                    className={`absolute -top-24 -right-24 w-96 h-96 rounded-full blur-[100px] ${isDark ? 'bg-blue-600/10' : 'bg-blue-50/50'}`}
+                ></div>
             </div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
                 {/* Header Row: Title & Navigation (Matched to HomeServices) */}
-                <div ref={headingRef} className='flex flex-col lg:flex-row items-center lg:items-end justify-between mb-12 md:mb-16 gap-10'>
+                <div
+                    ref={headingRef}
+                    className='flex flex-col lg:flex-row items-center lg:items-end justify-between mb-12 md:mb-16 gap-10'
+                >
                     <div className='max-w-3xl text-center lg:text-left'>
                         <div className='overflow-hidden mb-6'>
                             <div className='promo-reveal-text flex items-center justify-center lg:justify-start gap-3'>
@@ -106,12 +112,16 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
                                 </span>
                             </div>
                         </div>
-                        <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <h2
+                            className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                        >
                             <div className='overflow-hidden'>
                                 <span className='block promo-reveal-text'>Exclusive</span>
                             </div>
                             <div className='overflow-hidden'>
-                                <span className='block text-blue-600 promo-reveal-text'>Dental Offers.</span>
+                                <span className='block text-blue-600 promo-reveal-text'>
+                                    Dental Offers.
+                                </span>
                             </div>
                         </h2>
                     </div>
@@ -121,24 +131,49 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
                             onClick={prevSlide}
                             className={`w-10 h-10 rounded-xl border transition-all shadow-sm flex items-center justify-center ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:text-blue-400 hover:border-blue-500/50 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-white'}`}
                         >
-                            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M15 19l-7-7 7-7' />
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth='2.5'
+                                    d='M15 19l-7-7 7-7'
+                                />
                             </svg>
                         </button>
                         <button
                             onClick={nextSlide}
                             className={`w-10 h-10 rounded-xl border transition-all shadow-sm flex items-center justify-center ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:text-blue-400 hover:border-blue-500/50 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-white'}`}
                         >
-                            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M9 5l7 7-7 7' />
+                            <svg
+                                className='w-5 h-5'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                    strokeWidth='2.5'
+                                    d='M9 5l7 7-7 7'
+                                />
                             </svg>
                         </button>
                     </div>
                 </div>
 
                 {/* Ultra-Compact Banner Showcase */}
-                <div ref={bannerRef} className='relative group promo-banner-reveal'>
-                    <div className={`relative overflow-hidden rounded-[2rem] shadow-lg border h-[180px] sm:h-[240px] md:h-[260px] lg:h-[280px] ${isDark ? 'border-white/5 bg-slate-800' : 'border-slate-100 bg-slate-50'}`}>
+                <div
+                    ref={bannerRef}
+                    className='relative group promo-banner-reveal'
+                >
+                    <div
+                        className={`relative overflow-hidden rounded-[2rem] shadow-lg border h-[180px] sm:h-[240px] md:h-[260px] lg:h-[280px] ${isDark ? 'border-white/5 bg-slate-800' : 'border-slate-100 bg-slate-50'}`}
+                    >
                         {/* Carousel Track */}
                         <div
                             ref={trackRef}
@@ -146,13 +181,18 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
                             style={{ width: `${BANNER_IMAGES.length * 100}%` }}
                         >
                             {BANNER_IMAGES.map((banner) => (
-                                <div key={banner.id} className='relative h-full w-full flex-shrink-0'>
+                                <div
+                                    key={banner.id}
+                                    className='relative h-full w-full flex-shrink-0'
+                                >
                                     <img
                                         src={banner.src}
                                         alt={banner.alt}
                                         className='absolute inset-0 w-full h-full object-cover'
                                     />
-                                    <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-tr from-slate-900/40 to-transparent' : 'bg-gradient-to-tr from-slate-900/5 to-transparent'}`}></div>
+                                    <div
+                                        className={`absolute inset-0 ${isDark ? 'bg-gradient-to-tr from-slate-900/40 to-transparent' : 'bg-gradient-to-tr from-slate-900/5 to-transparent'}`}
+                                    ></div>
                                 </div>
                             ))}
                         </div>
@@ -175,13 +215,16 @@ const Promotions = forwardRef(({ variant = 'light' }, ref) => {
                 </div>
             </div>
 
-            <style dangerouslySetInnerHTML={{
-                __html: `
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 @keyframes progress {
                     0% { transform: scaleX(0); }
                     100% { transform: scaleX(1); }
                 }
-            `}} />
+            `,
+                }}
+            />
         </section>
     );
 });

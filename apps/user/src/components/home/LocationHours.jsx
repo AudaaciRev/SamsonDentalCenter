@@ -14,144 +14,256 @@ const LocationHours = ({ variant = 'light' }) => {
     // GSAP Animations
     useEffect(() => {
         let ctx = gsap.context(() => {
-            // Heading masked reveal
-            gsap.from('.location-reveal-text', {
-                y: '100%',
-                duration: 1.2,
-                stagger: 0.15,
-                ease: 'expo.out',
+            // Use a single timeline for all section animations for better reliability
+            const tl = gsap.timeline({
                 scrollTrigger: {
-                    trigger: headingRef.current,
-                    start: 'top 85%',
+                    trigger: sectionRef.current,
+                    start: 'top 85%', // Trigger when section is 85% from top
                     once: true,
                 },
             });
 
-            // Items Reveal
-            gsap.from('.location-reveal-items', {
-                y: 40,
+            // 1. Reveal Heading & Subtext
+            tl.from('.location-reveal-text', {
+                x: -30,
                 opacity: 0,
                 duration: 1,
-                stagger: 0.15,
+                stagger: 0.1,
                 ease: 'power3.out',
-                scrollTrigger: {
-                    trigger: sectionRef.current,
-                    start: 'top 80%',
-                    once: true,
-                },
             });
-        }, sectionRef);
+
+            // 2. Reveal Cards (Availability, Location, Map)
+            tl.from(
+                '.location-card-anim',
+                {
+                    y: 50,
+                    opacity: 0,
+                    duration: 0.8,
+                    stagger: 0.15,
+                    ease: 'power2.out',
+                },
+                '-=0.6',
+            ); // Overlap with heading animation
+
+            // Force a refresh after a short delay to account for layout shifts
+            setTimeout(() => {
+                ScrollTrigger.refresh();
+            }, 100);
+        }, sectionRef.current);
 
         return () => ctx.revert();
     }, []);
 
     return (
-        <section ref={sectionRef} className={`py-16 sm:py-24 lg:py-32 relative overflow-hidden transition-colors duration-500 z-0 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
-            {/* Minimal Background Gradients */}
-            <div className={`location-reveal-items absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[80px] -mr-64 -mt-64 pointer-events-none ${isDark ? 'bg-blue-600/10' : 'bg-blue-600/5'}`}></div>
-            <div className={`location-reveal-items absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[80px] -ml-64 -mb-64 pointer-events-none ${isDark ? 'bg-blue-400/10' : 'bg-blue-400/5'}`}></div>
+        <section
+            ref={sectionRef}
+            className={`py-20 sm:py-32 relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-slate-50/50'}`}
+        >
+            {/* Minimal Background Decor */}
+            <div
+                className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.03] -mr-48 -mt-48 pointer-events-none ${isDark ? 'bg-white' : 'bg-blue-600'}`}
+            ></div>
 
             <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'>
-                <div className='flex flex-col lg:flex-row gap-12 lg:gap-20 items-center'>
-                    
-                    {/* Content Left */}
-                    <div ref={headingRef} className='w-full lg:w-1/2 flex flex-col'>
-                        <div className='overflow-hidden mb-6'>
-                            <div className='location-reveal-text flex items-center gap-3'>
-                                <span className='h-px w-8 bg-blue-600'></span>
-                                <span className='tracking-wider font-semibold text-blue-600 text-[10px] uppercase tracking-[0.2em]'>
-                                    Contact & Hours
-                                </span>
+                {/* Standardized Header */}
+                <div
+                    ref={headingRef}
+                    className='max-w-3xl mb-12 lg:mb-20'
+                >
+                    <div className='overflow-hidden mb-6 text-left'>
+                        <div className='location-reveal-text flex items-center gap-3'>
+                            <span className='h-px w-8 bg-blue-600'></span>
+                            <span className='text-blue-500 font-bold uppercase tracking-widest text-[10px]'>
+                                Direct Access
+                            </span>
+                        </div>
+                    </div>
+                    <h2
+                        className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                    >
+                        <div className='overflow-hidden'>
+                            <span className='block location-reveal-text'>Visit Our</span>
+                        </div>
+                        <div className='overflow-hidden'>
+                            <span className='block text-slate-500 location-reveal-text'>
+                                Clinic.
+                            </span>
+                        </div>
+                    </h2>
+                </div>
+
+                {/* Main Content Grid */}
+                <div className='grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-stretch'>
+                    {/* LEFT COLUMN: Clean Neutral Cards */}
+                    <div className='lg:col-span-4 flex flex-col gap-6 lg:gap-8'>
+                        {/* 1. Availability Card */}
+                        <div className='location-card-anim'>
+                            <div
+                                className={`group p-8 lg:p-10 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/40'}`}
+                            >
+                                <div className='flex items-center gap-4 mb-10'>
+                                    <div
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'}`}
+                                    >
+                                        <svg
+                                            className='w-5 h-5'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth='2'
+                                                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                                            />
+                                        </svg>
+                                    </div>
+                                    <h3
+                                        className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                                    >
+                                        Availability
+                                    </h3>
+                                </div>
+
+                                <div className='space-y-5'>
+                                    {[
+                                        { d: 'Mon — Fri', t: '9:00 — 18:00', active: true },
+                                        { d: 'Sat', t: '8:00 — 17:00' },
+                                        { d: 'Sun', t: 'Appointment Only', accent: true },
+                                    ].map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className='flex justify-between items-center group/item'
+                                        >
+                                            <span
+                                                className={`text-[13px] font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+                                            >
+                                                {item.d}
+                                            </span>
+                                            <div className='flex items-center gap-3'>
+                                                <span
+                                                    className={`text-[13px] font-bold ${item.accent ? 'text-blue-500 italic' : isDark ? 'text-white' : 'text-slate-800'}`}
+                                                >
+                                                    {item.t}
+                                                </span>
+                                                {item.active && (
+                                                    <div className='w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse'></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        
-                        <h2 className={`text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.1] tracking-tight mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            <div className='overflow-hidden'>
-                                <span className='block location-reveal-text'>Visit Our</span>
-                            </div>
-                            <div className='overflow-hidden'>
-                                <span className='block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400 location-reveal-text'>Clinical Space.</span>
-                            </div>
-                        </h2>
 
-                        <div className='location-reveal-items flex flex-col sm:flex-row gap-10 sm:gap-16'>
-                            {/* Hours List */}
-                            <div className='flex-1'>
-                                <div className='flex items-center gap-3 mb-6'>
-                                    <div className='w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]'></div>
-                                    <h3 className='text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]'>Operating Hours</h3>
-                                </div>
-                                <ul className='space-y-5'>
-                                    {[
-                                        { day: 'Mon — Fri', time: '9:00 AM — 6:00 PM' },
-                                        { day: 'Saturday', time: '8:00 AM — 5:00 PM' }
-                                    ].map((item, idx) => (
-                                        <li key={idx} className={`flex justify-between items-end border-b pb-3 ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                                            <span className={`text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.day}</span>
-                                            <span className={`text-sm sm:text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.time}</span>
-                                        </li>
-                                    ))}
-                                    <li className='flex justify-between items-end pb-3'>
-                                        <span className={`text-sm font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sunday</span>
-                                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${isDark ? 'text-blue-400 bg-blue-600/10 border border-blue-500/20' : 'text-blue-600 bg-blue-50 border border-blue-100'}`}>By Appointment</span>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            {/* Location Details */}
-                            <div className='flex-1'>
-                                <div className='flex items-center gap-3 mb-6'>
-                                    <div className='w-2 h-2 rounded-full bg-slate-300'></div>
-                                    <h3 className='text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]'>Our Location</h3>
-                                </div>
-                                <div className='space-y-3 mb-10'>
-                                    <p className={`text-xl sm:text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                        7 Himalayan Road, <br />
-                                        Tandang Sora
-                                    </p>
-                                    <p className={`text-sm leading-relaxed font-medium ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                                        Quezon City, Metro Manila. <br className="hidden sm:block"/>
-                                        Accessible via Commonwealth Ave.
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => navigate('/contact')}
-                                    className='group flex items-center gap-3 text-sm font-bold text-blue-600 hover:text-blue-500 transition-colors duration-300'
-                                >
-                                    Get Directions
-                                    <div className='w-8 h-8 rounded-full border border-blue-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300'>
-                                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M13 7l5 5m0 0l-5 5m5-5H6'/></svg>
+                        {/* 2. Location Card */}
+                        <div className='location-card-anim'>
+                            <div
+                                className={`group p-8 lg:p-10 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-slate-100 shadow-xl shadow-slate-200/40'}`}
+                            >
+                                <div className='flex items-center gap-4 mb-8'>
+                                    <div
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'}`}
+                                    >
+                                        <svg
+                                            className='w-5 h-5'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth='2'
+                                                d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
+                                            />
+                                        </svg>
                                     </div>
-                                </button>
+                                    <h3
+                                        className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                                    >
+                                        Placement
+                                    </h3>
+                                </div>
+
+                                <p
+                                    className={`text-2xl font-black leading-[1.2] mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+                                >
+                                    7 Himalayan Rd, <br />
+                                    Tandang Sora, QC.
+                                </p>
+                                <p
+                                    className={`text-[13px] font-medium leading-relaxed mb-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+                                >
+                                    Accessible via Commonwealth Ave. <br />
+                                    Near major Metro Manila transit links.
+                                </p>
+
+                                <a
+                                    href='https://maps.google.com/maps?q=7%20Himalayan%20Road,%20Tandang%20Sora,%20Quezon%20City'
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    className={`group/btn flex items-center justify-between w-full p-5 rounded-2xl text-[13px] font-bold transition-all duration-300 ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/5 hover:shadow-blue-500/20'}`}
+                                >
+                                    Initiate Directions
+                                    <div
+                                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${isDark ? 'bg-white/10' : 'bg-white/20'}`}
+                                    >
+                                        <svg
+                                            className='w-4 h-4'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                                strokeWidth='3'
+                                                d='M9 5l7 7-7 7'
+                                            />
+                                        </svg>
+                                    </div>
+                                </a>
                             </div>
                         </div>
                     </div>
 
-                    {/* Content Right: Compact Map */}
-                    <div className='w-full lg:w-1/2 location-reveal-items'>
-                        <div className={`relative w-full h-[300px] sm:h-[400px] lg:h-[450px] rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 group hover:shadow-blue-500/5 ${isDark ? 'border-white/5' : 'border-slate-200/50 shadow-slate-200/50'}`}>
+                    {/* RIGHT COLUMN: Minimal Map Environment */}
+                    <div className='lg:col-span-8 h-full min-h-[450px] lg:min-h-full location-card-anim'>
+                        <div
+                            className={`relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 group ${isDark ? 'border-white/5 shadow-blue-900/10' : 'border-white shadow-slate-200/60'}`}
+                        >
+                            {/* Repositioned Label Overlay (Doesn't obstruct search/controls) */}
+                            <div
+                                className={`absolute top-6 right-6 z-10 hidden sm:flex items-center gap-3 px-5 py-2.5 backdrop-blur-md rounded-2xl border shadow-xl transition-all duration-500 group-hover:translate-x-1 ${isDark ? 'bg-slate-900/90 border-white/10 shadow-black/50' : 'bg-white/95 border-slate-100 shadow-slate-200/50'}`}
+                            >
+                                <div className='flex flex-col text-right'>
+                                    <span
+                                        className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                                    >
+                                        Samson Dental
+                                    </span>
+                                    <span
+                                        className={`text-[9px] font-bold uppercase tracking-widest opacity-40 ${isDark ? 'text-white' : 'text-slate-900'}`}
+                                    >
+                                        Official Clinical Site
+                                    </span>
+                                </div>
+                                <div className='w-2.5 h-2.5 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,1)] animate-pulse'></div>
+                            </div>
+
                             <iframe
-                                src='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.953843794345!2d121.0466!3d14.6735!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b0a561055555%3A0x1234567890abcdef!2sTandang%20Sora%20Ave%2C%20Quezon%20City%2C%20Metro%20Manila!5e0!3m2!1sen!2sph!4v1620000000000!5m2!1sen!2sph'
+                                src='https://maps.google.com/maps?q=7%20Himalayan%20Road,%20Tandang%20Sora,%20Quezon%20City&t=&z=15&ie=UTF8&iwloc=&output=embed'
                                 width='100%'
                                 height='100%'
                                 style={{ border: 0 }}
                                 allowFullScreen={true}
                                 loading='lazy'
-                                className={`absolute inset-0 w-full h-full grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 ease-in-out ${isDark ? 'opacity-70 invert contrast-[90%] brightness-[80%]' : ''}`}
+                                className={`absolute inset-0 w-full h-full grayscale-[15%] transition-all duration-1000 ease-in-out scale-100 hover:scale-[1.02] ${isDark ? 'opacity-80 invert contrast-[90%] brightness-[80%]' : ''}`}
                             ></iframe>
-                            
-                            <div className={`absolute bottom-6 left-6 right-6 backdrop-blur-md border p-4 rounded-[1.5rem] shadow-xl z-10 flex items-center gap-4 transition-all duration-500 translate-y-2 group-hover:translate-y-0 ${isDark ? 'bg-slate-800/90 border-white/10' : 'bg-white/95 border-slate-100'}`}>
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-600 text-white shadow-blue-500/20'}`}>
-                                    <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                </div>
-                                <div className='flex flex-col'>
-                                    <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Samson Dental Center</p>
-                                    <a href='https://maps.google.com' target='_blank' rel='noopener noreferrer' className='text-[10px] font-bold text-blue-600 hover:text-blue-500 uppercase tracking-widest mt-0.5 mt-1'>Open in Maps</a>
-                                </div>
-                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
