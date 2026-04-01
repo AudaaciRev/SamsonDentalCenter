@@ -81,11 +81,20 @@ export const getAvailableSlots = async (date, serviceId, filterSessionId = null)
         };
     }
 
-    // ── 3. Get all active dentists who work on that day ──
-    const { data: dentists } = await supabaseAdmin
+    // ── 3. Get all active dentists qualified for this service tier ──
+    let dentistQuery = supabaseAdmin
         .from('dentists')
-        .select('id, profile_id')
+        .select('id, profile_id, tier')
         .eq('is_active', true);
+
+    // TWO-TIER: Only show dentists who handle this type of service
+    if (service.tier === 'general') {
+        dentistQuery = dentistQuery.in('tier', ['general', 'both']);
+    } else if (service.tier === 'specialized') {
+        dentistQuery = dentistQuery.in('tier', ['specialized', 'both']);
+    }
+
+    const { data: dentists } = await dentistQuery;
 
     if (!dentists || dentists.length === 0) {
         return {
