@@ -25,9 +25,9 @@ const AppointmentConfirmed = () => {
                 <CheckCircle className="w-10 h-10 text-emerald-500" />
             </div>
 
-            <h1 className="text-3xl font-bold text-slate-900 mb-3 font-display tracking-tight">Appointment Confirmed!</h1>
+            <h1 className="text-3xl font-bold text-slate-900 mb-3 font-display tracking-tight">Verification Confirmed!</h1>
             <p className="text-slate-500 mb-10 leading-relaxed max-w-sm mx-auto">
-                We've secured your session. A final confirmation receipt has been sent to your email with the appointment details.
+                We've verified your email and received your booking request. Our team will review it and send a final confirmation once approved.
             </p>
 
             {apptId && (

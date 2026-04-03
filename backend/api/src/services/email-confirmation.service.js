@@ -50,13 +50,14 @@ export const sendGuestConfirmationEmail = async (email, name, details) => {
         await resend.emails.send({
             from: process.env.EMAIL_FROM || 'Primera Denta <noreply@primeradenta.com>',
             to: email,
-            subject: 'Confirm Your Dental Appointment — Primera Denta',
+            subject: 'Verify Your Booking Request — Samson Denta Center',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #0ea5e9;">Confirm Your Appointment</h2>
+                    <h2 style="color: #0ea5e9;">Verify Your Booking Request</h2>
                     <p>Hi ${name},</p>
-                    <p>Thank you for booking with <strong>Primera Denta</strong>!</p>
-                    <p>Here are your appointment details:</p>
+                    <p>Thank you for your booking request with <strong>Primera Denta</strong>!</p>
+                    <p>To prevent spam, please verify that you made this request by clicking the button below:</p>
+                    
                     <table style="border-collapse: collapse; margin: 16px 0;">
                         <tr>
                             <td style="padding: 8px; font-weight: bold;">Service:</td>
@@ -71,23 +72,19 @@ export const sendGuestConfirmationEmail = async (email, name, details) => {
                             <td style="padding: 8px;">${start_time}</td>
                         </tr>
                     </table>
-                    <p><strong>⚠️ Your appointment is not confirmed yet!</strong></p>
-                    <p>Please click the button below to confirm:</p>
+
                     <a href="${confirmUrl}"
                        style="display: inline-block; background: #0ea5e9; color: white;
-                              padding: 12px 24px; text-decoration: none; border-radius: 8px;
-                              font-weight: bold; margin: 16px 0;">
-                        ✅ Confirm My Appointment
+                               padding: 12px 24px; text-decoration: none; border-radius: 8px;
+                               font-weight: bold; margin: 16px 0;">
+                        ✅ Verify My Request
                     </a>
+                    <p><strong>Note:</strong> Once verified, our team will review your request and send a final confirmation soon.</p>
                     <p style="color: #666; font-size: 14px;">
                         This link expires in ${CLINIC_CONFIG.GUEST_CONFIRM_EXPIRY_HOURS} hours.
-                        If you did not make this booking, you can ignore this email.
                     </p>
                     <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-                    <p style="color: #999; font-size: 12px;">
-                        Primera Denta Dental Clinic<br/>
-                        7 Himalayan Rd, Tandang Sora, Quezon City
-                    </p>
+                    <p style="color: #999; font-size: 12px;">Primera Denta Dental Clinic</p>
                 </div>
             `,
         });
@@ -135,49 +132,59 @@ export const confirmAppointmentByToken = async (token) => {
         };
     }
 
-    // ── 4. Update appointment to CONFIRMED ──
+    // ── 4. Update appointment to mark as verified (but stay PENDING) ──
     const { data: updatedAppointment, error: updateError } = await supabaseAdmin
         .from('appointments')
         .update({
-            status: APPOINTMENT_STATUS.CONFIRMED,
+            patient_confirmed: true, // Used here to mean "Email Verified"
             confirmed_at: new Date().toISOString(),
+            // status remains PENDING for admin approval
         })
         .eq('id', tokenRecord.appointment_id)
-        .select(
-            `
+        .select(`
             *,
-            service:services(name, price),
-            dentist:dentists(profile:profiles(full_name))
-        `,
-        )
+            service:services(name, price)
+        `)
         .single();
 
     if (updateError) {
-        throw { status: 500, message: 'Failed to confirm appointment.' };
+        throw { status: 500, message: 'Failed to verify request.' };
     }
 
-    // ── 5. Send booking success email to guest ──
-    await sendBookingSuccessEmail(updatedAppointment.guest_email, updatedAppointment.guest_name, {
-        date: updatedAppointment.appointment_date,
-        start_time: updatedAppointment.start_time,
-        end_time: updatedAppointment.end_time,
-        service: updatedAppointment.service?.name,
-        dentist: updatedAppointment.dentist?.profile?.full_name || 'Assigned',
-    });
+    // ── 5. Send "Verification Success" email (Awaiting Admin) ──
+    try {
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Primera Denta <noreply@primeradenta.com>',
+            to: updatedAppointment.guest_email,
+            subject: '📧 Request Verified — Primera Denta',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #0ea5e9;">Verification Successful!</h2>
+                    <p>Hi ${updatedAppointment.guest_name},</p>
+                    <p>Your email has been successfully verified for your ${updatedAppointment.service?.name} appointment on ${updatedAppointment.appointment_date}.</p>
+                    <p><strong>What happens next?</strong></p>
+                    <p>Our admin team will now review your request and assign a dentist. You will receive a final confirmation email once it is approved.</p>
+                    <p>Thank you for choosing Primera Denta!</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+                    <p style="color: #999; font-size: 12px;">Primera Denta Dental Clinic</p>
+                </div>
+            `,
+        });
+    } catch (err) {
+        console.error('Failed to send verification success email:', err.message);
+    }
 
-    // ── 6. Delete used token (one-time use) ──
+    // ── 6. Delete used token ──
     await supabaseAdmin.from('appointment_confirmation_tokens').delete().eq('id', tokenRecord.id);
 
     return {
         confirmed: true,
-        message: 'Your appointment is confirmed! See you soon.',
+        message: 'Request verified! Our team will review it and notify you soon.',
         appointment: {
             id: updatedAppointment.id,
             date: updatedAppointment.appointment_date,
             start_time: updatedAppointment.start_time,
-            end_time: updatedAppointment.end_time,
             service: updatedAppointment.service?.name,
-            dentist: updatedAppointment.dentist?.profile?.full_name || 'Assigned',
         },
     };
 };

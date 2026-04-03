@@ -10,9 +10,9 @@ const AppointmentAlreadyConfirmed = () => {
                 <CheckCircle2 className="w-10 h-10 text-emerald-500" />
             </div>
 
-            <h1 className="text-3xl font-bold text-slate-900 mb-3 font-display tracking-tight">Already Confirmed!</h1>
+            <h1 className="text-3xl font-bold text-slate-900 mb-3 font-display tracking-tight">Request Verified</h1>
             <p className="text-slate-500 mb-10 leading-relaxed max-w-sm mx-auto">
-                No further action is needed. This appointment has already been confirmed and is secured on our schedule.
+                Your booking request has already been verified. We will notify you once it has been reviewed and approved by our team.
             </p>
 
             <button 

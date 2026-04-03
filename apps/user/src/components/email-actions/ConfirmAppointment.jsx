@@ -62,8 +62,8 @@ const ConfirmAppointment = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
             <div className="w-16 h-16 border-4 border-slate-100 border-t-sky-500 rounded-full animate-spin mb-6" />
-            <h1 className="text-2xl font-bold text-slate-900 mb-2 font-display">Verifying Appointment</h1>
-            <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">Securing your spot and finalizing details, please wait...</p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2 font-display">Verifying Request</h1>
+            <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">Verifying your email and sending request, please wait...</p>
         </div>
     );
 };

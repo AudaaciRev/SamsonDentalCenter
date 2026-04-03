@@ -60,13 +60,23 @@ const GuestBookingWizard = ({ booking }) => {
         };
     }, []);
 
+    const breadcrumbLabels = ['Service', 'Date & Time', 'Your Info', 'Review', 'Verification'];
+
     // If booking succeeded, show success screen
     if (result) {
         return (
-            <GuestBookingSuccess
-                result={result}
-                onReset={reset}
-            />
+            <div>
+                <StepIndicator
+                    currentStep={4} // Verification step
+                    labels={breadcrumbLabels}
+                    onStepClick={() => {}}
+                />
+                <GuestBookingSuccess
+                    result={result}
+                    onReset={reset}
+                    booking={booking}
+                />
+            </div>
         );
     }
 
@@ -74,7 +84,7 @@ const GuestBookingWizard = ({ booking }) => {
         <div>
             <StepIndicator
                 currentStep={step}
-                labels={['Service', 'Date & Time', 'Your Info', 'Review', 'Confirm']}
+                labels={breadcrumbLabels}
                 onStepClick={goToStep}
             />
 

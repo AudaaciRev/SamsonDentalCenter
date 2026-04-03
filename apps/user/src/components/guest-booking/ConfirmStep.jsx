@@ -12,9 +12,9 @@ const ConfirmStep = ({ formData, onSubmit, onBack, submitting, error }) => {
 
     return (
         <div>
-            <h2 className='text-xl font-bold text-slate-900 mb-2'>Review Your Booking</h2>
+            <h2 className='text-xl font-bold text-slate-900 mb-2'>Review Your Request</h2>
             <p className='text-slate-500 text-sm mb-6'>
-                Please review the details below before confirming your appointment.
+                Please review the details below before submitting your request.
             </p>
 
             {error && (
@@ -40,13 +40,12 @@ const ConfirmStep = ({ formData, onSubmit, onBack, submitting, error }) => {
             </div>
 
             <div className='bg-amber-50 border border-amber-100 rounded-xl p-4 mb-8'>
-                <p className='text-sm text-amber-800'>
-                    📧 A confirmation email will be sent to <strong>{formData.email}</strong>. You
-                    must click the link in the email to confirm your appointment. Until confirmed,
-                    your appointment status will be <strong>PENDING</strong>.
+                <p className='text-sm text-amber-800 leading-relaxed'>
+                    📧 A verification email will be sent to <strong>{formData.email}</strong>. 
+                    You <strong>must</strong> click the link in that email to verify your request. 
+                    Once verified, our clinic will review and approve your appointment.
                 </p>
             </div>
-
             {/* Navigation */}
             <div className='flex justify-between'>
                 <button
@@ -70,7 +69,7 @@ const ConfirmStep = ({ formData, onSubmit, onBack, submitting, error }) => {
                             Booking...
                         </>
                     ) : (
-                        'Confirm Booking'
+                        'Submit Request'
                     )}
                 </button>
             </div>

@@ -155,6 +155,22 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         }
     };
 
+    const resendVerification = async (appointmentId, email) => {
+        try {
+            await api.post('/appointments/resend-confirmation', {
+                appointment_id: appointmentId,
+                email: email,
+            });
+            return { success: true, message: 'Verification email resent!' };
+        } catch (err) {
+            console.error('Resend error:', err);
+            return {
+                success: false,
+                message: err.message || 'Failed to resend. Please try again later.',
+            };
+        }
+    };
+
     const reset = () => {
         setStep(0);
         setFormData({
@@ -196,6 +212,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         prevStep,
         goToStep,
         submit,
+        resendVerification,
         reset,
     };
 };

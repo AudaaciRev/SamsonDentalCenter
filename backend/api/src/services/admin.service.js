@@ -12,18 +12,22 @@ import { APPOINTMENT_STATUS, APPROVAL_STATUS, SERVICE_TIER } from '../utils/cons
  * @returns {Array} List of pending requests with patient and service info
  */
 export const getPendingRequests = async () => {
+    // ── 1. Get Specialized Pending Requests ──
+    // ── 2. Get Guest Bookings that have been Email Verified (patient_confirmed = true) ──
     const { data, error } = await supabaseAdmin
         .from('appointments')
         .select(
             `
+      *,
       patient:profiles!appointments_patient_id_fkey(id, full_name, email, phone, no_show_count),
       service:services(name, duration_minutes, price, tier)
     `,
         )
-        .eq('service_tier', SERVICE_TIER.SPECIALIZED)
-        .eq('approval_status', APPROVAL_STATUS.PENDING)
+        // Scenario A: Specialized service awaiting approval
+        // Scenario B: Guest booking (General or Specialized) that is email-verified but still PENDING
+        .or(`and(service_tier.eq.${SERVICE_TIER.SPECIALIZED},approval_status.eq.${APPROVAL_STATUS.PENDING}),and(source.eq.GUEST_BOOKING,patient_confirmed.eq.true)`)
         .eq('status', APPOINTMENT_STATUS.PENDING)
-        .order('created_at', { ascending: true }); // Oldest first (FIFO)
+        .order('created_at', { ascending: true });
 
     if (error) throw { status: 500, message: error.message };
     return data;
@@ -573,12 +577,12 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
     let assignedDentistId = dentistId;
 
     if (!assignedDentistId) {
-        // Auto-assign from specialized tier
+        // Auto-assign from the same tier as the service
         assignedDentistId = await assignDentist(
             appointment.appointment_date,
             appointment.start_time,
             appointment.end_time,
-            SERVICE_TIER.SPECIALIZED,
+            appointment.service?.tier || SERVICE_TIER.GENERAL,
         );
 
         if (!assignedDentistId) {
@@ -601,13 +605,13 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
             throw { status: 404, message: 'Selected dentist not found or inactive.' };
         }
 
-        if (dentist.tier !== 'specialized' && dentist.tier !== 'both') {
+        const requiredTier = appointment.service?.tier || 'general';
+        if (dentist.tier !== requiredTier && dentist.tier !== 'both') {
             throw {
                 status: 400,
-                message: 'Selected dentist is not qualified for specialized services.',
+                message: `Selected dentist is not qualified for ${requiredTier} services.`,
             };
         }
-
         // ── CHECK FOR TIME CONFLICT ──
         // Make sure this dentist isn't already booked for this time slot
         const { data: conflict, error: conflictErr } = await supabaseAdmin
