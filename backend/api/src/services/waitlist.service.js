@@ -16,8 +16,7 @@ import { AppError } from '../utils/errors.js';
  * @param {string} date - Preferred date 'YYYY-MM-DD'
  * @param {string} time - Preferred time 'HH:MM' (optional)
  * @param {number} priority - 0 = normal, 1 = urgent
- */
-export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null) => {
+export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null, preferred_dentist_id = null) => {
     // ── 1. Check if already on waitlist for this date + service + time ──
     // FIX: Include preferred_time in the duplicate check.
     // Without this, a patient waiting for 09:00 would be blocked from also waiting for 10:00.
@@ -51,6 +50,7 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
             service_id: serviceId,
             preferred_date: date,
             preferred_time: time,
+            preferred_dentist_id,
             priority,
             status: WAITLIST_STATUS.WAITING,
             booked_for_name: booked_for_name || null,
@@ -168,22 +168,29 @@ export const cancelWaitlistEntry = async (waitlistId, patientId) => {
  * @param {object} freedSlot - { date, start_time, end_time, service_id }
  */
 export const notifyWaitlist = async (freedSlot) => {
-    const { date, start_time, service_id } = freedSlot;
+    const { date, start_time, service_id, dentist_id } = freedSlot;
 
     // ── 0. Normalize time format (HH:MM) to avoid database mismatch (HH:MM:SS) ──
     const normalizedTime = start_time?.substring(0, 5);
 
-    // ── 1. Find waitlisted patients for this date and service ──
-    // Match patients who want this specific time OR any time (preferred_time is null)
-    console.log(`🔍 [WAITLIST] Searching for waitlisted patients for date: ${date}, time: ${normalizedTime}, service: ${service_id}`);
+    // ── 1. Find waitlisted patients for this date, service, and (optionally) doctor ──
+    console.log(`🔍 [WAITLIST] Searching for waitlisted patients for date: ${date}, time: ${normalizedTime}, service: ${service_id}, dentist: ${dentist_id || 'any'}`);
 
-    const { data: waitlistEntries, error } = await supabaseAdmin
+    let query = supabaseAdmin
         .from('waitlist')
         .select('*')
         .eq('preferred_date', date)
         .eq('service_id', service_id)
         .eq('status', WAITLIST_STATUS.WAITING)
-        .or(`preferred_time.eq.${normalizedTime},preferred_time.is.null`)
+        .or(`preferred_time.eq.${normalizedTime},preferred_time.is.null`);
+
+    if (dentist_id) {
+        query = query.or(`preferred_dentist_id.eq.${dentist_id},preferred_dentist_id.is.null`);
+    } else {
+        query = query.is('preferred_dentist_id', null);
+    }
+
+    const { data: waitlistEntries, error } = await query
         .order('priority', { ascending: false })
         .order('created_at', { ascending: true });
 

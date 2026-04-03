@@ -186,6 +186,7 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.time || waitlist.preferred_time || null,
                     waitlist.priority || 0,
                     waitlist.booked_for_name || booking?.booked_for_name || null,
+                    waitlist.dentist_id || null,
                 );
             } catch (err) {
                 return res.status(err.status || 500).json({

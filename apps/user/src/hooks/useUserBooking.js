@@ -155,6 +155,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                     date: formData.waitlist_date,
                     time: formData.waitlist_time,
                     priority: 0,
+                    dentist_id: formData.dentist_id || null,
                     booked_for_name: book_for_others && formData.booked_for_name.trim() 
                         ? formData.booked_for_name.trim() 
                         : null,

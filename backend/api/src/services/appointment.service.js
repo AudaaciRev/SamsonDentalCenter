@@ -221,7 +221,7 @@ export const bookAppointment = async (
     if (isSpecialized) {
         // Auto-assign a specialized dentist if no preference was given
         let finalDentistId = preferredDentistId;
-        
+
         if (!finalDentistId) {
             finalDentistId = await assignDentist(date, time, endTime, SERVICE_TIER.SPECIALIZED);
         }
@@ -634,6 +634,7 @@ export const cancelAppointment = async (
             start_time: appointment.start_time,
             end_time: appointment.end_time,
             service_id: appointment.service_id,
+            dentist_id: appointment.dentist_id,
         },
     };
 };
@@ -689,7 +690,7 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
     }
 
     // ── 3. New slot booked! Now cancel the original (sendEmail = false — reschedule email sent instead) ──
-    await cancelAppointment(appointmentId, patientId, 'Rescheduled to new time', false);
+    const cancelResult = await cancelAppointment(appointmentId, patientId, 'Rescheduled to new time', false);
 
     // ── 4. Send reschedule email ──
     const { data: patient } = await supabaseAdmin
@@ -725,6 +726,7 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
             status: 'CANCELLED',
         },
         new_appointment: newBooking.appointment,
+        freed_slot: cancelResult.freed_slot,
     };
 };
 

@@ -64,6 +64,7 @@ export const submitWizardSchema = z.object({
             time: stringSchema,
             preferred_time: stringSchema,
             priority: z.number().nullish(),
+            dentist_id: stringSchema,
             booked_for_name: stringSchema,
         }).passthrough().nullish(),
     }).passthrough(),
