@@ -5,6 +5,8 @@ import {
     bookAppointmentGuest,
     cancelAppointment,
     rescheduleAppointment,
+    cancelGuestAppointmentAction,
+    insertConfirmedGuestAppointment,
 } from '../services/appointment.service.js';
 import {
     confirmAppointmentByToken,
@@ -12,10 +14,14 @@ import {
     validateGuestActionToken,
     markGuestTokenUsed,
     sendCancellationEmail,
+    sendRescheduleEmail,
 } from '../services/email-confirmation.service.js';
-import { notifyWaitlist } from '../services/waitlist.service.js';
+import { notifyWaitlist, joinWaitlist } from '../services/waitlist.service.js';
+import { getAvailableSlots } from '../services/slot.service.js';
+import { assignDentist } from '../services/dentist-assignment.service.js';
 import { holdSlot, releaseHold } from '../services/slot-hold.service.js';
 import { getTodayPH } from '../utils/timezone.js';
+import { addMinutesToTime } from '../utils/time.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { APPOINTMENT_SOURCE } from '../utils/constants.js';
 
@@ -178,7 +184,6 @@ export const submitWizard = async (req, res, next) => {
         // 2. Process Waitlist if requested
         if (waitlist && (waitlist.date || waitlist.preferred_date)) {
             try {
-                const { joinWaitlist } = await import('../services/waitlist.service.js');
                 results.waitlist = await joinWaitlist(
                     req.user.id,
                     service_id,
@@ -335,19 +340,7 @@ export const guestCancelConfirm = async (req, res, next) => {
         const result = await validateGuestActionToken(token, 'cancel');
 
         // Cancel the appointment
-        const { data: updated, error } = await supabaseAdmin
-            .from('appointments')
-            .update({
-                status: 'CANCELLED',
-                cancellation_reason: 'Cancelled by guest via reminder email link.',
-                cancelled_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', result.appointment.id)
-            .select()
-            .single();
-
-        if (error) throw { status: 500, message: error.message };
+        const updated = await cancelGuestAppointmentAction(result.appointment.id, 'Cancelled by guest via reminder email link.');
 
         // Mark token as used
         await markGuestTokenUsed(result.token_id);
@@ -394,7 +387,6 @@ export const guestRescheduleInfo = async (req, res, next) => {
         const result = await validateGuestActionToken(token, 'reschedule');
 
         // Get available slots for the same service on the same date
-        const { getAvailableSlots } = await import('../services/slot.service.js');
         const slots = await getAvailableSlots(
             result.appointment.appointment_date,
             result.appointment.service?.id,
@@ -438,7 +430,6 @@ export const guestRescheduleConfirm = async (req, res, next) => {
         const oldAppt = result.appointment;
 
         // 1. Check new slot availability
-        const { getAvailableSlots } = await import('../services/slot.service.js');
         const availability = await getAvailableSlots(date, oldAppt.service?.id);
 
         const slotData = availability.all_slots.find((s) => s.time === time);
@@ -452,7 +443,6 @@ export const guestRescheduleConfirm = async (req, res, next) => {
         }
 
         // 2. Assign dentist for new slot
-        const { assignDentist } = await import('../services/dentist-assignment.service.js');
         const endTime = addMinutesToTime(time, oldAppt.service?.duration_minutes || 30);
         const dentistId = await assignDentist(date, time, endTime);
 
@@ -461,34 +451,10 @@ export const guestRescheduleConfirm = async (req, res, next) => {
         }
 
         // 3. Create new appointment (CONFIRMED — guest already verified via original booking)
-        const { data: newAppointment, error: insertError } = await supabaseAdmin
-            .from('appointments')
-            .insert({
-                patient_id: null,
-                guest_email: oldAppt.guest_email,
-                guest_phone: oldAppt.guest_phone,
-                guest_name: oldAppt.guest_name,
-                dentist_id: dentistId,
-                service_id: oldAppt.service?.id,
-                appointment_date: date,
-                start_time: time,
-                end_time: endTime,
-                status: 'CONFIRMED',
-            })
-            .select(`*, service:services(name), dentist:dentists(profile:profiles(full_name))`)
-            .single();
-
-        if (insertError) throw { status: 500, message: insertError.message };
+        const newAppointment = await insertConfirmedGuestAppointment(oldAppt, dentistId, date, time, endTime);
 
         // 4. Cancel old appointment
-        await supabaseAdmin
-            .from('appointments')
-            .update({
-                status: 'CANCELLED',
-                cancellation_reason: 'Rescheduled by guest via reminder email link.',
-                cancelled_at: new Date().toISOString(),
-            })
-            .eq('id', oldAppt.id);
+        await cancelGuestAppointmentAction(oldAppt.id, 'Rescheduled by guest via reminder email link.');
 
         // 5. Trigger waitlist for the freed old slot
         await notifyWaitlist({
@@ -502,7 +468,6 @@ export const guestRescheduleConfirm = async (req, res, next) => {
         await markGuestTokenUsed(result.token_id);
 
         // 7. Send reschedule email
-        const { sendRescheduleEmail } = await import('../services/email-confirmation.service.js');
         await sendRescheduleEmail(oldAppt.guest_email, oldAppt.guest_name, {
             oldDate: oldAppt.appointment_date,
             oldTime: oldAppt.start_time,
@@ -534,16 +499,7 @@ export const guestRescheduleConfirm = async (req, res, next) => {
     }
 };
 
-// Helper (same as in appointment.service.js)
-function addMinutesToTime(timeStr, minutes) {
-    const parts = timeStr.split(':');
-    const totalMin = parseInt(parts[0]) * 60 + parseInt(parts[1]) + minutes;
-    const hours = Math.floor(totalMin / 60)
-        .toString()
-        .padStart(2, '0');
-    const mins = (totalMin % 60).toString().padStart(2, '0');
-    return `${hours}:${mins}`;
-}
+// Helper replaced by global utility
 
 /**
  * POST /api/appointments/slots/hold

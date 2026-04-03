@@ -16,6 +16,7 @@ import {
     APPOINTMENT_SOURCE,
 } from '../utils/constants.js';
 import { getTodayPH } from '../utils/timezone.js';
+import { addMinutesToTime } from '../utils/time.js';
 import { AppError } from '../utils/errors.js';
 
 /**
@@ -752,7 +753,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
         .single();
 
     if (!service) {
-        throw { status: 404, message: 'Service not found.' };
+        throw new AppError('Service not found.', 404);
     }
 
     // Use provided time or current time rounded to next 30-min slot
@@ -794,9 +795,9 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
 
     if (error) {
         if (error.code === '23505') {
-            throw { status: 409, message: 'Time slot conflict. Try a different time.' };
+            throw new AppError('Time slot conflict. Try a different time.', 409);
         }
-        throw { status: 500, message: error.message };
+        throw new AppError(error.message, 500);
     }
 
     return {
@@ -815,14 +816,46 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
     };
 };
 
-// ── Helper ──
+// ── Guest direct mutations (moved from controller) ──
 
-function addMinutesToTime(timeStr, minutes) {
-    const parts = timeStr.split(':');
-    const totalMin = parseInt(parts[0]) * 60 + parseInt(parts[1]) + minutes;
-    const hours = Math.floor(totalMin / 60)
-        .toString()
-        .padStart(2, '0');
-    const mins = (totalMin % 60).toString().padStart(2, '0');
-    return `${hours}:${mins}`;
-}
+export const cancelGuestAppointmentAction = async (appointmentId, reason) => {
+    const { data: updated, error } = await supabaseAdmin
+        .from('appointments')
+        .update({
+            status: APPOINTMENT_STATUS.CANCELLED,
+            cancellation_reason: reason,
+            cancelled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId)
+        .select()
+        .single();
+
+    if (error) throw new AppError(error.message, 500);
+    return updated;
+};
+
+export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, time, endTime) => {
+    const { data: newAppointment, error: insertError } = await supabaseAdmin
+        .from('appointments')
+        .insert({
+            patient_id: null,
+            guest_email: oldAppt.guest_email,
+            guest_phone: oldAppt.guest_phone,
+            guest_name: oldAppt.guest_name,
+            dentist_id: dentistId,
+            service_id: oldAppt.service?.id,
+            appointment_date: date,
+            start_time: time,
+            end_time: endTime,
+            status: APPOINTMENT_STATUS.CONFIRMED,
+            source: APPOINTMENT_SOURCE.GUEST_BOOKING,
+        })
+        .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name))`)
+        .single();
+
+    if (insertError) throw new AppError(insertError.message, 500);
+    return newAppointment;
+};
+
+// ── End of Service ──

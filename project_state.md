@@ -26,12 +26,14 @@
 - [x] 2.5 Add CHECK Constraints for Data Integrity
 - [x] 2.6 Normalize guest_email Storage
 
-### 🟡 3. Medium — Backend Architecture (In Progress)
-- [ ] 3.1 Centralize Time Utilities
-- [ ] 3.2 Decouple Controllers from Supabase Mutations
-- [ ] 3.3 Static Imports for Service Dependencies
-- [ ] 3.4 Structured Logging (Pino)
-- [ ] 3.5 Graceful Shutdown & Timeouts
+### ✅ 3. Backend Architecture & Hardening (Completed)
+- [x] 3.1 Centralize Time Utilities
+- [x] 3.2 Decouple Controllers from Supabase Mutations
+- [x] 3.3 Static Imports for Service Dependencies
+- [x] 3.4 Standardized Error Handling (AppError)
+- [x] 3.5 Correct Test Route Registration
+- [x] 3.6 Structured Logging (Pino)
+- [x] 3.7 Graceful Shutdown & Request Timeouts
 
 ## Completed Features
 - Unified Booking Wizard

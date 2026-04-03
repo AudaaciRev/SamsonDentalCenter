@@ -1,3 +1,4 @@
+import { AppError } from '../utils/errors.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { assignDentist } from './dentist-assignment.service.js';
 import { APPOINTMENT_STATUS, APPROVAL_STATUS, SERVICE_TIER } from '../utils/constants.js';
@@ -29,7 +30,7 @@ export const getPendingRequests = async () => {
         .eq('status', APPOINTMENT_STATUS.PENDING)
         .order('created_at', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -48,10 +49,7 @@ export const recordPayment = async (paymentData, supervisorId) => {
     const { appointment_id, amount, payment_method, reference_number, notes } = paymentData;
 
     if (!appointment_id || !amount || !payment_method) {
-        throw {
-            status: 400,
-            message: 'appointment_id, amount, and payment_method are required.',
-        };
+        throw new AppError('appointment_id, amount, and payment_method are required.', 400);
     }
 
     // Verify appointment exists and get patient info
@@ -62,7 +60,7 @@ export const recordPayment = async (paymentData, supervisorId) => {
         .single();
 
     if (!appointment) {
-        throw { status: 404, message: 'Appointment not found.' };
+        throw new AppError('Appointment not found.', 404);
     }
 
     // Record payment
@@ -83,7 +81,7 @@ export const recordPayment = async (paymentData, supervisorId) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -100,7 +98,7 @@ export const getPaymentDetails = async (appointmentId) => {
         .eq('appointment_id', appointmentId)
         .maybeSingle();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -122,7 +120,7 @@ export const updatePayment = async (paymentId, updates) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -146,7 +144,7 @@ export const getPromotions = async () => {
         .gte('ends_at', today)
         .order('ends_at', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -170,11 +168,7 @@ export const createPromotion = async (promotionData, createdBy) => {
     } = promotionData;
 
     if (!service_id || !name || !discount_type || !discount_value || !starts_at || !ends_at) {
-        throw {
-            status: 400,
-            message:
-                'service_id, name, discount_type, discount_value, starts_at, and ends_at are required.',
-        };
+        throw new AppError('service_id, name, discount_type, discount_value, starts_at, and ends_at are required.', 400);
     }
 
     const { data, error } = await supabaseAdmin
@@ -195,7 +189,7 @@ export const createPromotion = async (promotionData, createdBy) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -213,7 +207,7 @@ export const getHolidays = async () => {
         .gte('date', today)
         .order('date', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -228,7 +222,7 @@ export const createHoliday = async (holidayData, createdBy) => {
     const { date, name, is_closed, special_open_time, special_close_time } = holidayData;
 
     if (!date || !name) {
-        throw { status: 400, message: 'date and name are required.' };
+        throw new AppError('date and name are required.', 400);
     }
 
     const { data, error } = await supabaseAdmin
@@ -245,7 +239,7 @@ export const createHoliday = async (holidayData, createdBy) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -273,7 +267,7 @@ export const getFeedback = async (dentistId = null) => {
 
     const { data, error } = await query.limit(100);
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -290,7 +284,7 @@ export const getAppointmentComments = async (appointmentId) => {
         .eq('appointment_id', appointmentId)
         .order('created_at', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -304,7 +298,7 @@ export const getAppointmentComments = async (appointmentId) => {
  */
 export const addAppointmentComment = async (appointmentId, comment, authorId) => {
     if (!comment || !comment.trim()) {
-        throw { status: 400, message: 'Comment text is required.' };
+        throw new AppError('Comment text is required.', 400);
     }
 
     const { data, error } = await supabaseAdmin
@@ -318,7 +312,7 @@ export const addAppointmentComment = async (appointmentId, comment, authorId) =>
         .select('*, author:profiles(full_name, role)')
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -338,7 +332,7 @@ export const getScheduleRequests = async () => {
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -361,7 +355,7 @@ export const approveScheduleRequest = async (requestId, supervisorId) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -386,7 +380,7 @@ export const rejectScheduleRequest = async (requestId, supervisorId, reason) => 
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -405,7 +399,7 @@ export const getAllUsers = async () => {
         .select('id, full_name, email, role, is_active, created_at')
         .order('created_at', { ascending: false });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -419,7 +413,7 @@ export const createSystemUser = async (userData) => {
     const { email, full_name, phone, role } = userData;
 
     if (!email || !full_name || !role) {
-        throw { status: 400, message: 'email, full_name, and role are required.' };
+        throw new AppError('email, full_name, and role are required.', 400);
     }
 
     if (!['admin', 'supervisor', 'dentist', 'patient'].includes(role)) {
@@ -434,7 +428,7 @@ export const createSystemUser = async (userData) => {
         .maybeSingle();
 
     if (existing) {
-        throw { status: 409, message: 'Email already in use.' };
+        throw new AppError('Email already in use.', 409);
     }
 
     const { data, error } = await supabaseAdmin
@@ -450,7 +444,7 @@ export const createSystemUser = async (userData) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -463,7 +457,7 @@ export const createSystemUser = async (userData) => {
  */
 export const changeUserRole = async (userId, newRole) => {
     if (!['admin', 'supervisor', 'dentist', 'patient'].includes(newRole)) {
-        throw { status: 400, message: 'Invalid role.' };
+        throw new AppError('Invalid role.', 400);
     }
 
     const { data, error } = await supabaseAdmin
@@ -476,7 +470,7 @@ export const changeUserRole = async (userId, newRole) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -498,7 +492,7 @@ export const deactivateUser = async (userId) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -586,11 +580,7 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
         );
 
         if (!assignedDentistId) {
-            throw {
-                status: 409,
-                message:
-                    'No specialized dentist available for this date/time. Please suggest a different schedule.',
-            };
+            throw new AppError('No specialized dentist available for this date/time. Please suggest a different schedule.', 409);
         }
     } else {
         // Verify the manually selected dentist exists and is specialized tier
@@ -602,15 +592,12 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
             .single();
 
         if (!dentist) {
-            throw { status: 404, message: 'Selected dentist not found or inactive.' };
+            throw new AppError('Selected dentist not found or inactive.', 404);
         }
 
         const requiredTier = appointment.service?.tier || 'general';
         if (dentist.tier !== requiredTier && dentist.tier !== 'both') {
-            throw {
-                status: 400,
-                message: `Selected dentist is not qualified for ${requiredTier} services.`,
-            };
+            throw new AppError(`Selected dentist is not qualified for ${requiredTier} services.`, 400);
         }
         // ── CHECK FOR TIME CONFLICT ──
         // Make sure this dentist isn't already booked for this time slot
@@ -628,14 +615,11 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
             .maybeSingle();
 
         if (conflictErr && conflictErr.code !== 'PGRST116') {
-            throw { status: 500, message: conflictErr.message };
+            throw new AppError(conflictErr.message, 500);
         }
 
         if (conflict) {
-            throw {
-                status: 409,
-                message: `Selected dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`,
-            };
+            throw new AppError(`Selected dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`, 409);
         }
     }
 
@@ -683,7 +667,7 @@ export const rejectRequest = async (appointmentId, supervisorId, reason, suggest
         .single();
 
     if (!appointment) {
-        throw { status: 404, message: 'Appointment not found.' };
+        throw new AppError('Appointment not found.', 404);
     }
 
     if (appointment.approval_status !== APPROVAL_STATUS.PENDING) {
@@ -717,7 +701,7 @@ export const rejectRequest = async (appointmentId, supervisorId, reason, suggest
         )
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return { appointment: updated, suggested_date: suggestedDate };
 };
@@ -732,7 +716,7 @@ export const rejectRequest = async (appointmentId, supervisorId, reason, suggest
 export const getClinicSettings = async () => {
     const { data, error } = await supabaseAdmin.from('clinic_settings').select('*').single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -753,7 +737,7 @@ export const updateClinicSettings = async (updates) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -766,7 +750,7 @@ export const getAnnouncements = async () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -790,7 +774,7 @@ export const createAnnouncement = async (announcement, createdBy) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -805,7 +789,7 @@ export const updateAnnouncement = async (id, updates) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -814,7 +798,7 @@ export const updateAnnouncement = async (id, updates) => {
  */
 export const deleteAnnouncement = async (id) => {
     const { error } = await supabaseAdmin.from('announcements').delete().eq('id', id);
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 };
 
 // ═══════════════════════════════════════════════
@@ -834,7 +818,7 @@ export const getDentistSchedule = async (dentistId) => {
         .eq('dentist_id', dentistId)
         .order('day_of_week', { ascending: true });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -861,7 +845,7 @@ export const setDentistSchedule = async (dentistId, dayOfWeek, schedule) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -885,7 +869,7 @@ export const setBulkSchedule = async (dentistId, schedules) => {
         .upsert(rows, { onConflict: 'dentist_id,day_of_week' })
         .select();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -910,7 +894,7 @@ export const getBlocks = async (dentistId = null, fromDate = null) => {
     if (fromDate) query = query.gte('block_date', fromDate);
 
     const { data, error } = await query;
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -1006,7 +990,7 @@ export const getPatientAppointmentHistory = async (patientId) => {
         .order('appointment_date', { ascending: false })
         .order('start_time', { ascending: false });
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -1031,7 +1015,7 @@ export const setPatientRestriction = async (patientId, restricted, reason = null
         )
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -1079,7 +1063,7 @@ export const markAppointmentComplete = async (appointmentId) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -1192,7 +1176,7 @@ export const removeAvailabilityBlock = async (blockId) => {
         .delete()
         .eq('id', blockId);
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return { message: 'Availability block removed.' };
 };
@@ -1236,7 +1220,7 @@ export const getAllAppointmentsFiltered = async (filters = {}, page = 1, limit =
     query = query.range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return {
         appointments: data,
@@ -1271,7 +1255,7 @@ export const getTodayAppointmentsFiltered = async () => {
         .not('status', 'eq', 'CANCELLED')
         .order('start_time');
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return { date: today, appointments: data };
 };
@@ -1297,7 +1281,7 @@ export const searchPatients = async (search = null) => {
     }
 
     const { data, error } = await query;
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return data;
 };
@@ -1318,7 +1302,7 @@ export const getDentistsList = async () => {
         )
         .eq('is_active', true);
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
 
     return data;
 };
@@ -1365,7 +1349,7 @@ export const quickRegisterPatient = async (patientData) => {
         .select()
         .single();
 
-    if (error) throw { status: 500, message: error.message };
+    if (error) throw new AppError(error.message, 500);
     return data;
 };
 
@@ -1407,7 +1391,7 @@ export const getAvailableDentistsForSlot = async (
 
     const { data: dentists, error: dentistErr } = await dentistQuery;
 
-    if (dentistErr) throw { status: 500, message: dentistErr.message };
+    if (dentistErr) throw new AppError(dentistErr.message, 500);
     if (!dentists || dentists.length === 0) return [];
 
     const dentistIds = dentists.map((d) => d.id);
@@ -1419,7 +1403,7 @@ export const getAvailableDentistsForSlot = async (
         .eq('block_date', appointmentDate)
         .in('dentist_id', dentistIds);
 
-    if (blockErr) throw { status: 500, message: blockErr.message };
+    if (blockErr) throw new AppError(blockErr.message, 500);
 
     const blockedDentistIds = new Set(blocks?.map((b) => b.dentist_id) || []);
 
@@ -1433,7 +1417,7 @@ export const getAvailableDentistsForSlot = async (
         .in('dentist_id', dentistIds)
         .neq('status', APPOINTMENT_STATUS.CANCELLED);
 
-    if (conflictErr) throw { status: 500, message: conflictErr.message };
+    if (conflictErr) throw new AppError(conflictErr.message, 500);
 
     const busyDentistIds = new Set(conflicts?.map((c) => c.dentist_id) || []);
 
@@ -1463,11 +1447,11 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         .single();
 
     if (fetchErr || !appointment) {
-        throw { status: 404, message: 'Appointment not found.' };
+        throw new AppError('Appointment not found.', 404);
     }
 
     if (appointment.status === APPOINTMENT_STATUS.CANCELLED) {
-        throw { status: 400, message: 'Cannot reassign a cancelled appointment.' };
+        throw new AppError('Cannot reassign a cancelled appointment.', 400);
     }
 
     // ── Verify target dentist exists and is qualified ──
@@ -1479,7 +1463,7 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         .single();
 
     if (dentistErr || !targetDentist) {
-        throw { status: 404, message: 'Target dentist not found or inactive.' };
+        throw new AppError('Target dentist not found or inactive.', 404);
     }
 
     // Check if target dentist is qualified for the service tier
@@ -1489,7 +1473,7 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         targetDentist.tier !== 'specialized' &&
         targetDentist.tier !== 'both'
     ) {
-        throw { status: 400, message: 'Target dentist is not qualified for specialized services.' };
+        throw new AppError('Target dentist is not qualified for specialized services.', 400);
     }
 
     // ── Check for time conflicts ──
@@ -1505,14 +1489,11 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         .maybeSingle();
 
     if (conflictErr && conflictErr.code !== 'PGRST116') {
-        throw { status: 500, message: conflictErr.message };
+        throw new AppError(conflictErr.message, 500);
     }
 
     if (conflict) {
-        throw {
-            status: 409,
-            message: `Target dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`,
-        };
+        throw new AppError(`Target dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`, 409);
     }
 
     // ── Update the appointment ──
@@ -1534,7 +1515,7 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         )
         .single();
 
-    if (updateErr) throw { status: 500, message: updateErr.message };
+    if (updateErr) throw new AppError(updateErr.message, 500);
 
     return updated;
 };

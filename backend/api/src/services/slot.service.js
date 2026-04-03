@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { CLINIC_CONFIG } from '../utils/constants.js';
 import { AppError } from '../utils/errors.js';
+import { generateTimeSlots, timesOverlap, timeToMinutes, minutesToTime, addMinutesToTime } from '../utils/time.js';
 
 /**
  * Get all time slots for a given date and service (including full ones).
@@ -235,7 +236,7 @@ export const getAvailableSlots = async (
         const possibleSlots = generateTimeSlots(dentistStartTime, dentistEndTime, durationMinutes);
 
         const freeSlots = possibleSlots.filter((slot) => {
-            const slotEnd = addMinutes(slot, durationMinutes);
+            const slotEnd = addMinutesToTime(slot, durationMinutes);
 
             // Check if this slot overlaps with any existing appointment
             const hasAppointmentConflict = dentistAppts.some((appt) =>
@@ -265,11 +266,11 @@ export const getAvailableSlots = async (
     // ── 7b. Subtract holds from available count (GLOBAL clinic capacity) ──
     const holdUnits = (activeHolds || []).map((h) => ({
         start_time: h.start_time,
-        end_time: addMinutes(h.start_time, h.service.duration_minutes),
+        end_time: addMinutesToTime(h.start_time, h.service.duration_minutes),
     }));
 
     sortedHoldSlots: for (const slot of allSlots.keys()) {
-        const slotEnd = addMinutes(slot, durationMinutes);
+        const slotEnd = addMinutesToTime(slot, durationMinutes);
         const holdCount = holdUnits.filter((hold) =>
             timesOverlap(slot, slotEnd, hold.start_time, hold.end_time),
         ).length;
@@ -510,65 +511,5 @@ export const getSuggestedSlots = async (date, serviceId, requestedTime) => {
 };
 
 // ──────────────────────────────────────────────────
-// HELPER FUNCTIONS (used only in this file)
+// END OF FILE
 // ──────────────────────────────────────────────────
-
-/**
- * Generate time slots between start and end with given interval.
- * Example: generateTimeSlots('08:00', '12:00', 30)
- *   → ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30']
- */
-function generateTimeSlots(startTime, endTime, intervalMinutes) {
-    const slots = [];
-    let currentMinutes = timeToMinutes(startTime);
-    const endMinutes = timeToMinutes(endTime) - intervalMinutes; // Last slot must END before closing
-
-    while (currentMinutes <= endMinutes) {
-        slots.push(minutesToTime(currentMinutes));
-        currentMinutes += intervalMinutes;
-    }
-
-    return slots;
-}
-
-/**
- * Check if two time ranges overlap.
- * Example: timesOverlap('09:00', '09:30', '09:00', '09:30') → true (exact same time)
- * Example: timesOverlap('09:00', '09:30', '09:30', '10:00') → false (back to back is OK)
- */
-function timesOverlap(start1, end1, start2, end2) {
-    const s1 = timeToMinutes(start1);
-    const e1 = timeToMinutes(end1);
-    const s2 = timeToMinutes(start2);
-    const e2 = timeToMinutes(end2);
-    return s1 < e2 && s2 < e1;
-}
-
-/**
- * Convert "HH:MM" or "HH:MM:SS" string to total minutes since midnight.
- * Example: timeToMinutes('09:30') → 570
- */
-function timeToMinutes(timeStr) {
-    const parts = timeStr.split(':');
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-}
-
-/**
- * Convert minutes since midnight to "HH:MM" string.
- * Example: minutesToTime(570) → '09:30'
- */
-function minutesToTime(totalMinutes) {
-    const hours = Math.floor(totalMinutes / 60)
-        .toString()
-        .padStart(2, '0');
-    const mins = (totalMinutes % 60).toString().padStart(2, '0');
-    return `${hours}:${mins}`;
-}
-
-/**
- * Add minutes to a time string.
- * Example: addMinutes('09:00', 30) → '09:30'
- */
-function addMinutes(timeStr, minutes) {
-    return minutesToTime(timeToMinutes(timeStr) + minutes);
-}

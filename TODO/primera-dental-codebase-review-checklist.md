@@ -119,42 +119,42 @@
 
 ## 3. 🟡 Backend Architecture
 
-- [ ] **3.1 Eliminate Duplicated Helper Functions**
+- [x] **3.1 Eliminate Duplicated Helper Functions**
   - **Files**: `appointment.service.js`, `appointments.controller.js`, `slot.service.js`
   - **Problem**: `addMinutesToTime()` and other time utilities are duplicated across files.
   - **Instructions**: Move them to a centralized `utils/time.js` and import everywhere.
 
-- [ ] **3.2 Move Direct Supabase Calls Out of Controllers**
+- [x] **3.2 Move Direct Supabase Calls Out of Controllers**
   - **File**: `appointments.controller.js`
   - **Problem**: Guest controller endpoints make direct DB calls instead of using the service layer.
   - **Instructions**: Move DB mutations in guest cancel/reschedule from the controller to new service tier functions.
 
-- [ ] **3.3 Remove Dynamic `import()` Calls in Controllers**
+- [x] **3.3 Remove Dynamic `import()` Calls in Controllers**
   - **File**: `appointments.controller.js`
   - **Problem**: Dynamic imports add latency and bypass tree-shaking.
   - **Instructions**: Move `await import(...)` to static `import` at the top of the file.
 
-- [ ] **3.4 Replace Raw Object Throws with AppError Class**
+- [x] **3.4 Replace Raw Object Throws with AppError Class**
   - **Files**: All service files
   - **Problem**: Throwing raw objects without stack traces means `instanceof Error` checks fail.
   - **Instructions**: Complete Item 1.7's `AppError` setup and apply across services.
 
-- [ ] **3.5 Fix the Test Routes Registration Order**
+- [x] **3.5 Fix the Test Routes Registration Order**
   - **File**: `server.js`
   - **Problem**: Test routes registered after `app.listen()` and outside `/api/v1` prefix.
   - **Instructions**: Register test routes before `app.listen()` safely and add version prefix.
 
-- [ ] **3.6 Add Structured Logging**
+- [x] **3.6 Add Structured Logging**
   - **Files**: All backend files
-  - **Problem**: Uses `console.log` which has no levels or JSON formatting for production.
+  - **Problem**: Uses `console.log` which haz`s no levels or JSON formatting for production.
   - **Instructions**: Implement `pino` logger to replace standard console logging and attach correlation UUID to track requests.
 
-- [ ] **3.7 Add Graceful Shutdown Handling**
+- [x] **3.7 Add Graceful Shutdown Handling**
   - **File**: `server.js`
   - **Problem**: SIGTERM abruptly kills mid-flight requests.
   - **Instructions**: Implement `SIGTERM` and `SIGINT` catch handlers to close the DB connection pooling strings or server loop safely.
 
-- [ ] **3.8 Add Request Timeout Middleware**
+- [x] **3.8 Add Request Timeout Middleware**
   - **File**: `app.js`
   - **Problem**: No timeout safeguard against deep `findNextAvailableDate` loops hanging the server.
   - **Instructions**: Setup `req.setTimeout(30000);` globally or early-exit timeout inside the service itself.

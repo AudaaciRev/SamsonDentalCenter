@@ -1,7 +1,8 @@
 import express, { Router } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import morgan from 'morgan';
+import pinoHttp from 'pino-http';
+import { logger } from './utils/logger.js';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { errorHandler } from './middleware/error.middleware.js';
@@ -33,7 +34,22 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(morgan('dev')); // Request logging
+app.use(pinoHttp({ logger })); // Structured request logging
+
+// ── Timeout Middleware ──
+app.use((req, res, next) => {
+    req.setTimeout(30000, () => {
+        const err = new Error('Request Timeout');
+        err.status = 408;
+        next(err);
+    });
+    res.setTimeout(30000, () => {
+        const err = new Error('Service Unavailable - Response Timeout');
+        err.status = 503;
+        next(err);
+    });
+    next();
+});
 app.use(
     cors({
         origin: (origin, callback) => {
