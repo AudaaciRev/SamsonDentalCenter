@@ -11,7 +11,7 @@ import { WAITLIST_STATUS, APPOINTMENT_STATUS, CLINIC_CONFIG } from '../utils/con
  * @param {string} time - Preferred time 'HH:MM' (optional)
  * @param {number} priority - 0 = normal, 1 = urgent
  */
-export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0) => {
+export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null) => {
     // ── 1. Check if already on waitlist for this date + service + time ──
     // FIX: Include preferred_time in the duplicate check.
     // Without this, a patient waiting for 09:00 would be blocked from also waiting for 10:00.
@@ -31,7 +31,7 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
         query = query.is('preferred_time', null);
     }
 
-    const { data: existing } = await query.single();
+    const { data: existing } = await query.maybeSingle();
 
     if (existing) {
         throw {
@@ -50,6 +50,7 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
             preferred_time: time,
             priority,
             status: WAITLIST_STATUS.WAITING,
+            booked_for_name: booked_for_name || null,
         })
         .select(
             `
@@ -276,15 +277,15 @@ export const notifyWaitlist = async (freedSlot) => {
  */
 export const confirmWaitlistOffer = async (waitlistId, patientId) => {
     // ── 1. Get the waitlist entry ──
-    const { data: entry, error } = await supabaseAdmin
+    const { data: entry, error: fetchErr } = await supabaseAdmin
         .from('waitlist')
-        .select('*')
+        .select('*, service:services(name)')
         .eq('id', waitlistId)
         .eq('patient_id', patientId)
         .eq('status', WAITLIST_STATUS.NOTIFIED)
         .single();
 
-    if (error || !entry) {
+    if (fetchErr || !entry) {
         throw { status: 404, message: 'Waitlist offer not found or already expired.' };
     }
 
@@ -334,7 +335,8 @@ export const confirmWaitlistOffer = async (waitlistId, patientId) => {
         entry.service_id,
         entry.preferred_date,
         normalizedTime,
-        true // sendEmail
+        true, // sendEmail
+        entry.booked_for_name || null // Pass the recorded name
     );
 
     if (!bookingResult.booked) {

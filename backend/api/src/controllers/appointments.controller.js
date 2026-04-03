@@ -205,6 +205,7 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.date || waitlist.preferred_date,
                     waitlist.time || waitlist.preferred_time || null,
                     waitlist.priority || 0,
+                    waitlist.booked_for_name || booking?.booked_for_name || null,
                 );
             } catch (err) {
                 return res.status(err.status || 500).json({

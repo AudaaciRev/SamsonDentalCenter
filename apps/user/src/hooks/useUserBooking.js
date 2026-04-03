@@ -152,7 +152,10 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                 waitlist: formData.waitlist_time ? {
                     date: formData.waitlist_date,
                     time: formData.waitlist_time,
-                    priority: 0 // Default priority
+                    priority: 0,
+                    booked_for_name: book_for_others && formData.booked_for_name.trim() 
+                        ? formData.booked_for_name.trim() 
+                        : null,
                 } : null
             };
 

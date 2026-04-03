@@ -48,7 +48,10 @@ export const assignDentist = async (date, startTime, endTime, serviceTier = 'gen
 
     // ── 3. Filter: dentist's shift must cover the requested time ──
     const eligibleDentists = workingDentists.filter((ds) => {
-        return ds.start_time <= startTime && ds.end_time >= endTime;
+        // Normalize DB 'HH:MM:SS' to 'HH:MM' for reliable string comparison
+        const dsStart = ds.start_time.slice(0, 5);
+        const dsEnd = ds.end_time.slice(0, 5);
+        return dsStart <= startTime && dsEnd >= endTime;
     });
 
     if (eligibleDentists.length === 0) {
