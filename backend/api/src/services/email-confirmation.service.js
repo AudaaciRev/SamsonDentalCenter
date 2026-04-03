@@ -8,7 +8,7 @@ import path from 'path';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const getTemplate = (templateName, data) => {
-    const templatePath = path.join(process.cwd(), '..', 'EmailTemplates', templateName);
+    const templatePath = path.join(process.cwd(), '..', '..', 'EmailTemplates', templateName);
     let html = fs.readFileSync(templatePath, 'utf-8');
 
     for (const [key, value] of Object.entries(data)) {
@@ -244,6 +244,37 @@ export const sendBookingSuccessEmail = async (email, name, details) => {
     } catch (err) {
         console.error('Failed to send booking success email:', err.message);
         // Don't throw — booking was successful, email failure shouldn't break it
+    }
+};
+
+/**
+ * Send a "Booking Request Received" email for authenticated patients.
+ * Used when their appointment needs admin approval (all online bookings now).
+ *
+ * @param {string} email - Patient email
+ * @param {string} name - Patient name
+ * @param {object} details - { date, start_time, service }
+ */
+export const sendBookingRequestReceivedEmail = async (email, name, details) => {
+    const { date, start_time, service } = details;
+
+    try {
+        const html = getTemplate('booking-request-received.html', {
+            name,
+            serviceName: service,
+            appointmentDate: date,
+            startTime: start_time,
+        });
+
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: '📧 Booking Request Received — Samson Dental',
+            html,
+        });
+        console.log(`📧 Booking request receipt sent to ${email}`);
+    } catch (err) {
+        console.error('Failed to send booking request receipt:', err.message);
     }
 };
 

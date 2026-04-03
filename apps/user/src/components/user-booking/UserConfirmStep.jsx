@@ -36,11 +36,11 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
     );
 
     // Dynamic title based on scenario
-    let stepTitle = 'Confirm Your Appointment';
+    let stepTitle = 'Review & Submit Request';
     if (isWaitlistOnly) {
         stepTitle = 'Confirm Waitlist Entry';
     } else if (isDualSelection) {
-        stepTitle = 'Confirm Dual Selection';
+        stepTitle = 'Review & Submit Request';
     }
 
     // ✅ NEW: Handle retry - resubmit with same data (GAP-10)
@@ -59,9 +59,7 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
             <p className='text-slate-500 text-sm mb-6'>
                 {isWaitlistOnly
                     ? 'Please review and confirm to be added to the waitlist.'
-                    : isDualSelection
-                      ? 'Please review and confirm both your appointment and waitlist entry.'
-                      : 'Please review your appointment details and click confirm to book.'}
+                    : 'Please review your appointment details and click submit to request your booking.'}
             </p>
 
             {/* ✅ UPDATED: Error Banner with Retry Button (GAP-10) */}
@@ -220,15 +218,7 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
                         {/* Booking Card */}
                         <div className='bg-sky-50 border border-sky-200 rounded-xl p-4'>
                             <h4 className='text-sm font-semibold text-sky-900 mb-3 flex items-center gap-2'>
-                                {isSpecialized ? (
-                                    <>
-                                        <span className='text-lg'>⏳</span> Appointment (For Approval)
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className='text-lg'>✅</span> Confirmed Appointment
-                                    </>
-                                )}
+                                <span className='text-lg'>⏳</span> Appointment (For Approval)
                             </h4>
                             <div className='space-y-2 ml-6'>
                                 <div className='flex items-center gap-2 text-sm'>
@@ -310,7 +300,7 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
                                 <ol className='text-sm text-blue-800 space-y-1 ml-2 list-decimal'>
                                     <li>
                                         Your {formData.time} appointment will be{' '}
-                                        <strong>{isSpecialized ? 'FOR APPROVAL' : 'CONFIRMED'}</strong>
+                                        <strong>FOR APPROVAL</strong>
                                     </li>
                                     <li>
                                         You'll be added to the {formData.waitlist_time}{' '}
@@ -356,67 +346,49 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
                 </p>
             </div>
 
-            {/* SERVICE TIER MESSAGING: Only for booking (not waitlist-only) */}
-            {hasBooking &&
-                (isSpecialized ? (
-                    <>
-                        {/* Approval Required Info - Specialized Service */}
-                        <div className='bg-amber-50 border border-amber-100 rounded-xl p-4 mb-4 flex items-start gap-3'>
-                            <Clock
-                                size={18}
-                                className='text-amber-600 shrink-0 mt-0.5'
-                            />
-                            <div>
-                                <p className='text-sm font-semibold text-amber-900 mb-1'>
-                                    🔴 SPECIALIZED — Requires Approval
-                                </p>
-                                <p className='text-sm text-amber-800'>
-                                    This is a specialized service. Your request will be reviewed by
-                                    our clinical team. Your appointment will be confirmed within
-                                    24-48 hours.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* What Happens Next - Specialized Service */}
-                        <div className='bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8'>
-                            <div className='flex gap-3'>
-                                <Info
-                                    size={18}
-                                    className='text-blue-600 shrink-0 mt-0.5'
-                                />
-                                <div>
-                                    <p className='text-sm font-semibold text-blue-900 mb-2'>
-                                        What Happens Next?
-                                    </p>
-                                    <ol className='text-sm text-blue-800 space-y-1 ml-2 list-decimal'>
-                                        <li>Your request is submitted for review</li>
-                                        <li>Our team reviews within 24-48 hours</li>
-                                        <li>You'll receive an email with status</li>
-                                        <li>Once approved, dentist details are sent</li>
-                                        <li>You can then view/manage appointment</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className='bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-8 flex items-start gap-3'>
-                        <Zap
+            {/* SERVICE TIER MESSAGING: All online bookings now require approval */}
+            {hasBooking && (
+                <>
+                    {/* Approval Required Info */}
+                    <div className='bg-amber-50 border border-amber-100 rounded-xl p-4 mb-4 flex items-start gap-3'>
+                        <Clock
                             size={18}
-                            className='text-emerald-600 shrink-0 mt-0.5'
+                            className='text-amber-600 shrink-0 mt-0.5'
                         />
                         <div>
-                            <p className='text-sm font-semibold text-emerald-900 mb-1'>
-                                ✅ Instant Confirmation
+                            <p className='text-sm font-semibold text-amber-900 mb-1'>
+                                ⏳ Requires Admin Approval
                             </p>
-                            <p className='text-sm text-emerald-800'>
-                                Your appointment will be confirmed immediately. You'll receive a
-                                reminder email before your appointment.
+                            <p className='text-sm text-amber-800'>
+                                To ensure the best care, all online requests are reviewed by our
+                                clinical team. Your appointment will be confirmed once a dentist is
+                                assigned (usually within 24 hours).
                             </p>
                         </div>
                     </div>
-                ))}
+
+                    {/* What Happens Next */}
+                    <div className='bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8'>
+                        <div className='flex gap-3'>
+                            <Info
+                                size={18}
+                                className='text-blue-600 shrink-0 mt-0.5'
+                            />
+                            <div>
+                                <p className='text-sm font-semibold text-blue-900 mb-2'>
+                                    What Happens Next?
+                                </p>
+                                <ol className='text-sm text-blue-800 space-y-1 ml-2 list-decimal'>
+                                    <li>Your request is submitted for review</li>
+                                    <li>Our team reviews and assigns a dentist</li>
+                                    <li>You'll receive a confirmation email once approved</li>
+                                    <li>You can then view/manage it from your dashboard</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Navigation */}
             <div className='flex justify-between'>
@@ -443,17 +415,11 @@ const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitti
                                   ? 'Submitting...'
                                   : isSpecialized
                                     ? 'Submitting Request...'
-                                    : 'Confirming...'}
+                                    : 'Submitting Request...'}
                         </>
                     ) : (
                         <>
-                            {isWaitlistOnly
-                                ? '✓ Join Waitlist'
-                                : isDualSelection
-                                  ? '✓ Confirm Both'
-                                  : isSpecialized
-                                    ? '✓ Submit Request'
-                                    : '✓ Confirm Appointment'}
+                            {isWaitlistOnly ? '✓ Join Waitlist' : '✓ Submit Request'}
                         </>
                     )}
                 </button>

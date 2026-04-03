@@ -41,7 +41,7 @@ const UserBookingWizard = ({ booking }) => {
             {/* Step Indicator */}
             <StepIndicator
                 currentStep={step}
-                labels={['Service', 'Date & Time', 'Patient Info', 'Review', 'Confirm']}
+                labels={['Service', 'Date & Time', 'Patient Info', 'Review', 'Submit']}
                 onStepClick={goToStep}
             />
 

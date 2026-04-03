@@ -5,6 +5,7 @@ import {
     createConfirmationToken,
     sendGuestConfirmationEmail,
     sendBookingSuccessEmail,
+    sendBookingRequestReceivedEmail,
     sendCancellationEmail,
     sendRescheduleEmail,
 } from './email-confirmation.service.js';
@@ -256,6 +257,15 @@ export const bookAppointment = async (
             throw { status: 500, message: error.message };
         }
 
+        // ── 5. Send booking request receipt email to authenticated patient ──
+        if (patient?.email && sendEmail) {
+            await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
+                date: appointment.appointment_date,
+                start_time: appointment.start_time,
+                service: appointment.service?.name,
+            });
+        }
+
         // TODO: Notify supervisor about new specialized request
         // await createNotification(supervisorUserId, 'NEW_REQUEST', ...)
 
@@ -319,8 +329,9 @@ export const bookAppointment = async (
             appointment_date: date,
             start_time: time,
             end_time: endTime,
-            status: APPOINTMENT_STATUS.CONFIRMED,
+            status: APPOINTMENT_STATUS.PENDING,
             service_tier: SERVICE_TIER.GENERAL,
+            approval_status: APPROVAL_STATUS.PENDING,
             source: source, // ✅ NEW: Track source
             // NULL = booked for self, a name = booked for someone else
             booked_for_name: bookedForName || null,
@@ -345,35 +356,35 @@ export const bookAppointment = async (
         throw { status: 500, message: error.message };
     }
 
-    // ── 5. Send booking success email to authenticated patient ──
+    // ── 5. Send booking request receipt email to authenticated patient ──
     if (patient?.email && sendEmail) {
-        await sendBookingSuccessEmail(patient.email, patient.full_name, {
+        await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
-            end_time: appointment.end_time,
             service: appointment.service?.name,
-            dentist: appointment.dentist?.profile?.full_name || 'Assigned',
-            booked_for_name: bookedForName || null,
         });
     }
 
     return {
         booked: true,
-        message: 'Appointment confirmed!',
-        deposit_required: patient?.deposit_required || false,
+        status: 'PENDING',
+        requires_approval: true,
+        message:
+            'Your appointment request has been submitted! The clinic will review and confirm your schedule within 24 hours.',
         appointment: {
             id: appointment.id,
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             end_time: appointment.end_time,
             status: appointment.status,
+            approval_status: appointment.approval_status,
             service: appointment.service?.name,
             service_tier: 'general',
             duration: appointment.service?.duration_minutes,
             price: appointment.service?.price,
             dentist: appointment.dentist?.profile?.full_name || 'Assigned',
             booked_for_name: appointment.booked_for_name || null,
-            source: appointment.source, // ✅ NEW: Include source in response
+            source: appointment.source,
         },
     };
 };
