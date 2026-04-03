@@ -17,7 +17,7 @@ import { AppError } from '../utils/errors.js';
  * @param {string} time - Preferred time 'HH:MM' (optional)
  * @param {number} priority - 0 = normal, 1 = urgent
  */
-export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null, preferred_dentist_id = null) => {
+export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null, preferred_dentist_id = null, backup_appointment_id = null) => {
     // ── 1. Check if already on waitlist for this date + service + time ──
     // FIX: Include preferred_time in the duplicate check.
     // Without this, a patient waiting for 09:00 would be blocked from also waiting for 10:00.
@@ -52,6 +52,7 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
             preferred_date: date,
             preferred_time: time,
             preferred_dentist_id,
+            backup_appointment_id,
             priority,
             status: WAITLIST_STATUS.WAITING,
             booked_for_name: booked_for_name || null,
@@ -198,7 +199,7 @@ export const notifyWaitlist = async (freedSlot) => {
     if (error) {
         console.error('❌ [WAITLIST] Search query error:', error);
     }
-    
+
     console.log(`📋 [WAITLIST] Found ${waitlistEntries?.length || 0} matching entries.`);
 
     if (error || !waitlistEntries || waitlistEntries.length === 0) {
@@ -319,24 +320,28 @@ export const confirmWaitlistOffer = async (waitlistId, patientId) => {
         throw new AppError('This offer has expired. The slot has been offered to the next person in line.', 410);
     }
 
-    // ── 3. SWAP LOGIC: Check if patient already has CONFIRMED or PENDING for same date + service ──
-    const { data: existingAppointment } = await supabaseAdmin
-        .from('appointments')
-        .select('id, start_time, status')
-        .eq('patient_id', patientId)
-        .eq('service_id', entry.service_id)
-        .eq('appointment_date', entry.preferred_date)
-        .in('status', [APPOINTMENT_STATUS.CONFIRMED, APPOINTMENT_STATUS.PENDING])
-        .maybeSingle();
+    // ── 3. SWAP LOGIC: Check if this waitlist was bundled with a backup appointment ──
+    let existingAppointment = null;
+    
+    if (entry.backup_appointment_id) {
+        const { data } = await supabaseAdmin
+            .from('appointments')
+            .select('id, start_time, appointment_date, status')
+            .eq('id', entry.backup_appointment_id)
+            .in('status', [APPOINTMENT_STATUS.CONFIRMED, APPOINTMENT_STATUS.PENDING])
+            .maybeSingle();
+            
+        existingAppointment = data;
+    }
 
     // ── 4. ATTEMPT BOOKING FIRST (Atomicity check) ──
     const { bookAppointment, cancelAppointment } = await import('./appointment.service.js');
-    
+
     // Normalize time to HH:MM (avoid database HH:MM:SS mismatch)
     const normalizedTime = entry.preferred_time?.substring(0, 5);
 
     console.log(`🎟️ [WAITLIST] Attempting to book slot for waitlist claim: ${entry.preferred_date} @ ${normalizedTime}`);
-    
+
     const bookingResult = await bookAppointment(
         patientId,
         entry.service_id,

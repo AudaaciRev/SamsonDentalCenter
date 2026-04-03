@@ -187,6 +187,7 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.priority || 0,
                     waitlist.booked_for_name || booking?.booked_for_name || null,
                     waitlist.dentist_id || null,
+                    results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
                 );
             } catch (err) {
                 return res.status(err.status || 500).json({
