@@ -16,6 +16,7 @@ import { AppError } from '../utils/errors.js';
  * @param {string} date - Preferred date 'YYYY-MM-DD'
  * @param {string} time - Preferred time 'HH:MM' (optional)
  * @param {number} priority - 0 = normal, 1 = urgent
+ */
 export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null, preferred_dentist_id = null) => {
     // ── 1. Check if already on waitlist for this date + service + time ──
     // FIX: Include preferred_time in the duplicate check.
