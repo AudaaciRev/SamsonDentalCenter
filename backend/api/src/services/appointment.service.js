@@ -219,14 +219,22 @@ export const bookAppointment = async (
     // 🔴 SPECIALIZED BRANCH — Requires admin approval
     // ═══════════════════════════════════════════════
     if (isSpecialized) {
-        // Don't check slot availability or assign dentist yet
-        // Admin will handle that during the approval step
+        // Auto-assign a specialized dentist if no preference was given
+        let finalDentistId = preferredDentistId;
+        
+        if (!finalDentistId) {
+            finalDentistId = await assignDentist(date, time, endTime, SERVICE_TIER.SPECIALIZED);
+        }
+
+        if (!finalDentistId) {
+            throw new AppError('No specialized dentist is available for this slot. Please select another time.', 409);
+        }
 
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
             .insert({
                 patient_id: patientId,
-                dentist_id: preferredDentistId || null, // ✅ Honor preference if provided
+                dentist_id: finalDentistId, // ✅ Auto-assigned or preferred
                 service_id: serviceId,
                 appointment_date: date,
                 start_time: time,
