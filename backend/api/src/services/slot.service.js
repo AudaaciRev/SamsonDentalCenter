@@ -1,3 +1,4 @@
+import { supabaseAdmin } from '../config/supabase.js';
 import { CLINIC_CONFIG } from '../utils/constants.js';
 import { AppError } from '../utils/errors.js';
 

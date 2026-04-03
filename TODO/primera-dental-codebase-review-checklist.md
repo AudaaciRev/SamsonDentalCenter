@@ -1,4 +1,4 @@
-# PrimeraDental — Production-Grade Codebase Review & Improvement Checklist
+# SamsonDental — Production-Grade Codebase Review & Improvement Checklist
 
 ## 1. 🔴 Critical — Security Hardening
 
@@ -51,7 +51,7 @@
     3. Add server-side validation that `user_session_id` is a valid UUID format. 
     4. Consider limiting to max 1 active hold per session to prevent bulk slot locking.
 
-- [ ] **1.7 Prevent Information Leakage in Error Responses**
+- [x] **1.7 Prevent Information Leakage in Error Responses**
   - **Files**: `error.middleware.js`, all services
   - **Problem**: Many controllers throw raw objects where `error.message` may contain Supabase internal details.
   - **Instructions**: 
@@ -59,14 +59,14 @@
     2. Replace all `throw { status, message }` patterns across services with `throw new AppError(message, status)`. 
     3. In the error handler, check `if (err instanceof AppError)` for safe user-facing errors; for all other errors, return a generic `"Internal server error"`.
 
-- [ ] **1.8 Harden CORS Configuration for Production**
+- [x] **1.8 Harden CORS Configuration for Production**
   - **File**: `app.js`
   - **Problem**: CORS origin list is hardcoded with `localhost` URLs.
   - **Instructions**: 
     1. Move the CORS origin to an environment variable: `ALLOWED_ORIGINS=https://primeradental.com,https://admin.primeradental.com`. 
     2. Parse it and use only the env var origins in production.
 
-- [ ] **1.9 Secure Token Storage on Frontend**
+- [x] **1.9 Secure Token Storage on Frontend**
   - **File**: `AuthContext.jsx`
   - **Problem**: Auth tokens are stored in `localStorage` which is vulnerable to XSS attacks.
   - **Instructions**: 

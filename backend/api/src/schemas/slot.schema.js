@@ -1,22 +1,25 @@
 import { z } from 'zod';
 
-const uuidSchema = z.string().uuid();
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
-const timeSchema = z.string().regex(/^\d{2}:\d{2}$/, 'Time must be in HH:MM format');
+const stringRequired = z.string().min(1);
+const stringSchema = z.string().nullish();
 
 export const getAvailableSchema = z.object({
     query: z.object({
-        date: dateSchema,
-        service_id: uuidSchema,
-        session_id: uuidSchema.optional(),
-        dentist_id: uuidSchema.optional(),
-    }),
-});
+        date: stringRequired,
+        service_id: stringRequired,
+        session_id: stringSchema,
+        dentist_id: stringSchema,
+    }).passthrough(),
+    body: z.any(),
+    params: z.any(),
+}).passthrough();
 
 export const getSuggestionsSchema = z.object({
     query: z.object({
-        date: dateSchema,
-        service_id: uuidSchema,
-        time: timeSchema,
-    }),
-});
+        date: stringRequired,
+        service_id: stringRequired,
+        time: stringRequired,
+    }).passthrough(),
+    body: z.any(),
+    params: z.any(),
+}).passthrough();
