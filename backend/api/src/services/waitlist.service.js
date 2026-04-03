@@ -1,6 +1,11 @@
 import crypto from 'crypto';
 import { supabaseAdmin } from '../config/supabase.js';
-import { WAITLIST_STATUS, APPOINTMENT_STATUS, CLINIC_CONFIG } from '../utils/constants.js';
+import {
+    WAITLIST_STATUS,
+    APPOINTMENT_STATUS,
+    CLINIC_CONFIG,
+    APPOINTMENT_SOURCE,
+} from '../utils/constants.js';
 
 /**
  * Add a patient to the waitlist.
@@ -336,7 +341,8 @@ export const confirmWaitlistOffer = async (waitlistId, patientId) => {
         entry.preferred_date,
         normalizedTime,
         true, // sendEmail
-        entry.booked_for_name || null // Pass the recorded name
+        entry.booked_for_name || null, // Pass the recorded name
+        APPOINTMENT_SOURCE.WAITLIST, // ✅ NEW: Set source as WAITLIST
     );
 
     if (!bookingResult.booked) {
@@ -358,10 +364,15 @@ export const confirmWaitlistOffer = async (waitlistId, patientId) => {
         console.log(`🔄 [WAITLIST] Swap complete: ${existingAppointment.start_time} → ${entry.preferred_time}`);
     }
 
-    // ── 6. Mark waitlist entry as confirmed ──
+    // ── 6. Mark waitlist entry as confirmed and CLAIMED ──
     await supabaseAdmin
         .from('waitlist')
-        .update({ status: WAITLIST_STATUS.CONFIRMED, updated_at: new Date().toISOString() })
+        .update({
+            status: WAITLIST_STATUS.CONFIRMED,
+            is_claimed: true, // ✅ NEW: Track claim status
+            claimed_appointment_id: bookingResult.appointment?.id, // ✅ NEW: Link the appointment
+            updated_at: new Date().toISOString(),
+        })
         .eq('id', waitlistId);
 
     // ── 7. CLEANUP: Remove other WAITING entries for same patient + date + service ──

@@ -169,48 +169,33 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             const { booking, waitlist } = response;
 
             // Handle results based on what was requested and what succeeded
-            const bookingSuccess = booking?.booked;
-            const waitlistSuccess = waitlist?.message === 'Added to waitlist!';
+            const bookingSuccess = !!booking?.booked;
+            const waitlistSuccess = !!waitlist?.success;
 
-            // ✅ SCENARIO 1: Both succeeded ✅
-            if (bookingSuccess && waitlistSuccess) {
+            // ✅ NEW: More resilient success handling
+            const hasRequestedBooking = !!formData.time;
+            const hasRequestedWaitlist = !!formData.waitlist_time;
+
+            if (bookingSuccess || waitlistSuccess) {
                 setResult({
-                    booked: true,
-                    bookingData: booking,
-                    waitlistData: waitlist,
-                    message: 'Both booking and waitlist confirmed!',
                     success: true,
-                });
-            }
-            // ✅ SCENARIO 2: Booking only succeeded ✅
-            else if (bookingSuccess && !formData.waitlist_time) {
-                setResult({
-                    booked: true,
-                    bookingData: booking,
-                    waitlistData: null,
-                    message: 'Appointment confirmed!',
-                    success: true,
-                });
-            }
-            // ✅ SCENARIO 3: Waitlist only succeeded ✅
-            else if (waitlistSuccess && !formData.time) {
-                setResult({
-                    booked: false,
-                    bookingData: null,
-                    waitlistData: waitlist,
-                    message: 'Successfully added to the waitlist!',
-                    success: true,
-                });
-            }
-            // ✅ SCENARIO 4: Fallback (Partial success or unexpected states handled by backend error)
-            else {
-                setResult({
                     booked: bookingSuccess,
+                    waitlisted: waitlistSuccess,
                     bookingData: booking,
                     waitlistData: waitlist,
-                    success: bookingSuccess || waitlistSuccess,
-                    message: bookingSuccess ? 'Booking confirmed' : 'Waitlist confirmed',
+                    message: (bookingSuccess && waitlistSuccess) 
+                        ? 'Both booking and waitlist confirmed!' 
+                        : bookingSuccess 
+                            ? 'Appointment confirmed!' 
+                            : 'Waitlist confirmed!',
                 });
+            }
+            // ✅ SCENARIO 4: Total Failure (Neither requested action succeeded) ❌
+            else {
+                setResult(null);
+                setError(booking?.message || waitlist?.message || 'The selected slot is no longer available. Please try another time.');
+                // Go back to datetime step so they can try again
+                setStep(STEPS.indexOf('datetime'));
             }
 
             setSubmitting(false);

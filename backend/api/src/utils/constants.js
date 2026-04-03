@@ -20,6 +20,14 @@ export const WAITLIST_STATUS = {
     CANCELLED: 'CANCELLED',
 };
 
+// Appointment source tracking
+export const APPOINTMENT_SOURCE = {
+    WALK_IN: 'WALK_IN',
+    GUEST_BOOKING: 'GUEST_BOOKING',
+    USER_BOOKING: 'USER_BOOKING',
+    WAITLIST: 'WAITLIST',
+};
+
 // User roles
 export const USER_ROLES = {
     PATIENT: 'patient',

@@ -17,6 +17,7 @@ import { notifyWaitlist } from '../services/waitlist.service.js';
 import { holdSlot, releaseHold } from '../services/slot-hold.service.js';
 import { getTodayPH } from '../utils/timezone.js';
 import { supabaseAdmin } from '../config/supabase.js';
+import { APPOINTMENT_SOURCE } from '../utils/constants.js';
 
 /**
  * POST /api/appointments/book-guest
@@ -136,7 +137,8 @@ export const bookUser = async (req, res, next) => {
             time,
             true, // sendEmail
             booked_for_name?.trim() || null, // null = for self, name = for someone else
-            user_session_id,
+            APPOINTMENT_SOURCE.USER_BOOKING, // source
+            user_session_id,                 // user_session_id
         );
 
         if (result.booked) {
@@ -181,7 +183,8 @@ export const submitWizard = async (req, res, next) => {
                     booking.time,
                     true, // sendEmail
                     booking.booked_for_name?.trim() || null,
-                    booking.user_session_id,
+                    APPOINTMENT_SOURCE.USER_BOOKING, // source
+                    booking.user_session_id,         // user_session_id
                 );
             } catch (err) {
                 // If booking fails, we might still want to proceed with waitlist or stop?

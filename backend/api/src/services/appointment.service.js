@@ -8,7 +8,12 @@ import {
     sendCancellationEmail,
     sendRescheduleEmail,
 } from './email-confirmation.service.js';
-import { APPOINTMENT_STATUS, SERVICE_TIER, APPROVAL_STATUS } from '../utils/constants.js';
+import {
+    APPOINTMENT_STATUS,
+    SERVICE_TIER,
+    APPROVAL_STATUS,
+    APPOINTMENT_SOURCE,
+} from '../utils/constants.js';
 import { getTodayPH } from '../utils/timezone.js';
 
 /**
@@ -97,6 +102,7 @@ export const bookAppointmentGuest = async (
             start_time: time,
             end_time: endTime,
             status: APPOINTMENT_STATUS.PENDING, // ← PENDING until email confirmed
+            source: APPOINTMENT_SOURCE.GUEST_BOOKING, // ✅ NEW: Track source
         })
         .select(
             `
@@ -132,6 +138,7 @@ export const bookAppointmentGuest = async (
             end_time: appointment.end_time,
             service: appointment.service?.name,
             dentist: appointment.dentist?.profile?.full_name || 'Assigned',
+            source: appointment.source, // ✅ NEW: Include source in response
         },
     };
 };
@@ -158,6 +165,7 @@ export const bookAppointment = async (
     time,
     sendEmail = true,
     bookedForName = null,
+    source = APPOINTMENT_SOURCE.USER_BOOKING,
     userSessionId = null,
 ) => {
     // ── 0. Check if patient is restricted (3+ no-shows or 3+ cancellations) ──
@@ -227,6 +235,7 @@ export const bookAppointment = async (
                 status: APPOINTMENT_STATUS.PENDING,
                 service_tier: SERVICE_TIER.SPECIALIZED,
                 approval_status: APPROVAL_STATUS.PENDING,
+                source: source, // ✅ NEW: Track source
                 booked_for_name: bookedForName || null,
             })
             .select(
@@ -312,6 +321,7 @@ export const bookAppointment = async (
             end_time: endTime,
             status: APPOINTMENT_STATUS.CONFIRMED,
             service_tier: SERVICE_TIER.GENERAL,
+            source: source, // ✅ NEW: Track source
             // NULL = booked for self, a name = booked for someone else
             booked_for_name: bookedForName || null,
         })
@@ -363,6 +373,7 @@ export const bookAppointment = async (
             price: appointment.service?.price,
             dentist: appointment.dentist?.profile?.full_name || 'Assigned',
             booked_for_name: appointment.booked_for_name || null,
+            source: appointment.source, // ✅ NEW: Include source in response
         },
     };
 };
@@ -762,6 +773,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             status: APPOINTMENT_STATUS.CONFIRMED,
             service_tier: 'general',
             is_walk_in: true,
+            source: APPOINTMENT_SOURCE.WALK_IN, // ✅ NEW: Track source
             notes: notes || 'Walk-in appointment',
         })
         .select(
@@ -791,6 +803,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             service: appointment.service?.name,
             dentist: appointment.dentist?.profile?.full_name,
             is_walk_in: true,
+            source: appointment.source, // ✅ NEW: Include source in response
         },
     };
 };

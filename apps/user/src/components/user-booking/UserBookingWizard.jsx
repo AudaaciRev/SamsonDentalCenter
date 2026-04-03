@@ -27,7 +27,7 @@ const UserBookingWizard = ({ booking }) => {
         slotHold,
     } = booking;
 
-    if (result) {
+    if (result && result.success) {
         return (
             <UserBookingSuccess
                 result={result}
