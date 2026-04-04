@@ -525,9 +525,9 @@ export const guestRescheduleConfirm = async (req, res, next) => {
  */
 export const holdSlotHandler = async (req, res) => {
     try {
-        const { service_id, date, time, user_session_id } = req.body;
+        const { service_id, date, time, user_session_id, dentist_id } = req.body;
 
-        const result = await holdSlot(service_id, date, time, user_session_id);
+        const result = await holdSlot(service_id, date, time, user_session_id, dentist_id);
         return res.status(200).json(result);
     } catch (err) {
         console.error('Hold slot error:', err);

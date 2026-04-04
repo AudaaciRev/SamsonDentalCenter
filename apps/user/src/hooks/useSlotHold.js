@@ -22,18 +22,22 @@ const useSlotHold = (sessionId) => {
     const holdIntervalRef = useRef(null);
     const countdownIntervalRef = useRef(null);
 
-    // Cleanup function: release hold when component unmounts
+    // Cleanup function: release hold when component unmounts or page exits
     useEffect(() => {
-        return () => {
-            // Release hold on unmount
+        const handleUnload = () => {
             if (activeHold?.hold_id) {
-                // Fire and forget - don't wait for response
+                // Use keepalive: true to ensure the request finishes even if the tab is closing
                 api.post('/appointments/slots/release-hold', {
                     hold_id: activeHold.hold_id,
-                }).catch(() => {
+                }, null, true).catch(() => {
                     // Silently fail - hold will auto-expire anyway
                 });
             }
+        };
+
+        // Standard unmount cleanup
+        return () => {
+            handleUnload();
 
             // Clear all intervals
             if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
@@ -44,6 +48,23 @@ const useSlotHold = (sessionId) => {
                 localStorage.removeItem('activeSlotHold');
             }
         };
+    }, [activeHold?.hold_id]);
+
+    // Handle Page Refresh/Tab Close/Navigate away from site
+    useEffect(() => {
+        const handlePageHide = () => {
+            if (activeHold?.hold_id) {
+                // pagehide is more reliable than beforeunload for cleanup
+                api.post('/appointments/slots/release-hold', {
+                    hold_id: activeHold.hold_id,
+                }, null, true).catch(() => {});
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('pagehide', handlePageHide);
+            return () => window.removeEventListener('pagehide', handlePageHide);
+        }
     }, [activeHold?.hold_id]);
 
     // ✅ Removed localStorage persistence effect — holds now live in memory only
@@ -93,9 +114,10 @@ const useSlotHold = (sessionId) => {
      * @param {string} serviceId - Service UUID
      * @param {string} date - YYYY-MM-DD format
      * @param {string} startTime - HH:MM format
+     * @param {string} [dentistId] - Optional dentist UUID
      */
     const holdSlot = useCallback(
-        async (serviceId, date, startTime) => {
+        async (serviceId, date, startTime, dentistId = null) => {
             if (!sessionId) {
                 setHoldError('Session ID required to hold slot');
                 return null;
@@ -110,6 +132,7 @@ const useSlotHold = (sessionId) => {
                     date: date,
                     time: startTime,
                     user_session_id: sessionId,
+                    dentist_id: dentistId,
                 });
 
                 // Response includes: hold_id, previous_hold_id, expires_at, expires_in_minutes, already_held

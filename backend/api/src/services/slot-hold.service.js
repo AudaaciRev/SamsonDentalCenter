@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { v4 as uuidv4 } from 'uuid';
 import { AppError } from '../utils/errors.js';
+import { getAvailableSlots } from './slot.service.js';
 
 const HOLD_DURATION_MINUTES = 5;
 
@@ -14,27 +15,27 @@ const HOLD_DURATION_MINUTES = 5;
  * @param {string} date - 'YYYY-MM-DD'
  * @param {string} startTime - 'HH:MM'
  * @param {string} userSessionId - Unique browser session ID
+ * @param {string} [dentistId] - Optional dentist UUID
  * @returns {object} { hold_id, previous_hold_id, expires_at, expires_in_minutes, already_held }
  */
-export const holdSlot = async (serviceId, date, startTime, userSessionId) => {
+export const holdSlot = async (serviceId, date, startTime, userSessionId, dentistId = null) => {
     const now = new Date();
 
-    // ✅ RACE CONDITION FIX: Check if OTHER USERS have an active hold on this slot
-    // This prevents simultaneous double-locking when two users click at the same time
-    const { data: otherHolds } = await supabaseAdmin
-        .from('slot_holds')
-        .select('id, user_session_id')
-        .eq('service_id', serviceId)
-        .eq('appointment_date', date)
-        .eq('start_time', startTime)
-        .eq('status', 'active')
-        .gt('expires_at', now.toISOString())
-        .neq('user_session_id', userSessionId); // Exclude current user's holds
+    // ✅ NEW: Check actual availability (includes doctor schedules, appointments, and OTHER people's holds)
+    const availability = await getAvailableSlots(
+        date,
+        serviceId,
+        userSessionId, // filterSessionId ensures we see availability EXCLUDING our own holds
+        true,          // skipNextSearch
+        dentistId      // optional dentist filter
+    );
 
-    if (otherHolds && otherHolds.length > 0) {
-        // Another user already locked this slot!
-        console.warn(`Slot ${serviceId} on ${date} at ${startTime} already locked by another user`);
-        throw new AppError('This time slot was just booked by someone else.', 409);
+    const slotInfo = availability.all_slots.find(s => s.time === startTime);
+    
+    if (!slotInfo || slotInfo.available <= 0) {
+        // Slot is either not in the list (closed) or full (held/booked by others)
+        console.warn(`Hold attempt failed: Slot ${startTime} on ${date} is not available (available: ${slotInfo?.available || 0})`);
+        throw new AppError('This time slot is no longer available.', 409);
     }
 
     // ── 1. Check if THIS USER already has ANY active hold ──

@@ -137,6 +137,7 @@ export const holdSlotSchema = z.object({
         date: stringRequired,
         time: stringRequired,
         user_session_id: stringRequired,
+        dentist_id: stringSchema,
     }).passthrough(),
     query: z.any(),
     params: z.any(),

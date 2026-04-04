@@ -161,7 +161,7 @@ const DateTimeStep = ({
                 // ✅ NEW: Call holdSlot to create a 5-minute hold on backend
                 if (!serviceId || !selectedDate) return;
 
-                const holdResult = await holdSlot(serviceId, selectedDate, slotData.rawTime);
+                const holdResult = await holdSlot(serviceId, selectedDate, slotData.rawTime, formData?.dentist_id);
 
                 if (holdResult?.success) {
                     // ✅ Update time only after hold is confirmed
