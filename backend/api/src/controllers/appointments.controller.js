@@ -155,70 +155,98 @@ export const submitWizard = async (req, res, next) => {
         const { service_id, booking, waitlist } = req.body;
         const results = { booking: null, waitlist: null };
 
-        // 1. Process Booking if requested
-        if (booking && booking.date && booking.time) {
-            try {
-                results.booking = await bookAppointment(
-                    req.user.id,
-                    service_id,
-                    booking.date,
-                    booking.time,
-                    true, // sendEmail
-                    booking.booked_for_name?.trim() || null,
-                    APPOINTMENT_SOURCE.USER_BOOKING, // source
-                    booking.user_session_id,         // user_session_id
-                    booking.dentist_id,              // preferredDentistId
-                );
+        // 1. Determine if we can parallelize (only if slots are different)
+        const isBackupWaitlist = booking && waitlist && 
+                                booking.date === waitlist.date && 
+                                booking.time === waitlist.time;
 
-                // ✅ NEW: Immediately release the hold once booked to free up capacity
-                if (results.booking?.booked && booking.user_session_id) {
-                    const { releaseHoldBySession } = await import('../services/slot-hold.service.js');
-                    await releaseHoldBySession(booking.user_session_id, booking.date, booking.time);
-                }
-            } catch (err) {
-                // If booking fails, we might still want to proceed with waitlist or stop?
-                // The user asked for "Atomic", so if one fails, we should probably stop if they intended both.
-                // However, usually they only do one or the other per slot.
-                // We'll return the error and stop.
-                return res.status(err.status || 500).json({
-                    error: `Booking failed: ${err.message}`,
-                    stage: 'booking',
-                });
-            }
-        }
-
-        // 2. Process Waitlist if requested
-        if (waitlist && (waitlist.date || waitlist.preferred_date)) {
-            try {
-                results.waitlist = await joinWaitlist(
-                    req.user.id,
-                    service_id,
-                    waitlist.date || waitlist.preferred_date,
-                    waitlist.time || waitlist.preferred_time || null,
-                    waitlist.priority || 0,
-                    waitlist.booked_for_name || booking?.booked_for_name || null,
-                    waitlist.dentist_id || null,
-                    results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
-                );
-            } catch (err) {
-                // ── ATOMICITY ROLLBACK: If waitlist fails, cancel the backup booking ──
-                if (results.booking?.booked && results.booking.appointment?.id) {
-                    try {
-                        console.warn(`⚠️ Rolling back booking ${results.booking.appointment.id} due to waitlist failure.`);
-                        await cancelAppointment(
-                            results.booking.appointment.id,
-                            req.user.id,
-                            'Rollback: waitlist registration failed during atomic submission.',
-                            false, // sendEmail = false to avoid confusing the user
-                        );
-                    } catch (rollbackErr) {
-                        console.error('❌ Critical: Rollback failed:', rollbackErr);
+        if (isBackupWaitlist) {
+            // SEQUENTIAL: Waitlist needs the booking ID for linking
+            if (booking && booking.date && booking.time) {
+                try {
+                    results.booking = await bookAppointment(
+                        req.user.id,
+                        service_id,
+                        booking.date,
+                        booking.time,
+                        true,
+                        booking.booked_for_name?.trim() || null,
+                        APPOINTMENT_SOURCE.USER_BOOKING,
+                        booking.user_session_id,
+                        booking.dentist_id
+                    );
+                    if (results.booking?.booked && booking.user_session_id) {
+                        const { releaseHoldBySession } = await import('../services/slot-hold.service.js');
+                        await releaseHoldBySession(booking.user_session_id, booking.date, booking.time);
                     }
+                } catch (err) {
+                    return res.status(err.status || 500).json({ error: `Booking failed: ${err.message}`, stage: 'booking' });
                 }
+            }
 
+            if (waitlist && (waitlist.date || waitlist.preferred_date)) {
+                try {
+                    results.waitlist = await joinWaitlist(
+                        req.user.id,
+                        service_id,
+                        waitlist.date || waitlist.preferred_date,
+                        waitlist.time || waitlist.preferred_time || null,
+                        waitlist.priority || 0,
+                        waitlist.booked_for_name || booking?.booked_for_name || null,
+                        waitlist.dentist_id || null,
+                        results.booking?.appointment?.id || null
+                    );
+                } catch (err) {
+                    processRollback(results.booking, req.user.id);
+                    return res.status(err.status || 500).json({ error: `Waitlist failed: ${err.message}`, stage: 'waitlist' });
+                }
+            }
+        } else {
+            // PARALLEL: Slots are different or only one was requested
+            const tasks = [];
+
+            if (booking && booking.date && booking.time) {
+                tasks.push((async () => {
+                    results.booking = await bookAppointment(
+                        req.user.id,
+                        service_id,
+                        booking.date,
+                        booking.time,
+                        true,
+                        booking.booked_for_name?.trim() || null,
+                        APPOINTMENT_SOURCE.USER_BOOKING,
+                        booking.user_session_id,
+                        booking.dentist_id
+                    );
+                    if (results.booking?.booked && booking.user_session_id) {
+                        const { releaseHoldBySession } = await import('../services/slot-hold.service.js');
+                        await releaseHoldBySession(booking.user_session_id, booking.date, booking.time);
+                    }
+                })());
+            }
+
+            if (waitlist && (waitlist.date || waitlist.preferred_date)) {
+                tasks.push((async () => {
+                    results.waitlist = await joinWaitlist(
+                        req.user.id,
+                        service_id,
+                        waitlist.date || waitlist.preferred_date,
+                        waitlist.time || waitlist.preferred_time || null,
+                        waitlist.priority || 0,
+                        waitlist.booked_for_name || booking?.booked_for_name || null,
+                        waitlist.dentist_id || null,
+                        null // No backup link for different slots
+                    );
+                })());
+            }
+
+            try {
+                await Promise.all(tasks);
+            } catch (err) {
+                // If parallel fails, we don't do complex rollback because slots were independent
                 return res.status(err.status || 500).json({
-                    error: `Waitlist failed: ${err.message}. Your backup booking was rolled back for atomicity.`,
-                    stage: 'waitlist',
+                    error: err.message,
+                    stage: 'parallel-submission'
                 });
             }
         }
@@ -320,6 +348,25 @@ export const reschedule = async (req, res, next) => {
         next(err);
     }
 };
+
+/**
+ * Helper to handle rollback of a backup booking if waitlist fails.
+ */
+async function processRollback(bookingResult, userId) {
+    if (bookingResult?.booked && bookingResult.appointment?.id) {
+        try {
+            console.warn(`⚠️ Rolling back booking ${bookingResult.appointment.id} due to waitlist failure.`);
+            await cancelAppointment(
+                bookingResult.appointment.id,
+                userId,
+                'Rollback: waitlist registration failed during atomic submission.',
+                false // sendEmail = false to avoid confusing the user
+            );
+        } catch (rollbackErr) {
+            console.error('❌ Critical: Rollback failed:', rollbackErr);
+        }
+    }
+}
 
 /**
  * GET /api/appointments/guest/cancel?token=xxx
