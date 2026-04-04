@@ -86,9 +86,30 @@ export const bookAppointmentGuest = async (
     }
 
     // ── 3. Assign dentist ──
-    const dentistId = await assignDentist(date, time, endTime);
+    // ✅ NEW: Try to use the dentist from the hold first
+    let finalDentistId = null;
+    if (userSessionId) {
+        const { data: hold } = await supabaseAdmin
+            .from('slot_holds')
+            .select('dentist_id')
+            .eq('user_session_id', userSessionId)
+            .eq('appointment_date', date)
+            .eq('start_time', time)
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .single();
+        
+        if (hold?.dentist_id) {
+            finalDentistId = hold.dentist_id;
+            console.log(`Using held dentist ${finalDentistId} for session ${userSessionId}`);
+        }
+    }
 
-    if (!dentistId) {
+    if (!finalDentistId) {
+        finalDentistId = await assignDentist(date, time, endTime);
+    }
+
+    if (!finalDentistId) {
         throw new AppError('No dentist available for this slot.', 409);
     }
 
@@ -100,7 +121,7 @@ export const bookAppointmentGuest = async (
             guest_email: normalizedEmail,
             guest_phone: guestPhone,
             guest_name: guestName,
-            dentist_id: dentistId,
+            dentist_id: finalDentistId,
             service_id: serviceId,
             appointment_date: date,
             start_time: time,
@@ -317,10 +338,32 @@ export const bookAppointment = async (
     }
 
     // ── 3. Auto-assign a dentist (tier-aware) ──
-    // Use preferred dentist if provided, otherwise auto-assign
-    const dentistId = preferredDentistId || (await assignDentist(date, time, endTime, SERVICE_TIER.GENERAL));
+    // ✅ NEW: Try to use the dentist from the hold first
+    let finalDentistId = preferredDentistId;
 
-    if (!dentistId) {
+    if (!finalDentistId && userSessionId) {
+        const { data: hold } = await supabaseAdmin
+            .from('slot_holds')
+            .select('dentist_id')
+            .eq('user_session_id', userSessionId)
+            .eq('appointment_date', date)
+            .eq('start_time', time)
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .single();
+
+        if (hold?.dentist_id) {
+            finalDentistId = hold.dentist_id;
+            console.log(`Using held dentist ${finalDentistId} for session ${userSessionId}`);
+        }
+    }
+
+    // If still no dentist, auto-assign
+    if (!finalDentistId) {
+        finalDentistId = await assignDentist(date, time, endTime, SERVICE_TIER.GENERAL);
+    }
+
+    if (!finalDentistId) {
         throw new AppError('No dentist available for this slot. This should not happen — please contact support.', 409);
     }
 
@@ -329,7 +372,7 @@ export const bookAppointment = async (
         .from('appointments')
         .insert({
             patient_id: patientId,
-            dentist_id: dentistId,
+            dentist_id: finalDentistId,
             service_id: serviceId,
             appointment_date: date,
             start_time: time,

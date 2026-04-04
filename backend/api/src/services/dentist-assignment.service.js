@@ -85,15 +85,30 @@ export const assignDentist = async (date, startTime, endTime, serviceTier = 'gen
         .from('appointments')
         .select('dentist_id')
         .eq('appointment_date', date)
-        // ✅ Only exclude actual cancellations. PENDING and CONFIRMED both count as booked slots.
         .not('status', 'in', '("CANCELLED","LATE_CANCEL")')
         .in('dentist_id', unblockedDentistIds)
-        // Check for time overlap
         .lt('start_time', endTime)
         .gt('end_time', startTime);
 
-    const busyDentistIds = (conflictingAppointments || []).map((a) => a.dentist_id);
-    const freeDentists = unblockedDentistIds.filter((id) => !busyDentistIds.includes(id));
+    const busyByAppointmentIds = (conflictingAppointments || []).map((a) => a.dentist_id);
+    
+    // ✅ NEW: Check which of these dentists are HELD at this time
+    const { data: conflictingHolds } = await supabaseAdmin
+        .from('slot_holds')
+        .select('dentist_id')
+        .eq('appointment_date', date)
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .in('dentist_id', unblockedDentistIds)
+        .lt('start_time', endTime);
+    
+    const busyByHoldIds = (conflictingHolds || [])
+        .filter(h => h.dentist_id !== null)
+        .map((h) => h.dentist_id);
+
+    const freeDentists = unblockedDentistIds.filter(
+        (id) => !busyByAppointmentIds.includes(id) && !busyByHoldIds.includes(id)
+    );
 
     if (freeDentists.length === 0) {
         return null; // All dentists booked at this time

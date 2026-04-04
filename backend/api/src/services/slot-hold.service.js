@@ -2,6 +2,8 @@ import { supabaseAdmin } from '../config/supabase.js';
 import { v4 as uuidv4 } from 'uuid';
 import { AppError } from '../utils/errors.js';
 import { getAvailableSlots } from './slot.service.js';
+import { assignDentist } from './dentist-assignment.service.js';
+import { addMinutesToTime } from '../utils/time.js';
 
 const HOLD_DURATION_MINUTES = 5;
 
@@ -76,6 +78,23 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
     // ── 3. Create new hold ──
     const expiresAt = new Date(now.getTime() + HOLD_DURATION_MINUTES * 60 * 1000);
 
+    // ✅ NEW: If no dentistId was provided, pick one NOW to "lock" it
+    let finalDentistId = dentistId;
+    if (!finalDentistId) {
+        // Find service for duration needed by assignDentist
+        const { data: service } = await supabaseAdmin.from('services').select('tier, duration_minutes').eq('id', serviceId).single();
+        if (service) {
+            const hEndTime = addMinutesToTime(startTime, service.duration_minutes);
+            finalDentistId = await assignDentist(date, startTime, hEndTime, service.tier);
+        }
+    }
+
+    if (!finalDentistId && !dentistId) {
+        // This should theoretically not happen if getAvailableSlots said > 0, 
+        // but provides safety against race conditions between checking available and assigning.
+        throw new AppError('No dentist available to hold this slot.', 409);
+    }
+
     const { data: hold, error } = await supabaseAdmin
         .from('slot_holds')
         .insert({
@@ -84,11 +103,12 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
             appointment_date: date,
             start_time: startTime,
             user_session_id: userSessionId,
+            dentist_id: finalDentistId, // ✅ Store the assigned/preferred dentist
             held_at: now.toISOString(),
             expires_at: expiresAt.toISOString(),
             status: 'active',
         })
-        .select('id, expires_at')
+        .select('id, expires_at, dentist_id')
         .single();
 
     if (error) {
@@ -102,6 +122,7 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
         expires_at: hold.expires_at,
         expires_in_minutes: HOLD_DURATION_MINUTES,
         already_held: false,
+        dentist_id: hold.dentist_id, // ✅ Return the assigned dentist
     };
 };
 
