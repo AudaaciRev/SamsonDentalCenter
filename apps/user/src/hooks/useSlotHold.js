@@ -19,7 +19,6 @@ const useSlotHold = (sessionId) => {
     const [holdLoading, setHoldLoading] = useState(false);
     const [holdError, setHoldError] = useState(null);
     const [timeRemaining, setTimeRemaining] = useState(null); // seconds
-    const [isExpiringSoon, setIsExpiringSoon] = useState(false); // < 60s
     const holdIntervalRef = useRef(null);
     const countdownIntervalRef = useRef(null);
 
@@ -84,7 +83,6 @@ const useSlotHold = (sessionId) => {
             const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
 
             setTimeRemaining(secondsLeft);
-            setIsExpiringSoon(secondsLeft > 0 && secondsLeft <= 60);
 
             // Auto-clear when expired
             if (secondsLeft === 0) {
@@ -146,7 +144,6 @@ const useSlotHold = (sessionId) => {
                         time: startTime,
                         expires_at: response.expires_at,
                         expires_in_minutes: response.expires_in_minutes,
-                        dentist_id: dentistId, // ✅ Store for renewal
                     });
 
                     // Track previous hold if auto-switched
@@ -208,24 +205,6 @@ const useSlotHold = (sessionId) => {
     }, [activeHold?.hold_id]);
 
     /**
-     * Renew Hold - reclaim an expired slot (Audit Item 11)
-     */
-    const renewHold = useCallback(async () => {
-        if (!activeHold?.date || !activeHold?.time || !activeHold?.service_id) {
-            setHoldError('No expired slot to renew.');
-            return null;
-        }
-
-        // Try to hold the same slot again
-        return await holdSlot(
-            activeHold.service_id,
-            activeHold.date,
-            activeHold.time,
-            activeHold.dentist_id // optional
-        );
-    }, [activeHold, holdSlot]);
-
-    /**
      * Format time remaining as human-readable string
      * E.g., "4:32" or "1:05"
      */
@@ -258,13 +237,11 @@ const useSlotHold = (sessionId) => {
         holdLoading,
         holdError,
         timeRemaining,
-        isExpiringSoon,
         formattedTime: formatTimeRemaining(),
 
         // Actions
         holdSlot,
         releaseHold,
-        renewHold,
         clearHold,
     };
 };

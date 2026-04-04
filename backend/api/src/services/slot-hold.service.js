@@ -20,7 +20,7 @@ const HOLD_DURATION_MINUTES = 5;
  * @param {string} [dentistId] - Optional dentist UUID
  * @returns {object} { hold_id, previous_hold_id, expires_at, expires_in_minutes, already_held }
  */
-export const holdSlot = async (serviceId, date, startTime, userSessionId, dentistId = null, serviceInfo = null) => {
+export const holdSlot = async (serviceId, date, startTime, userSessionId, dentistId = null) => {
     const now = new Date();
 
     // ✅ NEW: Check actual availability (includes doctor schedules, appointments, and OTHER people's holds)
@@ -39,9 +39,6 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
         console.warn(`Hold attempt failed: Slot ${startTime} on ${date} is not available (available: ${slotInfo?.available || 0})`);
         throw new AppError('This time slot is no longer available.', 409);
     }
-    
-    // ✅ Use serviceInfo from getAvailableSlots if available to avoid extra fetch later
-    let currentService = serviceInfo;
 
     // ── 1. Check if THIS USER already has ANY active hold ──
     const { data: existingHolds } = await supabaseAdmin
@@ -78,40 +75,35 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
         console.log(`Auto-released previous hold ${oldHold.id} for session ${userSessionId}`);
     }
 
-    // ── 3. Create new hold with SOFT-LOCK RETRY ──
+    // ── 3. Create new hold (with retry on dentist collision) ──
     const expiresAt = new Date(now.getTime() + HOLD_DURATION_MINUTES * 60 * 1000);
     const MAX_RETRIES = 3;
-    let attempts = 0;
     let hold = null;
-    let error = null;
     let finalDentistId = dentistId;
 
-    while (attempts < MAX_RETRIES) {
-        attempts++;
-        
-        // Pick a dentist if none provided (or if previous attempt failed)
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        // Pick a dentist if none provided (or if previous attempt collided)
         if (!finalDentistId) {
-            if (!currentService) {
-                const { data: service } = await supabaseAdmin.from('services').select('tier, duration_minutes').eq('id', serviceId).single();
-                currentService = service;
-            }
-            
-            if (currentService) {
-                const hEndTime = addMinutesToTime(startTime, currentService.duration_minutes);
-                finalDentistId = await assignDentist(date, startTime, hEndTime, currentService.tier, userSessionId);
+            const { data: service } = await supabaseAdmin
+                .from('services')
+                .select('tier, duration_minutes')
+                .eq('id', serviceId)
+                .single();
+
+            if (service) {
+                const hEndTime = addMinutesToTime(startTime, service.duration_minutes);
+                finalDentistId = await assignDentist(date, startTime, hEndTime, service.tier, userSessionId);
             }
         }
 
-        if (!finalDentistId && !dentistId) {
-            throw new AppError('No specialized dentist available for this slot.', 409);
+        if (!finalDentistId) {
+            throw new AppError('No dentist available to hold this slot.', 409);
         }
 
-        // A. Insert the hold
-        const myHoldId = uuidv4();
         const { data: insertedHold, error: insertError } = await supabaseAdmin
             .from('slot_holds')
             .insert({
-                id: myHoldId,
+                id: uuidv4(),
                 service_id: serviceId,
                 appointment_date: date,
                 start_time: startTime,
@@ -121,48 +113,28 @@ export const holdSlot = async (serviceId, date, startTime, userSessionId, dentis
                 expires_at: expiresAt.toISOString(),
                 status: 'active',
             })
-            .select('id, expires_at, dentist_id, created_at')
+            .select('id, expires_at, dentist_id')
             .single();
-        
-        if (insertError) {
-            error = insertError;
+
+        if (!insertError) {
+            hold = insertedHold;
             break;
         }
 
-        // B. SOFT-LOCK VERIFICATION: Check if anyone else inserted at the SAME time
-        // We look for any OTHER active holds for this dentist/slot
-        const { data: allHolds } = await supabaseAdmin
-            .from('slot_holds')
-            .select('id, created_at')
-            .eq('appointment_date', date)
-            .eq('start_time', startTime)
-            .eq('dentist_id', finalDentistId)
-            .eq('status', 'active')
-            .gt('expires_at', now.toISOString())
-            .order('created_at', { ascending: true });
-
-        // If I am NOT the first one in the list, I lost the race.
-        if (allHolds && allHolds.length > 1 && allHolds[0].id !== myHoldId) {
-            console.warn(`[Race] Session ${userSessionId} lost race for dentist ${finalDentistId}. Retrying...`);
-            
-            // Delete my hold (quietly)
-            try {
-                await supabaseAdmin.from('slot_holds').delete().eq('id', myHoldId);
-            } catch (cleanupErr) {
-                console.error(`[Cleanup] Failed to delete orphaned hold ${myHoldId}:`, cleanupErr);
-            }
-            
-            finalDentistId = null; // Re-assign next loop
+        // Unique constraint violation → another user just grabbed this dentist
+        if (insertError.code === '23505' && !dentistId) {
+            console.warn(`[Hold] Dentist ${finalDentistId} collision on attempt ${attempt}. Retrying...`);
+            finalDentistId = null; // Reset so assignDentist picks a different one
             continue;
         }
 
-        hold = insertedHold;
-        break; 
+        // Any other error is fatal
+        console.error('Hold slot error:', insertError);
+        throw new AppError('Failed to hold slot.', 500);
     }
 
     if (!hold) {
-        console.error('Hold slot error after retries:', error);
-        throw new AppError('This slot was just taken by another user. Please try again.', 409);
+        throw new AppError('All available dentists are currently held. Please try a different time.', 409);
     }
 
     return {
@@ -193,27 +165,7 @@ export const releaseHold = async (holdId) => {
 
     if (error) {
         console.error('Release hold error:', error);
-        return { released: false, error: error.message };
-    }
-
-    return { released: true };
-};
-
-/**
- * Release an active hold for a specific session/slot.
- * Useful for automated cleanup during successful booking.
- */
-export const releaseHoldBySession = async (userSessionId, date, time) => {
-    const { error } = await supabaseAdmin
-        .from('slot_holds')
-        .update({ status: 'released', updated_at: new Date().toISOString() })
-        .eq('user_session_id', userSessionId)
-        .eq('appointment_date', date)
-        .eq('start_time', time)
-        .eq('status', 'active');
-
-    if (error) {
-        console.error('Release hold by session error:', error);
+        // Don't throw — releasing a hold shouldn't fail
         return { released: false, error: error.message };
     }
 

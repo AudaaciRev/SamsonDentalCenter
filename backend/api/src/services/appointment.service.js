@@ -141,10 +141,6 @@ export const bookAppointmentGuest = async (
 
     if (insertError) {
         console.error('Insert Error:', insertError);
-        // ✅ NEW: Handle database-level unique constraint violation (Race Condition)
-        if (insertError.code === '23505') {
-            throw new AppError('This slot was just taken by another user. Please choose a different time.', 409);
-        }
         throw new AppError(insertError.message, 500);
     }
 

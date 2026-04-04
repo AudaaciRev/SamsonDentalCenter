@@ -26,7 +26,7 @@ const DateTimeStep = ({
     const [validationError, setValidationError] = useState(null);
 
     // ✅ Slot holding for user booking (passed from parent)
-    const { activeHold, holdSlot, releaseHold, formattedTime, isExpiringSoon, holdLoading, holdError } = slotHold;
+    const { activeHold, holdSlot, releaseHold, formattedTime, holdLoading, holdError } = slotHold;
 
     // Simple date picker state — starts from today
     const today = useMemo(() => {
@@ -167,9 +167,10 @@ const DateTimeStep = ({
                     // ✅ Update time only after hold is confirmed
                     handleTimeUpdate({
                         time: slotData.rawTime,
+                        // Keep waitlist selection if it exists - do NOT clear it
                     });
                 } else if (holdResult?.error === 'SLOT_TAKEN') {
-                    // ✅ Slot was taken — refresh so user sees updated count, error shown via holdError
+                    // ✅ Slot was taken — auto-refresh so user sees updated availability
                     refetchSlots();
                     return;
                 }
@@ -343,14 +344,6 @@ const DateTimeStep = ({
 
                 {/* Main Content (Calendar + Slots) */}
                 <div className='flex-grow'>
-                    {/* ✅ Hold error banner - shown when slot was taken by another user */}
-                    {holdError && (
-                        <div className='mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm'>
-                            <AlertCircle size={16} className='shrink-0 mt-0.5' />
-                            <span>{holdError}</span>
-                        </div>
-                    )}
-
                     {/* Week navigation */}
                     <div className='flex items-center justify-between mb-4'>
                 <button
@@ -465,21 +458,17 @@ const DateTimeStep = ({
 
                     {/* ✅ NEW: Hold Indicator with Countdown */}
                     {activeHold && selectedDate === activeHold.date && (
-                        <div className={`mb-4 p-3 border rounded-lg transition-all ${
-                            isExpiringSoon 
-                                ? 'bg-red-50 border-red-200 animate-pulse' 
-                                : 'bg-amber-50 border-amber-200'
-                        }`}>
+                        <div className='mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
                             <div className='flex items-start gap-2'>
                                 <Lock
                                     size={16}
-                                    className={`${isExpiringSoon ? 'text-red-600' : 'text-amber-600'} mt-1 shrink-0`}
+                                    className='text-amber-600 mt-1 shrink-0'
                                 />
                                 <div className='grow'>
-                                    <p className={`text-sm font-medium ${isExpiringSoon ? 'text-red-900' : 'text-amber-900'}`}>
-                                        {isExpiringSoon ? '⚠️ Reservation Expiring Soon!' : '🔒 Slot Reserved'}: {selectedDate} @ {activeHold.time}
+                                    <p className='text-sm font-medium text-amber-900'>
+                                        🔒 Slot Reserved: {selectedDate} @ {activeHold.time}
                                     </p>
-                                    <p className={`text-xs ${isExpiringSoon ? 'text-red-700' : 'text-amber-700'} mt-1`}>
+                                    <p className='text-xs text-amber-700 mt-1'>
                                         Time remaining: <strong>{formattedTime}</strong>
                                     </p>
                                 </div>

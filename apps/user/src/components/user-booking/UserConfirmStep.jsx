@@ -8,32 +8,19 @@ import {
     Info,
     Zap,
     RefreshCw,
-    Lock, // ✅ NEW
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const UserConfirmStep = ({
-    formData,
-    book_for_others,
-    onSubmit,
-    onBack,
-    submitting,
-    error,
-    slotHold, // ✅ NEW
-}) => {
+const UserConfirmStep = ({ formData, book_for_others, onSubmit, onBack, submitting, error }) => {
     // ✅ NEW: Track retry state (GAP-10)
     const [isRetrying, setIsRetrying] = useState(false);
     const { user } = useAuth();
 
-    // Determine scenario (Move up for scope)
+    // Determine scenario
     const hasBooking = formData?.time;
     const hasWaitlist = formData?.waitlist_time;
     const isWaitlistOnly = hasWaitlist && !hasBooking;
     const isDualSelection = hasBooking && hasWaitlist;
-
-    // ✅ NEW: Hold state for recovery (Audit Item 11)
-    const { activeHold, timeRemaining, renewHold, holdLoading } = slotHold || {};
-    const isHoldExpired = hasBooking && activeHold && timeRemaining === 0;
 
     // Determine if this is a specialized service
     const isSpecialized = formData.service_tier === 'specialized';
@@ -118,35 +105,8 @@ const UserConfirmStep = ({
 
                     {/* Helpful Tip */}
                     <div className='text-xs text-red-600 bg-red-100 p-2 rounded'>
-                        <strong>💡 Tip:</strong> Check your connection and try again. {error?.status === 409 && 'The slot may have been taken.'} If the problem
+                        <strong>💡 Tip:</strong> Check your connection and try again. If the problem
                         persists, go back and verify your selections.
-                    </div>
-                </div>
-            )}
-
-            {/* ✅ NEW: Hold Expired Warning & Recovery (Audit Item 11) */}
-            {isHoldExpired && (
-                <div className='bg-amber-50 border-2 border-amber-300 rounded-xl p-4 mb-6 shadow-sm'>
-                    <div className='flex items-start gap-3'>
-                        <Lock size={20} className='text-amber-600 shrink-0 mt-0.5' />
-                        <div>
-                            <p className='text-sm font-bold text-amber-900 mb-1'>Hold Expired</p>
-                            <p className='text-sm text-amber-800 mb-3'>
-                                Your 5-minute reservation for <strong>{formData.time}</strong> has expired. 
-                                Another user could now book this slot.
-                            </p>
-                            <button
-                                onClick={renewHold}
-                                disabled={holdLoading || submitting}
-                                className='flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-all shadow-sm'
-                            >
-                                {holdLoading ? (
-                                    <div className='w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                                ) : (
-                                    '🔄 Reclaim Slot'
-                                )}
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
@@ -452,7 +412,7 @@ const UserConfirmStep = ({
                 </button>
                 <button
                     onClick={onSubmit}
-                    disabled={submitting || error || isHoldExpired}
+                    disabled={submitting || error}
                     className='bg-sky-500 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-xl 
                                transition-colors shadow-lg shadow-sky-500/25 disabled:opacity-50 disabled:cursor-not-allowed 
                                flex items-center gap-2'

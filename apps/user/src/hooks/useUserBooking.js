@@ -83,7 +83,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         }
     }, [formData.service_id, slotHold]);
 
-    // Always use all steps
+    // Dynamically choose steps based on booking preference
     const steps = STEPS;
     const currentStep = steps[step];
 
@@ -107,15 +107,11 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
     };
 
     const nextStep = () => {
-        if (step < steps.length - 1) {
-            setStep(step + 1);
-        }
+        if (step < steps.length - 1) setStep((s) => s + 1);
     };
 
     const prevStep = () => {
-        if (step > 0) {
-            setStep(step - 1);
-        }
+        if (step > 0) setStep((s) => s - 1);
     };
 
     // Only allow going back to completed steps
@@ -201,7 +197,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             else {
                 setResult(null);
                 setError(booking?.message || waitlist?.message || 'The selected slot is no longer available. Please try another time.');
-                // Only go back to datetime step if it's a conflict/unavailability error
+                // Go back to datetime step so they can try again
                 setStep(STEPS.indexOf('datetime'));
             }
 
@@ -213,12 +209,6 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             // Backend returns specific error stage if one fails
             const prefix = err.stage ? `[${err.stage}] ` : '';
             setError(`${prefix}${err.message || 'Submission failed. Please try again.'}`);
-
-            // ✅ NEW: Smarter redirection (Audit Item 10)
-            // If the error is a 409 Conflict (slot taken/expired), go back to datetime
-            if (err.status === 409) {
-                setStep(STEPS.indexOf('datetime'));
-            }
         }
     };
 

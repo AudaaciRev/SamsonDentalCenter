@@ -84,10 +84,10 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
             clearTimeout(fetchTimeoutRef.current);
         }
 
-        // Set new timeout (150ms)
+        // Set new timeout (300ms)
         fetchTimeoutRef.current = setTimeout(() => {
             performFetch();
-        }, 150);
+        }, 300);
 
         // Cleanup on unmount or deps change
         return () => {

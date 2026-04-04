@@ -291,7 +291,6 @@ export const getAvailableSlots = async (
         all_slots: sortedSlots,
         date,
         service: service.name,
-        service_data: service, // ✅ NEW: Include full service object for optimizations
         duration_minutes: durationMinutes,
         total_available: totalAvailable,
         total_full: totalFull,
