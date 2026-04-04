@@ -246,6 +246,9 @@ export const bookAppointment = async (
                 approval_status: APPROVAL_STATUS.PENDING,
                 source: source, // ✅ NEW: Track source
                 booked_for_name: bookedForName || null,
+                // ✅ User is booking from their own account, auto-confirm their intent
+                patient_confirmed: true,
+                confirmed_at: new Date().toISOString(),
             })
             .select(
                 `
@@ -337,6 +340,9 @@ export const bookAppointment = async (
             source: source, // ✅ NEW: Track source
             // NULL = booked for self, a name = booked for someone else
             booked_for_name: bookedForName || null,
+            // ✅ User is booking from their own account, auto-confirm their intent
+            patient_confirmed: true,
+            confirmed_at: new Date().toISOString(),
         })
         .select(
             `
@@ -784,6 +790,9 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             is_walk_in: true,
             source: APPOINTMENT_SOURCE.WALK_IN, // ✅ NEW: Track source
             notes: notes || 'Walk-in appointment',
+            // ✅ Walk-ins are confirmed by default
+            patient_confirmed: true,
+            confirmed_at: new Date().toISOString(),
         })
         .select(
             `
@@ -849,8 +858,12 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
             appointment_date: date,
             start_time: time,
             end_time: endTime,
-            status: APPOINTMENT_STATUS.CONFIRMED,
+            status: APPOINTMENT_STATUS.PENDING,
+            approval_status: APPROVAL_STATUS.PENDING,
             source: APPOINTMENT_SOURCE.GUEST_BOOKING,
+            // ✅ Now confirmed via email link
+            patient_confirmed: true,
+            confirmed_at: new Date().toISOString(),
         })
         .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name))`)
         .single();
