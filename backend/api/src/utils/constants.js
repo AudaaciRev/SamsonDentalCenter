@@ -72,7 +72,7 @@ export const CLINIC_CONFIG = {
     CONFIRM_REMINDER_HOURS: 48, // 48h reminder asks patient to confirm
     EMERGENCY_BUFFER_SLOTS: 1, // Reserve 1 slot per day for emergencies
     OVERBOOK_LOW_RISK_PERCENT: 10, // Allow 10% overbooking on low no-show risk hours
-    GUEST_CONFIRM_EXPIRY_HOURS: 24, // Guest must confirm via email within 24 hours
+    GUEST_CONFIRM_EXPIRY_MINUTES: 15, // Guest must confirm via email within 15 minutes
     MAX_ADVANCE_BOOKING_MONTHS: 3, // Online booking up to 3 months ahead
     NO_SAME_DAY_ONLINE: true, // ❌ No same-day booking for online
 };

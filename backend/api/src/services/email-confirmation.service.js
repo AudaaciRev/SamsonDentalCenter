@@ -29,9 +29,9 @@ const getTemplate = (templateName, data) => {
 export const createConfirmationToken = async (appointmentId) => {
     const token = crypto.randomBytes(32).toString('hex');
 
-    // Token expires in 24 hours
+    // Token expires in 15 minutes
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + CLINIC_CONFIG.GUEST_CONFIRM_EXPIRY_HOURS);
+    expiresAt.setMinutes(expiresAt.getMinutes() + CLINIC_CONFIG.GUEST_CONFIRM_EXPIRY_MINUTES);
 
     const { error } = await supabaseAdmin.from('appointment_confirmation_tokens').insert({
         appointment_id: appointmentId,
@@ -66,7 +66,7 @@ export const sendGuestConfirmationEmail = async (email, name, details) => {
             date,
             start_time,
             confirmUrl,
-            expiryHours: CLINIC_CONFIG.GUEST_CONFIRM_EXPIRY_HOURS,
+            expiryMinutes: CLINIC_CONFIG.GUEST_CONFIRM_EXPIRY_MINUTES,
         });
 
         await resend.emails.send({

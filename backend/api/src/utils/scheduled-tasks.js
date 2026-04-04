@@ -1,4 +1,4 @@
-﻿import cron from 'node-cron';
+import cron from 'node-cron';
 import { autoDetectNoShows } from '../services/noshow.service.js';
 import { sendReminder, send48hConfirmReminder } from '../services/notification.service.js';
 import {
@@ -202,8 +202,8 @@ export const startScheduledTasks = () => {
         }
     });
 
-    // ── 4. Guest cleanup: every hour — cancel PENDING guests who did not confirm email ──
-    cron.schedule('0 * * * *', async () => {
+    // ── 4. Guest cleanup: every minute — cancel PENDING guests who did not confirm email ──
+    cron.schedule('* * * * *', async () => {
         console.log('Cleaning up expired PENDING guest appointments...');
         try {
             const now = new Date().toISOString();
@@ -224,7 +224,7 @@ export const startScheduledTasks = () => {
                 .from('appointments')
                 .update({
                     status: 'CANCELLED',
-                    cancellation_reason: 'Guest did not confirm via email within 24 hours.',
+                    cancellation_reason: 'Guest did not confirm via email within 15 minutes.',
                     cancelled_at: now,
                 })
                 .in('id', expiredIds)
