@@ -105,7 +105,8 @@ export const bookAppointmentGuest = async (
             appointment_date: date,
             start_time: time,
             end_time: endTime,
-            status: APPOINTMENT_STATUS.PENDING, // ← PENDING until email confirmed
+            status: APPOINTMENT_STATUS.PENDING,
+            approval_status: APPROVAL_STATUS.PENDING, // ✅ NEW: Match user booking
             source: APPOINTMENT_SOURCE.GUEST_BOOKING, // ✅ NEW: Track source
         })
         .select(
