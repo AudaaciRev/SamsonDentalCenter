@@ -35,8 +35,9 @@ const getAppointmentData = (id) => {
         time: found?.time || '10:00 AM',
         endTime: '11:00 AM', // Dummy static
         duration: '1 Hour', // Dummy static
-        status: mappedStatus,
-        rejectionReason: rejectionReason,
+        status: 'Pending',
+        rejectionReason: null, // e.g., 'Schedule conflict.'
+        description: 'Routine checkup and general cleaning. Patient requested special attention to lower molars due to recent sensitivity.',
         preTreatmentNotes: [
             'Please arrive 10 minutes early to fill out any necessary forms.',
             'Avoid eating heavy meals 2 hours before the appointment.'
@@ -65,6 +66,7 @@ const AppointmentDetails = () => {
     const navigate = useNavigate();
     const app = getAppointmentData(id);
     const [showStatusDetails, setShowStatusDetails] = React.useState(false);
+    const [activeTab, setActiveTab] = React.useState('description');
     const statusRef = React.useRef(null);
 
     React.useEffect(() => {
@@ -164,86 +166,66 @@ const AppointmentDetails = () => {
                 </div>
 
                 {/* Main Content Grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className="flex flex-col xl:flex-row items-stretch gap-6">
                     {/* Left Column - Core Details */}
-                    <div className="xl:col-span-2 space-y-6">
-                        <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03] shadow-theme-sm">
-                            <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7 font-outfit">Service Overview</h3>
+                    <div className="w-full xl:w-2/3 p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03] shadow-theme-sm flex flex-col">
+                        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7 font-outfit">Service Overview</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 grow items-center">
+                            <div className="space-y-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                        <CalendarIcon />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
+                                        <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.date}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                        <ClockIcon />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
+                                        <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.time} - {app.endTime}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">Duration: {app.duration}</p>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                                            <CalendarIcon />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.date}</p>
-                                        </div>
+                            <div className="space-y-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-gray-400">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
                                     </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                                            <ClockIcon />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.time} - {app.endTime}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">Duration: {app.duration}</p>
-                                        </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Patient</p>
+                                        <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.patient}</p>
                                     </div>
                                 </div>
-                                
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-gray-400">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Patient</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.patient}</p>
-                                        </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg text-brand-500">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
                                     </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg text-brand-500">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Service</p>
-                                            <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.service}</p>
-                                        </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Service</p>
+                                        <p className="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{app.service}</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Guidelines / Notes */}
-                        <div className="bg-amber-50 dark:bg-transparent rounded-2xl border border-amber-100 dark:border-amber-500/20 p-5 lg:p-6 shadow-theme-sm">
-                            <div className="flex items-center gap-3 mb-4 text-amber-600 dark:text-amber-500">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M12 9v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">Pre-Treatment Notes</h4>
-                            </div>
-                            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                {app.preTreatmentNotes.map((note, index) => (
-                                    <li key={index}>{note}</li>
-                                ))}
-                            </ul>
                         </div>
                     </div>
 
                     {/* Right Column - Actions */}
-                    <div className="space-y-6">
-                        <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03] lg:sticky lg:top-24 shadow-theme-sm">
+                    <div className="w-full xl:w-1/3 p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03] shadow-theme-sm flex flex-col justify-between">
+                        <div>
                             <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7 font-outfit">Manage Appointment</h3>
-                            
                             <div className="flex flex-col gap-3">
                                 {app.status !== 'Cancelled' && app.status !== 'Completed' && (
                                     <>
@@ -254,7 +236,7 @@ const AppointmentDetails = () => {
                                             </svg>
                                             Reschedule
                                         </button>
-                                        <button className="w-full px-4 py-3 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 text-error-600 dark:text-error-500 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors flex justify-center items-center gap-2 shadow-theme-xs">
+                                        <button className="w-full px-4 py-3 bg-white dark:bg-transparent border border-error-200 dark:border-error-500/20 text-error-600 dark:text-error-500 rounded-lg text-sm font-medium hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors flex justify-center items-center gap-2 shadow-theme-xs">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                 <path d="M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -263,16 +245,123 @@ const AppointmentDetails = () => {
                                         </button>
                                     </>
                                 )}
-                                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
-                                    <button
-                                        onClick={() => navigate('/patient/appointments')}
-                                        className="inline-block text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 underline transition-colors"
-                                    >
-                                        Back to All Appointments
-                                    </button>
-                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Bottom Full-Width Tabs Area (Description / Pre-Treatment) */}
+                <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03] shadow-theme-sm">
+                    {/* Tabs Navigation */}
+                    <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6 gap-6 relative overflow-x-auto whitespace-nowrap hide-scrollbar">
+                        <button 
+                            onClick={() => setActiveTab('description')}
+                            className={`pb-3 text-sm font-medium transition-colors relative ${
+                                activeTab === 'description' 
+                                ? 'text-brand-600 dark:text-brand-500' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                            }`}
+                        >
+                            Description
+                            {activeTab === 'description' && (
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-500 rounded-t-sm" />
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('notes')}
+                            className={`pb-3 text-sm font-medium transition-colors relative flex items-center gap-2 ${
+                                activeTab === 'notes' 
+                                ? 'text-brand-600 dark:text-brand-500' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                            }`}
+                        >
+                            Pre-Treatment Notes
+                            {activeTab === 'notes' && (
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-500 rounded-t-sm" />
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('contact')}
+                            className={`pb-3 text-sm font-medium transition-colors relative flex items-center gap-2 ${
+                                activeTab === 'contact' 
+                                ? 'text-brand-600 dark:text-brand-500' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                            }`}
+                        >
+                            Contact Clinic
+                            {activeTab === 'contact' && (
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-500 rounded-t-sm" />
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('faq')}
+                            className={`pb-3 text-sm font-medium transition-colors relative flex items-center gap-2 ${
+                                activeTab === 'faq' 
+                                ? 'text-brand-600 dark:text-brand-500' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                            }`}
+                        >
+                            FAQ
+                            {activeTab === 'faq' && (
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-500 rounded-t-sm" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Tabs Content */}
+                    <div className="min-h-[80px]">
+                        {activeTab === 'description' && (
+                            <div className="animate-[fadeIn_0.2s_ease-out]">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-4xl">
+                                    {app.description || "Routine dental operation and general hygiene optimization."}
+                                </p>
+                            </div>
+                        )}
+                        {activeTab === 'notes' && (
+                            <div className="animate-[fadeIn_0.2s_ease-out]">
+                                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                    {app.preTreatmentNotes?.length > 0 ? (
+                                        app.preTreatmentNotes.map((note, index) => (
+                                            <li key={index}>{note}</li>
+                                        ))
+                                    ) : (
+                                        <li>No pre-treatment notes required.</li>
+                                    )}
+                                </ul>
+                            </div>
+                        )}
+                        {activeTab === 'contact' && (
+                            <div className="animate-[fadeIn_0.2s_ease-out]">
+                                <div className="flex flex-col gap-3">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">If you have any urgent concerns prior to your appointment, please reach out to us:</p>
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        <p className="text-sm text-gray-800 dark:text-gray-200"><strong>Phone:</strong> (555) 123-4567</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <p className="text-sm text-gray-800 dark:text-gray-200"><strong>Email:</strong> support@primeradental.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'faq' && (
+                            <div className="animate-[fadeIn_0.2s_ease-out] space-y-4 max-w-4xl">
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Do I need to arrive early?</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Please arrive at least 10 minutes prior to your scheduled time to complete any necessary paperwork.</p>
+                                </div>
+                                <hr className="border-gray-100 dark:border-gray-800" />
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">What if I need to cancel?</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Cancellations must be made at least 24 hours in advance. You can cancel your appointment directly using the "Manage Appointment" tools on this page.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
