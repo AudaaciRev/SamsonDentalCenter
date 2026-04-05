@@ -21,19 +21,48 @@
     --brand-800: #252dae;
     --brand-900: #262e89;
 
+    /* Status Colors (from template) */
+    --success-50: #ecfdf3;
+    --success-500: #12b76a;
+    --success-600: #039855;
+
+    --error-50: #fef3f2;
+    --error-500: #f04438;
+    --error-600: #d92d20;
+
+    --warning-50: #fffaeb;
+    --warning-500: #f79009;
+    --warning-600: #dc6803;
+
     /* -- Fonts -- */
     --font-main: "Outfit", sans-serif;
 }
 
 @theme {
     /* Fonts */
-    --font-*: initial;
     --font-sans: var(--font-main);
     --font-outfit: var(--font-main);
 
-    /* Breakpoints */
     --breakpoint-2xsm: 375px;
     --breakpoint-xsm: 425px;
+
+    /* Typography (from template) */
+    --text-title-2xl: 72px;
+    --text-title-2xl--line-height: 90px;
+    --text-title-xl: 60px;
+    --text-title-xl--line-height: 72px;
+    --text-title-lg: 48px;
+    --text-title-lg--line-height: 60px;
+    --text-title-md: 36px;
+    --text-title-md--line-height: 44px;
+    --text-title-sm: 30px;
+    --text-title-sm--line-height: 38px;
+    --text-theme-xl: 20px;
+    --text-theme-xl--line-height: 30px;
+    --text-theme-sm: 14px;
+    --text-theme-sm--line-height: 20px;
+    --text-theme-xs: 12px;
+    --text-theme-xs--line-height: 18px;
 
     /* Colors mapped to brand variables */
     --color-brand-25: #f2f7ff;
@@ -48,6 +77,19 @@
     --color-brand-800: var(--brand-800);
     --color-brand-900: var(--brand-900);
     --color-brand-950: #161950;
+
+    /* Status Colors */
+    --color-success-50: var(--success-50);
+    --color-success-500: var(--success-500);
+    --color-success-600: var(--success-600);
+
+    --color-error-50: var(--error-50);
+    --color-error-500: var(--error-500);
+    --color-error-600: var(--error-600);
+
+    --color-warning-50: var(--warning-50);
+    --color-warning-500: var(--warning-500);
+    --color-warning-600: var(--warning-600);
 
     /* Shadows */
     --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),

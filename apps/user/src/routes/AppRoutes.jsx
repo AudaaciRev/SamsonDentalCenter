@@ -36,6 +36,7 @@ import GuestBookingPage from '../pages/guest/GuestBookingPage';
 
 // Patient pages
 import PatientDashboard from '../pages/patient/PatientDashboard';
+import MyAppointments from '../pages/patient/MyAppointments';
 import PatientProfile from '../pages/patient/PatientProfile';
 import NotificationsPage from '../pages/patient/NotificationsPage';
 import WaitlistPage from '../pages/patient/WaitlistPage';
@@ -137,7 +138,7 @@ const AppRoutes = () => {
                     }
                 >
                     <Route index element={<PatientDashboard />} />
-                    <Route path='appointments' element={<PatientDashboard />} />
+                    <Route path='appointments' element={<MyAppointments />} />
                     <Route path='profile' element={<PatientProfile />} />
                     <Route path='notifications' element={<NotificationsPage />} />
                     <Route path='waitlist' element={<WaitlistPage />} />
