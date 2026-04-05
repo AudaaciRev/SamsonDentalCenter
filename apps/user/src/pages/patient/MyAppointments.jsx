@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import ComponentCard from '../../components/common/ComponentCard';
 import {
@@ -114,14 +115,15 @@ const appointmentsData = [
 
 const MyAppointments = () => {
     const [openDropdown, setOpenDropdown] = useState(null);
+    const navigate = useNavigate();
 
     const toggleDropdown = (id) => {
         setOpenDropdown(openDropdown === id ? null : id);
     };
 
     const handleViewDetails = (id) => {
-        console.log('Viewing details for:', id);
         setOpenDropdown(null);
+        navigate(`/patient/appointments/${id}`);
     };
 
     return (
