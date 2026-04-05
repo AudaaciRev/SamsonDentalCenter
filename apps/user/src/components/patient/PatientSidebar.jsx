@@ -209,6 +209,10 @@ const PatientSidebar = () => {
                 <Link to='/patient'>
                     {isExpanded || isHovered || isMobileOpen ? (
                         <>
+                            <span className='text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase font-outfit'>
+                                Samson <span className='text-brand-500'>Dental</span>
+                            </span>
+                            {/* 
                             <img
                                 className='dark:hidden'
                                 src='/images/logo/logo.svg'
@@ -223,14 +227,22 @@ const PatientSidebar = () => {
                                 width={150}
                                 height={40}
                             />
+                            */}
                         </>
                     ) : (
-                        <img
-                            src='/images/logo/logo-icon.svg'
-                            alt='Logo'
-                            width={32}
-                            height={32}
-                        />
+                        <>
+                            <span className='text-2xl font-black text-brand-500 font-outfit'>
+                                S
+                            </span>
+                            {/* 
+                            <img
+                                src='/images/logo/logo-icon.svg'
+                                alt='Logo'
+                                width={32}
+                                height={32}
+                            />
+                            */}
+                        </>
                     )}
                 </Link>
             </div>
