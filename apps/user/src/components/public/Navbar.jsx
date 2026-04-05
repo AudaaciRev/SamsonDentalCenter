@@ -112,7 +112,7 @@ const Navbar = () => {
                 backdropFilter: 'none',
             }}
         >
-            <div className='max-w-350 mx-auto px-4 sm:px-6 lg:px-8 w-full'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full'>
                 <div className='flex items-center justify-between'>
                     {/* Section 1: Logo */}
                     <div className='flex-1 flex items-center justify-start nav-anim'>
@@ -151,7 +151,13 @@ const Navbar = () => {
 
                     {/* Section 2: Links (Desktop) */}
                     <div className='hidden lg:flex items-center justify-center'>
-                        <ul className='hidden lg:flex items-center justify-center gap-8'>
+                        <ul
+                            className={`hidden lg:flex items-center justify-center gap-1 px-3 py-1.5 rounded-full transition-all duration-300 ring-1 h-[48px] ${
+                                isScrolled
+                                    ? 'bg-white/80 backdrop-blur-md ring-slate-200 shadow-sm'
+                                    : 'bg-white/10 ring-white/20'
+                            }`}
+                        >
                             {navLinks.map((link, index) => (
                                 <li
                                     key={index}
@@ -160,23 +166,18 @@ const Navbar = () => {
                                     <NavLink
                                         to={link.path}
                                         className={({ isActive }) =>
-                                            `font-medium transition-colors duration-300 pb-1.5 ${
-                                                isScrolled
-                                                    ? 'text-slate-600 hover:text-slate-900'
-                                                    : 'text-white/80 hover:text-white'
-                                            } ${isActive && (isScrolled ? 'text-blue-600' : 'text-white')}`
+                                            `font-medium text-sm transition-all duration-300 px-5 py-1.5 rounded-2xl ${
+                                                isActive
+                                                    ? isScrolled
+                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                        : 'bg-white/20 text-white backdrop-blur-sm shadow-sm'
+                                                    : isScrolled
+                                                    ? 'text-slate-600 hover:text-blue-600 hover:bg-slate-100/50'
+                                                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                                            }`
                                         }
                                     >
-                                        {({ isActive }) => (
-                                            <>
-                                                {link.name}
-                                                <span
-                                                    className={`absolute bottom-0 left-0 w-full h-0.5 transition-transform duration-300 ease-out origin-left transform ${
-                                                        isActive ? 'scale-x-100' : 'scale-x-0'
-                                                    } ${isScrolled ? 'bg-blue-600' : 'bg-white'}`}
-                                                ></span>
-                                            </>
-                                        )}
+                                        {link.name}
                                     </NavLink>
                                 </li>
                             ))}
@@ -187,20 +188,135 @@ const Navbar = () => {
                     <div className='flex-1 flex items-center justify-end gap-3'>
                         <div className='nav-anim flex items-center gap-3'>
                             {!user ? (
-                                <>
+                                <div
+                                    className='relative'
+                                    ref={profileRef}
+                                >
                                     <button
-                                        onClick={() => navigate('/login')}
-                                        className={`hidden sm:inline-flex items-center justify-center font-bold text-sm transition-all duration-300 ease-out ring-1 px-5 py-2.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm ${isScrolled ? 'text-slate-700 hover:text-blue-600 bg-white hover:bg-blue-50 ring-slate-200 hover:ring-blue-200 focus:ring-blue-600 focus:ring-offset-2' : 'text-white bg-white/10 hover:bg-white/20 ring-white/20 hover:ring-white/30 focus:ring-sky-400 focus:ring-offset-slate-900'}`}
+                                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${
+                                            isScrolled
+                                                ? 'hover:bg-slate-100 bg-white ring-1 ring-slate-200'
+                                                : 'hover:bg-white/20 bg-white/10 ring-1 ring-white/20'
+                                        }`}
+                                        title='Guest Menu'
                                     >
-                                        Login
+                                        <span
+                                            className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                                                isScrolled ? 'bg-slate-400' : 'bg-white/20'
+                                            }`}
+                                        >
+                                            <svg
+                                                className='w-5 h-5'
+                                                viewBox='0 0 24 24'
+                                                fill='none'
+                                                stroke='currentColor'
+                                                strokeWidth='2.5'
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                            >
+                                                <path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' />
+                                                <circle cx='12' cy='7' r='4' />
+                                            </svg>
+                                        </span>
+                                        <svg
+                                            className={`transition-transform duration-200 flex-shrink-0 ${
+                                                isProfileMenuOpen ? 'rotate-180' : ''
+                                            } ${isScrolled ? 'text-slate-500' : 'text-white/70'}`}
+                                            width='18'
+                                            height='20'
+                                            viewBox='0 0 18 20'
+                                            fill='none'
+                                            xmlns='http://www.w3.org/2000/svg'
+                                        >
+                                            <path
+                                                d='M4.3125 8.65625L9 13.3437L13.6875 8.65625'
+                                                stroke='currentColor'
+                                                strokeWidth='1.5'
+                                                strokeLinecap='round'
+                                                strokeLinejoin='round'
+                                            />
+                                        </svg>
                                     </button>
-                                    <button
-                                        onClick={() => navigate(user ? '/patient/book' : '/book')}
-                                        className={`hidden md:inline-flex items-center justify-center font-bold text-sm transition-all duration-300 ease-out shadow-sm hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 px-6 py-2.5 rounded-2xl ${isScrolled ? 'bg-sky-500 hover:bg-sky-600 text-white hover:shadow-[0_8px_20px_rgb(14,165,233,0.3)] focus:ring-sky-400 focus:ring-offset-2' : 'bg-sky-500 hover:bg-sky-600 text-white hover:shadow-[0_8px_20px_rgb(14,165,233,0.3)] focus:ring-sky-400 focus:ring-offset-slate-900'}`}
-                                    >
-                                        Book Now
-                                    </button>
-                                </>
+
+                                    {isProfileMenuOpen && (
+                                        <div className='absolute right-0 mt-3 w-[240px] rounded-2xl shadow-theme-lg z-50 p-3 border bg-white border-gray-200'>
+                                            <div className='px-4 py-2 mb-2'>
+                                                <span className='block font-semibold text-sm text-gray-800'>
+                                                    Guest User
+                                                </span>
+                                                <span className='mt-0.5 block text-xs text-gray-500'>
+                                                    Welcome to Samson Dental
+                                                </span>
+                                            </div>
+
+                                            <div className='grid grid-cols-1 gap-1 pt-2 border-t border-gray-100'>
+                                                <Link
+                                                    to='/login'
+                                                    className='flex items-center gap-3 px-3 py-2.5 font-medium rounded-lg text-sm transition-colors text-gray-700 hover:bg-gray-100'
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                >
+                                                    <svg
+                                                        className='w-5 h-5 text-gray-400'
+                                                        viewBox='0 0 24 24'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        strokeWidth='2'
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                    >
+                                                        <path d='M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4' />
+                                                        <polyline points='10 17 15 12 10 7' />
+                                                        <line x1='15' y1='12' x2='3' y2='12' />
+                                                    </svg>
+                                                    Sign In
+                                                </Link>
+                                                <Link
+                                                    to='/register'
+                                                    className='flex items-center gap-3 px-3 py-2.5 font-medium rounded-lg text-sm transition-colors text-gray-700 hover:bg-gray-100'
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                >
+                                                    <svg
+                                                        className='w-5 h-5 text-gray-400'
+                                                        viewBox='0 0 24 24'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        strokeWidth='2'
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                    >
+                                                        <path d='M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' />
+                                                        <circle cx='8.5' cy='7' r='4' />
+                                                        <line x1='20' y1='8' x2='20' y2='14' />
+                                                        <line x1='23' y1='11' x2='17' y2='11' />
+                                                    </svg>
+                                                    Sign Up
+                                                </Link>
+                                                <Link
+                                                    to='/book'
+                                                    className='flex items-center gap-3 px-3 py-2.5 mt-1 font-medium rounded-lg text-sm transition-colors bg-blue-600 text-white hover:bg-blue-700'
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                >
+                                                    <svg
+                                                        className='w-5 h-5'
+                                                        viewBox='0 0 24 24'
+                                                        fill='none'
+                                                        stroke='currentColor'
+                                                        strokeWidth='2'
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                    >
+                                                        <rect x='3' y='4' width='18' height='18' rx='2' ry='2' />
+                                                        <line x1='16' y1='2' x2='16' y2='6' />
+                                                        <line x1='8' y1='2' x2='8' y2='6' />
+                                                        <line x1='3' y1='10' x2='21' y2='10' />
+                                                    </svg>
+                                                    Book as a Guest
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className='flex items-center gap-2 lg:gap-4'>
                                     <PatientNotification />
@@ -249,62 +365,62 @@ const Navbar = () => {
                                             <div
                                                 className='absolute right-0 mt-3 w-[260px] rounded-2xl shadow-theme-lg z-50 p-3 border bg-white border-gray-200'
                                             >
-                                                    <div className='px-4 py-2 mb-2'>
-                                                        <span className='block font-semibold text-sm truncate text-gray-800'>
-                                                            {user?.full_name || 'User'}
-                                                        </span>
-                                                        <span className='mt-0.5 block text-xs truncate text-gray-500'>
-                                                            {user?.email}
-                                                        </span>
-                                                    </div>
-
-                                                    <ul className='flex flex-col gap-1 pt-2 pb-2 border-t border-b border-gray-100'>
-                                                        <li>
-                                                            <Link
-                                                                to='/patient'
-                                                                className='flex items-center gap-3 px-3 py-2 font-medium rounded-lg group text-sm transition-colors text-gray-700 hover:bg-gray-100'
-                                                                onClick={() => setIsProfileMenuOpen(false)}
-                                                            >
-                                                                <Settings size={18} />
-                                                                Dashboard
-                                                            </Link>
-                                                        </li>
-                                                        <li>
-                                                            <Link
-                                                                to='/patient/profile'
-                                                                className='flex items-center gap-3 px-3 py-2 font-medium rounded-lg group text-sm transition-colors text-gray-700 hover:bg-gray-100'
-                                                                onClick={() => setIsProfileMenuOpen(false)}
-                                                            >
-                                                                <svg
-                                                                    className='w-5 h-5 fill-current opacity-70'
-                                                                    viewBox='0 0 24 24'
-                                                                    fill='none'
-                                                                    xmlns='http://www.w3.org/2000/svg'
-                                                                >
-                                                                    <path
-                                                                        fillRule='evenodd'
-                                                                        clipRule='evenodd'
-                                                                        d='M12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.1526 4.3002 16.1184 5.61936 17.616C6.17279 15.3096 8.24852 13.5955 10.7246 13.5955H13.2746C15.7509 13.5955 17.8268 15.31 18.38 17.6167C19.6996 16.119 20.5 14.153 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5ZM17.0246 18.8566V18.8455C17.0246 16.7744 15.3457 15.0955 13.2746 15.0955H10.7246C8.65354 15.0955 6.97461 16.7744 6.97461 18.8455V18.856C8.38223 19.8895 10.1198 20.5 12 20.5C13.8798 20.5 15.6171 19.8898 17.0246 18.8566ZM2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM11.9991 7.25C10.8847 7.25 9.98126 8.15342 9.98126 9.26784C9.98126 10.3823 10.8847 11.2857 11.9991 11.2857C13.1135 11.2857 14.0169 10.3823 14.0169 9.26784C14.0169 8.15342 13.1135 7.25 11.9991 7.25ZM8.48126 9.26784C8.48126 7.32499 10.0563 5.75 11.9991 5.75C13.9419 5.75 15.5169 7.32499 15.5169 9.26784C15.5169 11.2107 13.9419 12.7857 11.9991 12.7857C10.0563 12.7857 8.48126 11.2107 8.48126 9.26784Z'
-                                                                        fill='currentColor'
-                                                                    />
-                                                                </svg>
-                                                                Account Settings
-                                                            </Link>
-                                                        </li>
-                                                    </ul>
-
-                                                    <button
-                                                        onClick={() => {
-                                                            logout();
-                                                            setIsProfileMenuOpen(false);
-                                                            navigate('/');
-                                                        }}
-                                                        className='w-full text-left px-3 py-2 mt-2 text-sm flex items-center gap-3 rounded-lg transition-colors font-medium border border-transparent text-red-600 hover:bg-red-50 hover:border-red-100'
-                                                    >
-                                                        <LogOut size={18} />
-                                                        Logout
-                                                    </button>
+                                                <div className='px-4 py-2 mb-2'>
+                                                    <span className='block font-semibold text-sm truncate text-gray-800'>
+                                                        {user?.full_name || 'User'}
+                                                    </span>
+                                                    <span className='mt-0.5 block text-xs truncate text-gray-500'>
+                                                        {user?.email}
+                                                    </span>
                                                 </div>
+
+                                                <ul className='flex flex-col gap-1 pt-2 pb-2 border-t border-b border-gray-100'>
+                                                    <li>
+                                                        <Link
+                                                            to='/patient'
+                                                            className='flex items-center gap-3 px-3 py-2 font-medium rounded-lg group text-sm transition-colors text-gray-700 hover:bg-gray-100'
+                                                            onClick={() => setIsProfileMenuOpen(false)}
+                                                        >
+                                                            <Settings size={18} />
+                                                            Dashboard
+                                                        </Link>
+                                                    </li>
+                                                    <li>
+                                                        <Link
+                                                            to='/patient/profile'
+                                                            className='flex items-center gap-3 px-3 py-2 font-medium rounded-lg group text-sm transition-colors text-gray-700 hover:bg-gray-100'
+                                                            onClick={() => setIsProfileMenuOpen(false)}
+                                                        >
+                                                            <svg
+                                                                className='w-5 h-5 fill-current opacity-70'
+                                                                viewBox='0 0 24 24'
+                                                                fill='none'
+                                                                xmlns='http://www.w3.org/2000/svg'
+                                                            >
+                                                                <path
+                                                                    fillRule='evenodd'
+                                                                    clipRule='evenodd'
+                                                                    d='M12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.1526 4.3002 16.1184 5.61936 17.616C6.17279 15.3096 8.24852 13.5955 10.7246 13.5955H13.2746C15.7509 13.5955 17.8268 15.31 18.38 17.6167C19.6996 16.119 20.5 14.153 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5ZM17.0246 18.8566V18.8455C17.0246 16.7744 15.3457 15.0955 13.2746 15.0955H10.7246C8.65354 15.0955 6.97461 16.7744 6.97461 18.8455V18.856C8.38223 19.8895 10.1198 20.5 12 20.5C13.8798 20.5 15.6171 19.8898 17.0246 18.8566ZM2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM11.9991 7.25C10.8847 7.25 9.98126 8.15342 9.98126 9.26784C9.98126 10.3823 10.8847 11.2857 11.9991 11.2857C13.1135 11.2857 14.0169 10.3823 14.0169 9.26784C14.0169 8.15342 13.1135 7.25 11.9991 7.25ZM8.48126 9.26784C8.48126 7.32499 10.0563 5.75 11.9991 5.75C13.9419 5.75 15.5169 7.32499 15.5169 9.26784C15.5169 11.2107 13.9419 12.7857 11.9991 12.7857C10.0563 12.7857 8.48126 11.2107 8.48126 9.26784Z'
+                                                                    fill='currentColor'
+                                                                />
+                                                            </svg>
+                                                            Account Settings
+                                                        </Link>
+                                                    </li>
+                                                </ul>
+
+                                                <button
+                                                    onClick={() => {
+                                                        logout();
+                                                        setIsProfileMenuOpen(false);
+                                                        navigate('/');
+                                                    }}
+                                                    className='w-full text-left px-3 py-2 mt-2 text-sm flex items-center gap-3 rounded-lg transition-colors font-medium border border-transparent text-red-600 hover:bg-red-50 hover:border-red-100'
+                                                >
+                                                    <LogOut size={18} />
+                                                    Logout
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -392,7 +508,7 @@ const Navbar = () => {
                                                 `block py-2 px-3 rounded ${
                                                     isActive
                                                         ? 'bg-blue-600 text-white'
-                                                        : 'text-slate-200 hover:bg-slate-700'
+                                                        : 'text-slate-700 hover:bg-slate-100'
                                                 }`
                                             }
                                             onClick={() => setIsMobileMenuOpen(false)}
@@ -410,27 +526,27 @@ const Navbar = () => {
                                                 navigate('/login');
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className='w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-slate-100 transition-colors duration-300'
+                                            className='w-full bg-white text-blue-600 border border-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-300'
                                         >
                                             Login
                                         </button>
                                         <button
                                             onClick={() => {
-                                                navigate(user ? '/patient/book' : '/book');
+                                                navigate('/book');
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className='w-full bg-sky-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-sky-600 transition-colors duration-300'
+                                            className='w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300'
                                         >
-                                            Book Now
+                                            Book as a Guest
                                         </button>
                                     </>
                                 ) : (
                                     <>
-                                        <div className='bg-slate-800 rounded-lg p-3 text-center border border-slate-700'>
-                                            <p className='text-sm font-semibold text-white'>
+                                        <div className='bg-slate-50 rounded-lg p-3 text-center border border-slate-200'>
+                                            <p className='text-sm font-semibold text-gray-800'>
                                                 {user?.full_name || 'User'}
                                             </p>
-                                            <p className='text-xs text-slate-400'>{user?.email}</p>
+                                            <p className='text-xs text-gray-500'>{user?.email}</p>
                                         </div>
                                         <button
                                             onClick={() => {
