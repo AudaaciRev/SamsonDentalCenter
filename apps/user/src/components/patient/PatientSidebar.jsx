@@ -71,6 +71,63 @@ const UserCircleIcon = () => (
     </svg>
 );
 
+const BellIcon = () => (
+    <svg
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        xmlns='http://www.w3.org/2000/svg'
+    >
+        <path
+            d='M15 17H20L18.595 15.595C18.214 15.214 18 14.697 18 14.159V11C18 7.301 15.482 4.191 12.1 3.507V3.5C12.1 2.672 11.428 2 10.6 2C9.772 2 9.1 2.672 9.1 3.5V3.507C5.718 4.191 3.2 7.301 3.2 11V14.159C3.2 14.697 2.986 15.214 2.605 15.595L1.2 17H6.2M15 17V18C15 20.209 13.209 22 11 22C8.791 22 7 20.209 7 18V17M15 17H7'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+    </svg>
+);
+
+const WaitlistIcon = () => (
+    <svg
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        xmlns='http://www.w3.org/2000/svg'
+    >
+        <path
+            d='M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+        <path
+            d='M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+        <path
+            d='M23 21V19C22.9993 18.1137 22.7044 17.2522 22.1614 16.5463C21.6184 15.8403 20.8581 15.3331 20 15.11'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+        <path
+            d='M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11145 19.0078 6.995C19.0078 7.87855 18.7122 8.73608 18.1676 9.43768C17.623 10.1393 16.8604 10.6397 16 10.86'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+    </svg>
+);
+
 const HorizontalDots = ({ className }) => (
     <svg
         className={className}
@@ -99,6 +156,16 @@ const navItems = [
         icon: <CalendarIcon />,
         name: 'My Appointments',
         path: '/patient/appointments',
+    },
+    {
+        icon: <BellIcon />,
+        name: 'Notifications',
+        path: '/patient/notifications',
+    },
+    {
+        icon: <WaitlistIcon />,
+        name: 'Waitlist',
+        path: '/patient/waitlist',
     },
     {
         icon: <UserCircleIcon />,
