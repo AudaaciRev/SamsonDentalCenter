@@ -145,7 +145,7 @@ const AppointmentDetails = () => {
                             <div className="absolute top-full right-0 mt-3 w-full xl:w-max min-w-[280px] flex justify-center xl:justify-end origin-top z-20 shadow-lg rounded-xl animate-[fadeIn_0.15s_ease-out]">
                                 {app.status === 'Pending' && (
                                     <p className="text-sm font-medium text-warning-700 dark:text-warning-500 bg-warning-50 dark:bg-warning-500/10 px-4 py-3 rounded-xl border border-warning-100 dark:border-warning-500/20 text-center xl:text-right w-full">
-                                        This appointment requires confirmation from our clinic. We will notify you once approved.
+                                        This appointment requires confirmation from our senior dentist. We will notify you once approved.
                                     </p>
                                 )}
                                 {app.status === 'Cancelled' && (

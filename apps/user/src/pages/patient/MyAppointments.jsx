@@ -49,12 +49,12 @@ export const appointmentsData = [
     {
         id: 'APP-001',
         dentist: {
-            name: 'Dr. Sarah Smith',
-            specialty: 'General Dentist',
+            name: 'Dr. Sarah Alexandra Smith, DDS',
+            specialty: 'Senior General Dentist',
             image: '/images/user/user-01.jpg',
         },
-        patient: 'John Doe',
-        service: 'Routine Checkup',
+        patient: 'Johnathon Bartholomew Doe',
+        service: 'Comprehensive Routine Checkup',
         date: 'Oct 24, 2024',
         time: '10:00 AM',
         endTime: '11:00 AM',
@@ -63,12 +63,12 @@ export const appointmentsData = [
     {
         id: 'APP-002',
         dentist: {
-            name: 'Dr. Mark Wilson',
-            specialty: 'Orthodontist',
+            name: 'Dr. Michael Chen, Orthodontist',
+            specialty: 'Orthodontics & Facial Orthopedics',
             image: '/images/user/user-02.jpg',
         },
-        patient: 'John Doe',
-        service: 'Braces Adjustment',
+        patient: 'Samantha Marie Wellington III',
+        service: 'Advanced Braces Adjustment',
         date: 'Oct 20, 2024',
         time: '02:30 PM',
         endTime: '04:00 PM',
@@ -77,12 +77,12 @@ export const appointmentsData = [
     {
         id: 'APP-003',
         dentist: {
-            name: 'Dr. Sarah Smith',
-            specialty: 'General Dentist',
-            image: '/images/user/user-01.jpg',
+            name: 'Dr. Emily Johnson, Oral Surgeon',
+            specialty: 'Maxillofacial Surgery',
+            image: '/images/user/user-03.jpg',
         },
-        patient: 'John Doe',
-        service: 'Tooth Extraction',
+        patient: 'Christopher Alexander Martinez',
+        service: 'Complex Wisdom Tooth Extraction',
         date: 'Oct 15, 2024',
         time: '09:00 AM',
         endTime: '09:45 AM',
@@ -106,18 +106,23 @@ export const appointmentsData = [
     {
         id: 'APP-005',
         dentist: {
-            name: 'Dr. Sarah Smith',
-            specialty: 'General Dentist',
+            name: 'Dr. Sarah Alexandra Smith, DDS',
+            specialty: 'Senior General Dentist',
             image: '/images/user/user-01.jpg',
         },
-        patient: 'John Doe',
-        service: 'Teeth Whitening',
+        patient: 'Isabella Florentina Gomez-Smith',
+        service: 'Deep Tissue Gum Disease Treatment',
         date: 'Nov 12, 2024',
         time: '04:00 PM',
         endTime: '05:30 PM',
         status: 'Pending',
     },
 ];
+
+const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+};
 
 const MyAppointments = () => {
     const [openDropdown, setOpenDropdown] = useState(null);
@@ -135,9 +140,31 @@ const MyAppointments = () => {
     return (
         <>
             <PageBreadcrumb pageTitle='My Appointments' />
-            <ComponentCard
-                title='Recent Appointments'
+            <ComponentCard 
+                title='My Appointments'
                 desc='View and manage your upcoming and past dental visits.'
+                action={
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </span>
+                            <input 
+                                type="text"
+                                placeholder="Search..."
+                                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-transparent dark:border-white/[0.05] dark:text-gray-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 w-[160px] sm:w-[220px]"
+                            />
+                        </div>
+                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg dark:bg-white/[0.03] dark:text-gray-300 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H21M7 12H17M10 18H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Filter
+                        </button>
+                    </div>
+                }
             >
                 <div className='overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]'>
                     <div className='max-w-full overflow-x-auto'>
@@ -205,7 +232,9 @@ const MyAppointments = () => {
                                             </span>
                                         </TableCell>
                                         <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
-                                            {app.service}
+                                            <span className='block' title={app.service}>
+                                                {truncateText(app.service, 10)}
+                                            </span>
                                         </TableCell>
                                         <TableCell className='px-4 py-3 text-start'>
                                             <div className='flex items-center gap-3'>
@@ -217,17 +246,19 @@ const MyAppointments = () => {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <span className='block font-medium text-gray-800 text-theme-sm dark:text-white/90'>
-                                                        {app.dentist.name}
+                                                    <span className='block font-medium text-gray-800 text-theme-sm dark:text-white/90' title={app.dentist.name}>
+                                                        {truncateText(app.dentist.name, 12)}
                                                     </span>
-                                                    <span className='block text-gray-500 text-theme-xs dark:text-gray-400'>
-                                                        {app.dentist.specialty}
+                                                    <span className='block text-gray-500 text-theme-xs dark:text-gray-400' title={app.dentist.specialty}>
+                                                        {truncateText(app.dentist.specialty, 12)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
-                                            {app.patient}
+                                            <span className='block' title={app.patient}>
+                                                {truncateText(app.patient, 12)}
+                                            </span>
                                         </TableCell>
                                         <TableCell className='px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400'>
                                             <Badge
