@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Lock, X, AlertCircle, RefreshCw, Clock, Plus, ArrowRight, Hourglass, Calendar, MousePointer2, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, X, AlertCircle, RefreshCw, Clock, Plus, ArrowRight, Hourglass, Calendar, MousePointer2, Loader2, CheckCircle2, CalendarDays } from 'lucide-react';
 import { api } from '../../utils/api';
 import useSlots from '../../hooks/useSlots';
 import JoinWaitlistModal from './JoinWaitlistModal';
@@ -139,14 +139,16 @@ const DateTimeStep = ({
     // ✅ Handle both available and full slot clicks
     // ✅ UPDATED: Added toggle behavior + slot holding
     const handleTimeClick = async (slotData) => {
-        const isAvailable = slotData.available > 0;
+        const isCurrentlyHeldByMe = activeHold?.time === slotData.rawTime && selectedDate === activeHold.date;
+        const isAvailable = slotData.available > 0 || isCurrentlyHeldByMe;
+
         setPendingSlot(slotData.rawTime);
         try {
             if (isAvailable) {
                 // Available slot - toggle behavior
                 const isCurrentlySelected = selectedTime === slotData.rawTime;
 
-                if (isCurrentlySelected) {
+                if (isCurrentlySelected || isCurrentlyHeldByMe) {
                     await releaseHold();
                     handleTimeUpdate({ time: '' });
                 } else {
@@ -160,9 +162,20 @@ const DateTimeStep = ({
                     }
                 }
             } else {
-                // Full slot — show waitlist modal (don't call API yet)
-                setWaitlistSlot(slotData);
-                setShowWaitlistModal(true);
+                // Full slot — toggle or show waitlist modal
+                const isSelectedForWaitlist = formData?.waitlist_time === slotData.rawTime;
+
+                if (isSelectedForWaitlist) {
+                    // ✅ Toggle OFF: If already on waitlist for this slot, remove it
+                    handleTimeUpdate({
+                        waitlist_date: '',
+                        waitlist_time: '',
+                    });
+                } else {
+                    // ✅ Toggle ON: Show waitlist modal
+                    setWaitlistSlot(slotData);
+                    setShowWaitlistModal(true);
+                }
             }
         } finally {
             setPendingSlot(null);
@@ -170,30 +183,12 @@ const DateTimeStep = ({
     };
 
     // ✅ Handle modal success - defer API call, just update form state
-    // ✅ UPDATED: Do NOT clear time - allow user to have both booking AND waitlist!
-    // ✅ FIXED: Support toggle behavior - clicking same slot in modal removes it
     const handleWaitlistModalSuccess = ({ date, time }) => {
-        // Check if this is the same slot being toggled OFF
-        const isCurrentlySelected = formData?.waitlist_time === time;
-
-        if (isCurrentlySelected) {
-            // ✅ Toggle OFF: Remove waitlist selection
-            handleTimeUpdate({
-                waitlist_date: '',
-                waitlist_time: '',
-                // Keep booking selection if it exists
-            });
-        } else {
-            // ✅ Toggle ON: Add/change waitlist selection
-            // Update form with waitlist selection, DO NOT clear time
-            // ✅ DEFERRED: API call will happen during final submit
-            // ✅ NEW: User can now have BOTH booking and waitlist selections
-            handleTimeUpdate({
-                // time is NOT cleared - keep booking selection if it exists!
-                waitlist_date: date,
-                waitlist_time: time,
-            });
-        }
+        // Just add/update the waitlist request
+        handleTimeUpdate({
+            waitlist_date: date,
+            waitlist_time: time,
+        });
         setShowWaitlistModal(false);
         setWaitlistSlot(null);
     };
@@ -242,6 +237,23 @@ const DateTimeStep = ({
     const handleTimeUpdate = (updates) => {
         setValidationError(null);
         onUpdate(updates);
+    };
+
+    // Helper to format time (e.g. 09:00:00 -> 9:00 AM)
+    const formatTimeDisplay = (rawTime) => {
+        if (!rawTime) return '';
+        const [hours, minutes] = rawTime.split(':');
+        const h = parseInt(hours, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const displayH = h % 12 || 12;
+        return `${displayH}:${minutes} ${ampm}`;
+    };
+
+    // Helper to format date (e.g. 2026-04-11 -> Sat, Apr 11)
+    const formatDateDisplay = (dateKey) => {
+        if (!dateKey) return '';
+        const d = new Date(dateKey + 'T00:00:00'); // Use ISO format to avoid timezone issues
+        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     };
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -428,7 +440,7 @@ const DateTimeStep = ({
                             <p className='text-[12px] text-gray-500 dark:text-gray-400 max-w-[220px] leading-relaxed font-bold'>Select an available day from the calendar to see slots.</p>
                         </div>
                     ) : (
-                        <div className='animate-in fade-in slide-in-from-right-4 duration-500 h-full flex flex-col'>
+                        <div className='animate-in fade-in slide-in-from-right-4 duration-500 h-full flex flex-col bg-gray-50/30 dark:bg-white/[0.01] border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl p-6'>
                             <div className='flex items-center justify-between mb-5'>
                                 <h3 className='text-[15px] font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight uppercase'>
                                     <div className='p-1.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg'><Clock size={16} className='text-brand-500' /></div>
@@ -458,7 +470,7 @@ const DateTimeStep = ({
                                                         isSelectedForBooking && isAvailable
                                                         ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10' 
                                                         : isSelectedForWaitlist && !isAvailable
-                                                        ? 'bg-amber-400 text-white shadow-lg shadow-amber-400/20 ring-4 ring-amber-400/10'
+                                                        ? 'bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 text-amber-900 dark:text-amber-100 shadow-lg shadow-amber-400/10 ring-4 ring-amber-400/10 opacity-100 scale-105 z-10'
                                                         : isHeldByMe 
                                                         ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400' 
                                                         : isAvailable
@@ -471,7 +483,7 @@ const DateTimeStep = ({
                                                     ) : (
                                                         <>
                                                             {slot.displayTime}
-                                                            {!isAvailable && <Lock size={10} className={`absolute top-2 right-2 ${isSelectedForWaitlist ? 'text-white' : 'text-slate-400'}`} />}
+                                                            {!isAvailable && <Lock size={10} className={`absolute top-2 right-2 ${isSelectedForWaitlist ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />}
                                                             {isHeldByMe && !isSelectedForBooking && <Lock size={10} className='absolute top-2 right-2 text-brand-500' />}
                                                         </>
                                                     )}
@@ -494,28 +506,6 @@ const DateTimeStep = ({
                                 <div className='p-8 bg-gray-50 dark:bg-white/[0.02] rounded-2xl text-center border-2 border-dashed border-gray-200 dark:border-gray-800 flex-grow flex flex-col items-center justify-center leading-relaxed'><p className='text-gray-500 text-[14px] font-bold mb-2'>No available slots.</p>{nextAvailableDate && <button onClick={() => {const d = new Date(nextAvailableDate);setViewDate(new Date(d.getFullYear(), d.getMonth(), 1));handleDateClick(d);}} className='text-brand-500 text-[13px] font-black hover:underline underline-offset-4'>Try {new Date(nextAvailableDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}</button>}</div>
                             )}
 
-                            {/* DYNAMIC HOLD Status Indicator */}
-                            {activeHold && selectedDate === activeHold.date && (
-                                <div className='mt-auto p-4 bg-brand-50/50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 rounded-2xl animate-in slide-in-from-bottom duration-500'>
-                                    <div className='flex items-start gap-4'>
-                                        <div className='w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-theme-xs shrink-0'><Hourglass size={18} className='text-brand-500 animate-pulse' /></div>
-                                        <div className='grow'>
-                                            <p className='text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight'>Slot Held</p>
-                                            <p className='text-[12px] text-slate-600 dark:text-slate-400 font-bold mt-0.5 leading-snug'>
-                                                Holding <span className="text-slate-900 dark:text-white">{formatHoldDetail()}</span>. Expires in <span className="text-brand-600 dark:text-brand-400">{formattedTime}</span>.
-                                            </p>
-                                            <div className='flex items-center gap-2 mt-2.5'>
-                                                <div className='h-1.5 flex-1 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden'>
-                                                    <div className='h-full bg-brand-500 transition-all duration-1000 ease-linear' style={{ width: `${holdProgress}%` }} />
-                                                </div>
-                                                <span className='text-[10px] font-black text-brand-500 whitespace-nowrap uppercase italic'>
-                                                    {Math.ceil(holdProgress)}%
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
@@ -523,31 +513,67 @@ const DateTimeStep = ({
 
             {/* SELECTION SUMMARY (User-Specific) */}
             {(selectedTime || formData?.waitlist_time) && (
-                <div className='mb-10 p-5 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-3xl shadow-theme-sm animate-in fade-in slide-in-from-bottom-4 duration-500'>
-                    <h4 className='text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4'>Your Selection Summary</h4>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                        {selectedTime && (
-                           <div className='flex items-center justify-between p-4 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl'>
-                                <div className='flex items-center gap-3'>
-                                    <div className='w-10 h-10 rounded-xl bg-white dark:bg-brand-900/30 flex items-center justify-center text-brand-500 shadow-sm'>✅</div>
-                                    <div>
-                                        <p className='text-sm font-bold text-slate-900 dark:text-white'>Booking Confirmed</p>
-                                        <p className='text-xs text-slate-500 dark:text-slate-400'>{selectedDate} at {selectedTime}</p>
+                <div className='mb-10 p-6 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-theme-sm animate-in fade-in slide-in-from-bottom-4 duration-500'>
+                    <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6'>
+                        <div className='flex items-center gap-2'>
+                            <div className='w-1 h-4 bg-brand-500 rounded-full' />
+                            <h4 className='text-xs font-black text-slate-400 uppercase tracking-[0.2em]'>Your Selection Summary</h4>
+                        </div>
+                        
+                        {/* HOLD ADVISORY & TIMER */}
+                        {activeHold && (
+                            <div className='flex items-center gap-3 bg-brand-50/50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 px-4 py-2 rounded-xl animate-in fade-in zoom-in duration-500'>
+                                <Hourglass size={14} className='text-brand-500 animate-pulse' />
+                                <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                                    <p className='text-[11px] font-bold text-slate-600 dark:text-slate-400'>
+                                        Your selected times are being held for <span className="text-brand-600 dark:text-brand-400 font-black tracking-widest">{formattedTime}</span> while you finish.
+                                    </p>
+                                    <div className='w-24 h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden shrink-0'>
+                                        <div className='h-full bg-brand-500 transition-all duration-1000 ease-linear' style={{ width: `${holdProgress}%` }} />
                                     </div>
                                 </div>
-                                <button onClick={handleClearBooking} className='p-2 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-slate-300 hover:text-red-500 transition-colors'><X size={16} /></button>
+                            </div>
+                        )}
+                    </div>
+                    <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+                        {selectedTime && (
+                           <div className='group flex items-center justify-between p-4 bg-brand-50/40 dark:bg-brand-500/5 border border-brand-100/60 dark:border-brand-500/10 rounded-2xl transition-all hover:bg-white dark:hover:bg-brand-500/10 hover:shadow-theme-sm'>
+                                <div className='flex items-center gap-4'>
+                                    <div className='w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-brand-500 shadow-theme-xs ring-4 ring-brand-50/50 dark:ring-brand-500/5 group-hover:scale-110 transition-transform'>
+                                        <CheckCircle2 size={24} />
+                                    </div>
+                                    <div>
+                                        <p className='text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-0.5'>Selected Slot</p>
+                                        <div className='flex items-center gap-2'>
+                                            <p className='text-sm font-bold text-slate-900 dark:text-white'>{formatDateDisplay(selectedDate)}</p>
+                                            <span className='w-1 h-1 rounded-full bg-slate-300' />
+                                            <p className='text-sm font-black text-brand-500'>{formatTimeDisplay(selectedTime)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={handleClearBooking} className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-95' title="Remove Selection">
+                                    <X size={18} />
+                                </button>
                            </div>
                         )}
                         {formData?.waitlist_time && (
-                            <div className='flex items-center justify-between p-4 bg-amber-50/50 dark:bg-amber-500/5 border border-amber-100/50 dark:border-amber-500/10 rounded-2xl'>
-                                <div className='flex items-center gap-3'>
-                                    <div className='w-10 h-10 rounded-xl bg-white dark:bg-amber-900/30 flex items-center justify-center text-amber-500 shadow-sm'>⏳</div>
+                            <div className='group flex items-center justify-between p-4 bg-amber-50/40 dark:bg-amber-500/5 border border-amber-100/60 dark:border-amber-500/10 rounded-2xl transition-all hover:bg-white dark:hover:bg-amber-500/10 hover:shadow-theme-sm'>
+                                <div className='flex items-center gap-4'>
+                                    <div className='w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-amber-500 shadow-theme-xs ring-4 ring-amber-50/50 dark:ring-amber-500/5 group-hover:scale-110 transition-transform'>
+                                        <Clock size={24} />
+                                    </div>
                                     <div>
-                                        <p className='text-sm font-bold text-slate-900 dark:text-white'>Waitlist Requested</p>
-                                        <p className='text-xs text-slate-500 dark:text-slate-400'>{formData.waitlist_date} at {formData.waitlist_time}</p>
+                                        <p className='text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-0.5'>Waitlist Request</p>
+                                        <div className='flex items-center gap-2'>
+                                            <p className='text-sm font-bold text-slate-900 dark:text-white'>{formatDateDisplay(formData.waitlist_date)}</p>
+                                            <span className='w-1 h-1 rounded-full bg-slate-300' />
+                                            <p className='text-sm font-black text-amber-500'>{formatTimeDisplay(formData.waitlist_time)}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <button onClick={handleClearWaitlist} className='p-2 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-slate-300 hover:text-red-500 transition-colors'><X size={16} /></button>
+                                <button onClick={handleClearWaitlist} className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-95' title="Remove from Waitlist">
+                                    <X size={18} />
+                                </button>
                             </div>
                         )}
                     </div>
@@ -573,6 +599,7 @@ const DateTimeStep = ({
                     serviceId={serviceId}
                     date={selectedDate}
                     time={waitlistSlot.displayTime}
+                    rawTime={waitlistSlot.rawTime}
                     serviceName={serviceName}
                     onSuccess={handleWaitlistModalSuccess}
                     onClose={() => {
