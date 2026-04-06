@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Lock, X, AlertCircle, RefreshCw, Clock, Plus
 import { api } from '../../utils/api';
 import useSlots from '../../hooks/useSlots';
 import JoinWaitlistModal from './JoinWaitlistModal';
+import WaitlistOnlyWarningModal from './WaitlistOnlyWarningModal';
 
 const DateTimeStep = ({
     serviceId,
@@ -25,6 +26,7 @@ const DateTimeStep = ({
     // ✅ NEW: Add validation error state
     const [validationError, setValidationError] = useState(null);
     const [pendingSlot, setPendingSlot] = useState(null);
+    const [showWaitlistOnlyWarning, setShowWaitlistOnlyWarning] = useState(false);
 
     // ✅ Slot holding for user booking (passed from parent)
     const { activeHold, holdSlot, releaseHold, formattedTime, holdLoading, holdError, timeRemaining } = slotHold;
@@ -217,7 +219,7 @@ const DateTimeStep = ({
         return hasBooking || hasWaitlist;
     };
 
-    // ✅ NEW: Handle Next button with validation
+    // ✅ NEW: Handle Next button with validation & warning
     const handleNext = () => {
         if (!selectedDate) {
             setValidationError('Please select a date first');
@@ -226,6 +228,12 @@ const DateTimeStep = ({
 
         if (!isValidSelection()) {
             setValidationError('Please select at least one time slot (either booking or waitlist)');
+            return;
+        }
+
+        // ✅ NEW: If ONLY waitlist is selected, show warning modal
+        if (formData?.waitlist_time && !selectedTime) {
+            setShowWaitlistOnlyWarning(true);
             return;
         }
 
@@ -520,13 +528,17 @@ const DateTimeStep = ({
                             <h4 className='text-[11px] sm:text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest'>Your Selection Summary</h4>
                         </div>
                         
-                        {/* HOLD ADVISORY & TIMER (Compact & Minimal) */}
+                        {/* HOLD ADVISORY & TIMER (Final Wording) */}
                         {activeHold && (
                             <div className='flex items-center gap-3 bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200 dark:border-gray-800 px-4 py-2 rounded-xl animate-in fade-in zoom-in duration-500'>
-                                <Hourglass size={14} className='text-brand-500 opacity-80' />
-                                <p className='text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400'>
-                                    The timeslot choosen will be held for you: <span className="text-sm sm:text-base font-black text-brand-500 font-mono tracking-tighter ml-1">{formattedTime}</span>
-                                </p>
+                                <div className='flex flex-col gap-0.5'>
+                                    <p className='text-[10px] sm:text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-tight'>
+                                        We are holding this time for you.
+                                    </p>
+                                    <p className='text-[10px] sm:text-[11px] font-bold text-slate-400 dark:text-slate-500'>
+                                        Please complete your request within: <span className="font-mono text-brand-500 font-black ml-1 text-sm sm:text-base tracking-tighter">{formattedTime}</span>
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -611,6 +623,16 @@ const DateTimeStep = ({
                         setShowWaitlistModal(false);
                         setWaitlistSlot(null);
                     }}
+                />
+            )}
+            {/* Waitlist-Only Warning Modal */}
+            {showWaitlistOnlyWarning && (
+                <WaitlistOnlyWarningModal 
+                    onConfirm={() => {
+                        setShowWaitlistOnlyWarning(false);
+                        onNext();
+                    }}
+                    onCancel={() => setShowWaitlistOnlyWarning(false)}
                 />
             )}
         </div>
