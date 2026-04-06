@@ -65,14 +65,14 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
     };
 
     const getInputClasses = (fieldError) => {
-        const base = "h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 transition-colors bg-white dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30";
+        const base = "h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-[clamp(13px,1vw,14px)] shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 transition-colors bg-white dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 font-medium";
         if (fieldError) {
             return `${base} border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:text-error-400 dark:border-error-500 dark:focus:border-error-800`;
         }
         return `${base} text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-800`;
     };
 
-    const labelClasses = "mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400";
+    const labelClasses = "mb-1.5 block text-[clamp(12px,0.8vw,13px)] font-bold text-gray-700 dark:text-gray-400 uppercase tracking-widest opacity-80 leading-none";
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -190,13 +190,13 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
                         </div>
 
                         {/* Information Banner (Exclusive Guest Communication) */}
-                        <div className="mt-8 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl p-5 flex items-start gap-4">
+                        <div className="mt-8 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl p-5 flex items-start gap-4 overflow-hidden">
                             <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800 shadow-theme-xs flex items-center justify-center text-brand-500 shrink-0">
                                 <Info size={20} />
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1 min-w-0">
                                 <h4 className="text-[13px] font-bold text-gray-900 dark:text-white uppercase tracking-wider leading-none">Please double-check your email address</h4>
-                                <p className="text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium mt-1">
+                                <p className="text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium break-words mt-1">
                                     Since you are booking as a guest, the address provided above is our **exclusive way** to send your appointment confirmation, clinic approvals, and important status updates.
                                 </p>
                             </div>
