@@ -17,6 +17,11 @@ const GuestBookingSuccess = ({ result, onReset, booking }) => {
         return () => clearInterval(timer);
     }, [cooldown]);
 
+    // Auto-scroll to top when success screen mounts
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
     const handleResend = async () => {
         if (!booking?.resendVerification || cooldown > 0) return;
         setResending(true);
