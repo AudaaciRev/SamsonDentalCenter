@@ -513,66 +513,71 @@ const DateTimeStep = ({
 
             {/* SELECTION SUMMARY (User-Specific) */}
             {(selectedTime || formData?.waitlist_time) && (
-                <div className='mb-10 p-6 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-theme-sm animate-in fade-in slide-in-from-bottom-4 duration-500'>
-                    <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6'>
-                        <div className='flex items-center gap-2'>
-                            <div className='w-1 h-4 bg-brand-500 rounded-full' />
-                            <h4 className='text-xs font-black text-slate-400 uppercase tracking-[0.2em]'>Your Selection Summary</h4>
+                <div className='mb-10 p-5 sm:p-7 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-theme-sm animate-in fade-in slide-in-from-bottom-4 duration-500'>
+                    <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6'>
+                        <div className='flex items-center gap-2.5'>
+                            <div className='w-1 h-5 bg-brand-500 rounded-full' />
+                            <h4 className='text-[11px] sm:text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest'>Your Selection Summary</h4>
                         </div>
                         
-                        {/* HOLD ADVISORY & TIMER */}
+                        {/* HOLD ADVISORY & TIMER (Compact & Minimal) */}
                         {activeHold && (
-                            <div className='flex items-center gap-3 bg-brand-50/50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 px-4 py-2 rounded-xl animate-in fade-in zoom-in duration-500'>
-                                <Hourglass size={14} className='text-brand-500 animate-pulse' />
-                                <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-                                    <p className='text-[11px] font-bold text-slate-600 dark:text-slate-400'>
-                                        Your selected times are being held for <span className="text-brand-600 dark:text-brand-400 font-black tracking-widest">{formattedTime}</span> while you finish.
-                                    </p>
-                                    <div className='w-24 h-1.5 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden shrink-0'>
-                                        <div className='h-full bg-brand-500 transition-all duration-1000 ease-linear' style={{ width: `${holdProgress}%` }} />
-                                    </div>
-                                </div>
+                            <div className='flex items-center gap-3 bg-slate-50/80 dark:bg-white/[0.02] border border-slate-200 dark:border-gray-800 px-4 py-2 rounded-xl animate-in fade-in zoom-in duration-500'>
+                                <Hourglass size={14} className='text-brand-500 opacity-80' />
+                                <p className='text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400'>
+                                    The timeslot choosen will be held for you: <span className="text-sm sm:text-base font-black text-brand-500 font-mono tracking-tighter ml-1">{formattedTime}</span>
+                                </p>
                             </div>
                         )}
                     </div>
-                    <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'> 
                         {selectedTime && (
-                           <div className='group flex items-center justify-between p-4 bg-brand-50/40 dark:bg-brand-500/5 border border-brand-100/60 dark:border-brand-500/10 rounded-2xl transition-all hover:bg-white dark:hover:bg-brand-500/10 hover:shadow-theme-sm'>
+                           <div className='group flex items-center justify-between gap-5 pl-3.5 pr-2.5 py-2.5 bg-white dark:bg-transparent border border-brand-100/50 dark:border-brand-500/20 rounded-2xl transition-all hover:border-brand-300 shadow-theme-xs'>
                                 <div className='flex items-center gap-4'>
-                                    <div className='w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-brand-500 shadow-theme-xs ring-4 ring-brand-50/50 dark:ring-brand-500/5 group-hover:scale-110 transition-transform'>
-                                        <CheckCircle2 size={24} />
+                                    <div className='w-9 h-9 rounded-xl bg-brand-50/50 dark:bg-brand-500/5 flex items-center justify-center text-brand-500 transition-transform group-hover:scale-105'>
+                                        <CheckCircle2 size={20} />
                                     </div>
                                     <div>
-                                        <p className='text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-0.5'>Selected Slot</p>
-                                        <div className='flex items-center gap-2'>
-                                            <p className='text-sm font-bold text-slate-900 dark:text-white'>{formatDateDisplay(selectedDate)}</p>
-                                            <span className='w-1 h-1 rounded-full bg-slate-300' />
-                                            <p className='text-sm font-black text-brand-500'>{formatTimeDisplay(selectedTime)}</p>
+                                        <p className='text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 leading-none'>Primary Request</p>
+                                        <div className='flex items-center gap-1.5'>
+                                            <p className='text-[13px] sm:text-[14px] font-black text-slate-900 dark:text-white'>{formatDateDisplay(selectedDate)}</p>
+                                            <span className='w-1 h-1 rounded-full bg-slate-200 dark:bg-gray-700' />
+                                            <p className='text-[13px] sm:text-[14px] font-black text-brand-500'>{formatTimeDisplay(selectedTime)}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={handleClearBooking} className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-95' title="Remove Selection">
-                                    <X size={18} />
+                                <button 
+                                    onClick={handleClearBooking} 
+                                    className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-90 flex items-center justify-center' 
+                                    title="Remove"
+                                >
+                                    <X size={16} className="stroke-[2.5]" />
                                 </button>
                            </div>
                         )}
+
                         {formData?.waitlist_time && (
-                            <div className='group flex items-center justify-between p-4 bg-amber-50/40 dark:bg-amber-500/5 border border-amber-100/60 dark:border-amber-500/10 rounded-2xl transition-all hover:bg-white dark:hover:bg-amber-500/10 hover:shadow-theme-sm'>
+                            <div className='group flex items-center justify-between gap-5 pl-3.5 pr-2.5 py-2.5 bg-white dark:bg-transparent border border-amber-100/50 dark:border-amber-500/20 rounded-2xl transition-all hover:border-amber-300 shadow-theme-xs'>
                                 <div className='flex items-center gap-4'>
-                                    <div className='w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-amber-500 shadow-theme-xs ring-4 ring-amber-50/50 dark:ring-amber-500/5 group-hover:scale-110 transition-transform'>
-                                        <Clock size={24} />
+                                    <div className='w-9 h-9 rounded-xl bg-amber-50/50 dark:bg-amber-500/5 flex items-center justify-center text-amber-500 transition-transform group-hover:scale-105'>
+                                        <Clock size={20} />
                                     </div>
                                     <div>
-                                        <p className='text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-0.5'>Waitlist Request</p>
-                                        <div className='flex items-center gap-2'>
-                                            <p className='text-sm font-bold text-slate-900 dark:text-white'>{formatDateDisplay(formData.waitlist_date)}</p>
-                                            <span className='w-1 h-1 rounded-full bg-slate-300' />
-                                            <p className='text-sm font-black text-amber-500'>{formatTimeDisplay(formData.waitlist_time)}</p>
+                                        <p className='text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 leading-none'>Waitlist Choice</p>
+                                        <div className='flex items-center gap-1.5'>
+                                            <p className='text-[13px] sm:text-[14px] font-black text-slate-900 dark:text-white'>{formatDateDisplay(formData.waitlist_date)}</p>
+                                            <span className='w-1 h-1 rounded-full bg-slate-200 dark:bg-gray-700' />
+                                            <p className='text-[13px] sm:text-[14px] font-black text-amber-500'>{formatTimeDisplay(formData.waitlist_time)}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={handleClearWaitlist} className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-95' title="Remove from Waitlist">
-                                    <X size={18} />
+                                <button 
+                                    onClick={handleClearWaitlist} 
+                                    className='p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-300 hover:text-red-500 transition-all active:scale-90 flex items-center justify-center' 
+                                    title="Remove"
+                                >
+                                    <X size={16} className="stroke-[2.5]" />
                                 </button>
                             </div>
                         )}
