@@ -43,9 +43,11 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
 
     return (
         <div>
-            <div className='mb-8'>
-                <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>Your Information</h2>
-                <p className='text-gray-500 dark:text-gray-400 text-sm'>
+            <div className='mb-8 sm:mb-10'>
+                <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
+                    Your Information
+                </h2>
+                <p className='text-[13px] sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-xl leading-relaxed'>
                     We need a few details to complete your booking. A confirmation email will be sent to the address you provide.
                 </p>
             </div>
