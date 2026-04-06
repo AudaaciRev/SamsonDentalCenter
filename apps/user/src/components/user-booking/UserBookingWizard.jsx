@@ -6,7 +6,6 @@ import ServiceStep from '../guest-booking/ServiceStep';
 import DateTimeStep from './DateTimeStep';
 import UserOtherInfoStep from './UserOtherInfoStep';
 import UserReviewStep from './UserReviewStep';
-import UserConfirmStep from './UserConfirmStep';
 import UserBookingSuccess from './UserBookingSuccess';
 
 const UserBookingWizard = ({ booking }) => {
@@ -43,7 +42,7 @@ const UserBookingWizard = ({ booking }) => {
         }
     };
 
-    const breadcrumbLabels = ['Service', 'Date & Time', 'Patient Info', 'Review', 'Submit'];
+    const breadcrumbLabels = ['Service', 'Date & Time', 'Patient Info', 'Review'];
 
     if (result && result.success) {
         return (
@@ -51,7 +50,7 @@ const UserBookingWizard = ({ booking }) => {
                 <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                     <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center relative">
                         <StepIndicator
-                            currentStep={5} // Success step indicator
+                            currentStep={4} // Success step indicator
                             labels={[...breadcrumbLabels, 'Done']}
                             onStepClick={() => {}}
                         />
@@ -147,23 +146,14 @@ const UserBookingWizard = ({ booking }) => {
                         />
                     )}
 
-                    {/* Step 4: Review Details */}
+                    {/* Step 4: Review Details & Submission */}
                     {currentStep === 'review' && (
                         <UserReviewStep
                             formData={formData}
                             book_for_others={book_for_others}
-                            onNext={nextStep}
-                            onBack={prevStep}
-                        />
-                    )}
-
-                    {/* Step 5: Final Submission */}
-                    {currentStep === 'confirm' && (
-                        <UserConfirmStep
-                            formData={formData}
-                            book_for_others={book_for_others}
                             onSubmit={submit}
                             onBack={prevStep}
+                            onEdit={goToStep}
                             submitting={submitting}
                             error={error}
                         />

@@ -213,12 +213,14 @@ export const bookAppointment = async (
                 .update({ is_booking_restricted: false, restriction_reason: null })
                 .eq('id', patientId);
         } else {
-            // Check max advance booking days (e.g., only 3 days ahead)
-            if (patient.max_advance_booking_days) {
+            // Check max advance booking days (Sync with global clinic config)
+            const maxDays = Math.max(patient.max_advance_booking_days || 0, CLINIC_CONFIG.NO_SHOW_RESTRICT_ADVANCE_DAYS);
+            
+            if (maxDays > 0) {
                 const maxDate = new Date();
-                maxDate.setDate(maxDate.getDate() + patient.max_advance_booking_days);
+                maxDate.setDate(maxDate.getDate() + maxDays);
                 if (new Date(date) > maxDate) {
-                    throw new AppError(`Due to missed appointments, you can only book up to ${patient.max_advance_booking_days} days in advance.`, 403);
+                    throw new AppError(`Due to missed appointments, you can only book up to ${maxDays} days in advance.`, 403);
                 }
             }
         }

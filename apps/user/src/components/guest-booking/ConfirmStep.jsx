@@ -1,6 +1,13 @@
-import { Calendar, Clock, User, Mail, Phone, Stethoscope, ShieldCheck, MailWarning, Edit2, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Clock, User, Mail, Phone, Stethoscope, ShieldCheck, MailWarning, Edit2, ArrowRight, Info } from 'lucide-react';
 
 const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) => {
+    // Auto-scroll to top on error
+    useEffect(() => {
+        if (error) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [error]);
 
     // Formatting for display
     const formatDate = (dateString) => {
@@ -33,32 +40,20 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
     };
 
     const ReviewSection = ({ title, children, onEditClick }) => (
-        <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 mb-6">
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-800/80 lg:mb-6 lg:pb-6">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+        <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 mb-6 overflow-hidden">
+            <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800/80 lg:mb-6 lg:pb-6">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 truncate min-w-0">
                     {title}
                 </h4>
                 <button
                     onClick={onEditClick}
                     className="flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-[13px] sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors shrink-0"
                 >
-                    <svg
-                        className="fill-current w-4 h-4"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-                            fill=""
-                        />
-                    </svg>
+                    <Edit2 size={14} className="text-gray-500" />
                     Edit
                 </button>
             </div>
-            <div className="w-full">
+            <div className="w-full min-w-0">
                 {children}
             </div>
         </div>
@@ -133,24 +128,24 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
                 {/* 3. Your Information */}
                 <ReviewSection title="Your Information" onEditClick={() => onEdit(2)}>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-                        <div>
-                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        <div className="min-w-0">
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">
                                 Full Name
                             </p>
-                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white">
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate">
                                 {formData.full_name}
                             </p>
                         </div>
-                        <div>
-                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        <div className="min-w-0">
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">
                                 Email Address
                             </p>
-                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate">
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white break-all leading-tight">
                                 {formData.email}
                             </p>
                         </div>
-                        <div>
-                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        <div className="min-w-0">
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">
                                 Phone Number
                             </p>
                             <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white">
@@ -161,26 +156,36 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
                 </ReviewSection>
 
                 {/* Verification Email Highlight Banner */}
-                <div className='bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/10 rounded-2xl p-6 md:p-8 animate-in zoom-in-95 duration-500'>
-                    <div className="flex flex-col sm:flex-row gap-5 items-start">
-                        <div className="w-12 h-12 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/20">
-                            <MailWarning size={24} />
-                        </div>
-                        <div className="grow w-full">
-                            <h4 className="text-[15px] sm:text-base md:text-lg font-black text-gray-900 dark:text-white mb-3 sm:mb-4 uppercase tracking-tight">Action Required: Verify Your Appointment</h4>
-                            <div className='space-y-4 text-[13px] sm:text-[14px] md:text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed font-medium'>
-                                <p>A verification link has been sent to <strong className="text-brand-600 dark:text-brand-400 border-b-2 border-brand-500/10 break-all">{formData.email}</strong>.</p>
-                                
-                                <div>
-                                    <strong className="text-gray-900 dark:text-white font-black block mb-0.5">What you need to do:</strong>
-                                    <p>Click the email link within 15 minutes to confirm your request, or it will expire.</p>
-                                </div>
-
-                                <div>
-                                    <strong className="text-gray-900 dark:text-white font-black block mb-0.5">Next Steps:</strong>
-                                    <p>Once verified, our staff will review your request. You'll receive an email as soon as it's approved.</p>
-                                </div>
+                <div className='bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/10 rounded-2xl p-6 md:p-8 animate-in zoom-in-95 duration-500 overflow-hidden'>
+                    <div className="flex flex-col gap-5">
+                        {/* Title Bar: Icon + Title */}
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/20">
+                                <MailWarning size={22} className="sm:w-6 sm:h-6" />
                             </div>
+                            <h4 className="text-[15px] sm:text-base md:text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight">
+                                Action Required: Verify Your Appointment
+                            </h4>
+                        </div>
+                        
+                        {/* Detailed Information: Flows Underneath */}
+                        <div className='space-y-4 text-[13px] sm:text-[14px] md:text-[15px] text-gray-600 dark:text-gray-400 leading-relaxed font-medium min-w-0'>
+                            <p className="min-w-0 break-words">To secure your booking as a guest, please complete the following verification steps:</p>
+                            
+                            <ul className="space-y-3 pt-2">
+                                <li className="flex items-start gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                    <p>A verification link has been sent to <strong className="text-brand-600 dark:text-brand-400 break-all">{formData.email}</strong>.</p>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                    <p>Click the link within **15 minutes** to confirm your request, or it will expire automatically.</p>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                    <p>Once verified, our specialists will review your request. You'll receive a final approval email within 24 hours.</p>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
