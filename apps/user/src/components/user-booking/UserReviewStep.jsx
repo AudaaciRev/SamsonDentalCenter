@@ -1,418 +1,369 @@
+import { useState, useEffect } from 'react';
+import { 
+    Calendar, 
+    Clock, 
+    User, 
+    Mail, 
+    Phone, 
+    Stethoscope, 
+    ShieldCheck, 
+    Info, 
+    AlertCircle, 
+    RefreshCw,
+    Edit2
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Stethoscope, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
 
-const UserReviewStep = ({ formData, book_for_others, onNext, onBack }) => {
+const UserReviewStep = ({ formData, book_for_others, onSubmit, onBack, onEdit, submitting, error }) => {
     const { user } = useAuth();
+    const [isRetrying, setIsRetrying] = useState(false);
+
+    // Auto-scroll to top on error
+    useEffect(() => {
+        if (error) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [error]);
 
     // Determine scenario
     const hasBooking = formData?.time;
     const hasWaitlist = formData?.waitlist_time;
     const isWaitlistOnly = hasWaitlist && !hasBooking;
     const isDualSelection = hasBooking && hasWaitlist;
-
-    // Determine if this is a specialized service
     const isSpecialized = formData.service_tier === 'specialized';
 
-    // Dynamic step title based on scenario
-    let stepTitle = 'Review Appointment';
-    if (isWaitlistOnly) {
-        stepTitle = 'Review Waitlist';
-    } else if (isDualSelection) {
-        stepTitle = 'Review Selections';
-    }
+    // Formatting for display
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Not selected';
+        try {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+
+    const formatTime = (timeString) => {
+        if (!timeString) return 'Not selected';
+        try {
+            const [hours, minutes] = timeString.split(':');
+            const h = parseInt(hours, 10);
+            const m = parseInt(minutes, 10);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const formattedHour = h % 12 || 12;
+            const formattedMinute = m < 10 ? `0${m}` : m;
+            return `${formattedHour}:${formattedMinute} ${ampm}`;
+        } catch (e) {
+            return timeString;
+        }
+    };
+
+    const handleRetry = async () => {
+        setIsRetrying(true);
+        try {
+            await onSubmit();
+        } finally {
+            setIsRetrying(false);
+        }
+    };
+
+    const ReviewSection = ({ title, children, onEditClick }) => (
+        <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 mb-6">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-800/80 lg:mb-6 lg:pb-6">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                    {title}
+                </h4>
+                <button
+                    onClick={onEditClick}
+                    className="flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-[13px] sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors shrink-0"
+                >
+                    <Edit2 size={14} className="text-gray-500" />
+                    Edit
+                </button>
+            </div>
+            <div className="w-full">
+                {children}
+            </div>
+        </div>
+    );
 
     return (
-        <div>
-            <h2 className='text-xl font-bold text-slate-900 mb-2'>{stepTitle}</h2>
-            <p className='text-slate-500 text-sm mb-6'>
-                Please review your information. Everything shown below is read-only.
-            </p>
-
-            {/* ⚠️ WAITLIST-ONLY WARNING BANNER (Prominent, Persistent) */}
-            {isWaitlistOnly && (
-                <div className='bg-amber-50 border-2 border-amber-300 rounded-xl p-4 mb-6'>
-                    <div className='flex items-start gap-3'>
-                        <AlertCircle
-                            size={20}
-                            className='text-amber-600 shrink-0 mt-0.5'
-                        />
-                        <div>
-                            <p className='text-sm font-bold text-amber-900 mb-2'>
-                                ⚠️ IMPORTANT: Waitlist Only — No Appointment Confirmed
-                            </p>
-                            <p className='text-sm text-amber-800 mb-2'>
-                                You are joining a WAITLIST, not booking an appointment. This means:
-                            </p>
-                            <ul className='text-sm text-amber-800 space-y-1 ml-2'>
-                                <li>❌ You do NOT have a confirmed appointment yet</li>
-                                <li>⏳ You will be notified when this time becomes available</li>
-                                <li>
-                                    ⏱️ You'll have 25 minutes to confirm or the slot goes to the
-                                    next person
-                                </li>
-                                <li>📧 Check your email for the notification</li>
-                            </ul>
-                            <p className='text-sm text-amber-800 mt-2 font-medium'>
-                                If you'd prefer a confirmed appointment, go back and select an
-                                available time.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className='bg-slate-50 rounded-xl p-6 mb-6 space-y-4'>
-                {/* Your Details Section */}
-                <div className='border-b border-slate-200 pb-4'>
-                    <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                        <User
-                            size={16}
-                            className='text-sky-500'
-                        />
-                        Your Details
-                    </h3>
-                    <div className='space-y-2 ml-6'>
-                        <div className='text-sm'>
-                            <span className='text-slate-500'>Name: </span>
-                            <span className='font-medium text-slate-900'>
-                                {user?.name || user?.email?.split('@')[0]}
-                            </span>
-                        </div>
-                        <div className='text-sm'>
-                            <span className='text-slate-500'>Email: </span>
-                            <span className='font-medium text-slate-900'>{user?.email}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* DUAL SELECTION: Show both sections */}
-                {isDualSelection && (
-                    <>
-                        {/* Booking Section */}
-                        <div className='border-b border-slate-200 pb-4'>
-                            <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                                {isSpecialized ? (
-                                    <>
-                                        <Clock
-                                            size={16}
-                                            className='text-amber-500'
-                                        />
-                                        ⏳ Appointment (For Approval)
-                                    </>
-                                ) : (
-                                    <>
-                                        <Stethoscope
-                                            size={16}
-                                            className='text-sky-500'
-                                        />
-                                        ✅ Confirmed Appointment
-                                    </>
-                                )}
-                            </h3>
-                            <div className='space-y-2 ml-6'>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Service: </span>
-                                    <span className='font-medium text-slate-900'>
-                                        {formData.service_name}
-                                    </span>
-                                </div>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Date: </span>
-                                    <span className='font-medium text-slate-900'>
-                                        {formData.date}
-                                    </span>
-                                </div>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Time: </span>
-                                    <span className='font-medium text-sky-600 text-lg'>
-                                        {formData.time}
-                                    </span>
-                                </div>
-                                {formData.dentist_id && (
-                                    <div className='text-sm mt-1'>
-                                        <span className='text-slate-500'>Dentist: </span>
-                                        <span className='font-medium text-slate-900'>
-                                            {/* Note: In a real app we'd show the name here. 
-                                                Since we only have the ID, we'll indicate a specialist is chosen */}
-                                            Specific Specialist Selected
-                                        </span>
-                                    </div>
-                                )}
-                                <div
-                                    className={`text-xs font-medium mt-2 ${isSpecialized ? 'text-amber-600' : 'text-sky-600'
-                                        }`}
-                                >
-                                    Status:{' '}
-                                    {isSpecialized
-                                        ? 'FOR APPROVAL when submitted (Specialized Service)'
-                                        : 'CONFIRMED when submitted'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Waitlist Section */}
-                        <div className='border-b border-slate-200 pb-4'>
-                            <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                                <Clock
-                                    size={16}
-                                    className='text-amber-500'
-                                />
-                                ⏳ Waitlist Entry
-                            </h3>
-                            <div className='space-y-2 ml-6'>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Service: </span>
-                                    <span className='font-medium text-slate-900'>
-                                        {formData.service_name}
-                                    </span>
-                                </div>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Preferred Date: </span>
-                                    <span className='font-medium text-slate-900'>
-                                        {formData.waitlist_date}
-                                    </span>
-                                </div>
-                                <div className='text-sm'>
-                                    <span className='text-slate-500'>Preferred Time: </span>
-                                    <span className='font-medium text-amber-600 text-lg'>
-                                        {formData.waitlist_time}
-                                    </span>
-                                </div>
-                                <div className='text-xs text-amber-600 font-medium mt-2'>
-                                    Status: Added to waitlist when submitted
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {/* BOOKING ONLY: Show appointment details */}
-                {hasBooking && !hasWaitlist && (
-                    <div>
-                        <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                            {isSpecialized ? (
-                                <>
-                                    <Clock
-                                        size={16}
-                                        className='text-amber-500'
-                                    />
-                                    Appointment (For Approval)
-                                </>
-                            ) : (
-                                <>
-                                    <Stethoscope
-                                        size={16}
-                                        className='text-sky-500'
-                                    />
-                                    Appointment Details
-                                </>
-                            )}
-                        </h3>
-                        <div className='space-y-2 ml-6'>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Service: </span>
-                                <span className='font-medium text-slate-900'>
-                                    {formData.service_name}
-                                </span>
-                            </div>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Date: </span>
-                                <span className='font-medium text-slate-900'>{formData.date}</span>
-                            </div>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Time: </span>
-                                <span className='font-medium text-slate-900'>{formData.time}</span>
-                            </div>
-                            {formData.dentist_id && (
-                                <div className='text-sm mt-1'>
-                                    <span className='text-slate-500'>Dentist: </span>
-                                    <span className='font-medium text-slate-900 text-xs bg-sky-100 px-2 py-0.5 rounded-full'>
-                                        Specific Specialist Selected
-                                    </span>
-                                </div>
-                            )}
-                            <div
-                                className={`text-xs font-medium mt-2 ${isSpecialized ? 'text-amber-600' : 'text-sky-600'
-                                    }`}
-                            >
-                                Status:{' '}
-                                {isSpecialized
-                                    ? 'FOR APPROVAL when submitted'
-                                    : 'CONFIRMED when submitted'}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* WAITLIST ONLY: Show waitlist details */}
-                {hasWaitlist && !hasBooking && (
-                    <div>
-                        <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                            <Clock
-                                size={16}
-                                className='text-amber-500'
-                            />
-                            Waitlist Entry Details
-                        </h3>
-                        <div className='space-y-2 ml-6'>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Service: </span>
-                                <span className='font-medium text-slate-900'>
-                                    {formData.service_name}
-                                </span>
-                            </div>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Preferred Date: </span>
-                                <span className='font-medium text-slate-900'>
-                                    {formData.waitlist_date}
-                                </span>
-                            </div>
-                            <div className='text-sm'>
-                                <span className='text-slate-500'>Preferred Time: </span>
-                                <span className='font-medium text-slate-900'>
-                                    {formData.waitlist_time}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* If Booking For Others - Show Appointee Name */}
-                {book_for_others && formData.booked_for_name && (
-                    <div className='border-t border-slate-200 pt-4'>
-                        <h3 className='text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2'>
-                            <User
-                                size={16}
-                                className='text-amber-500'
-                            />
-                            Appointment For
-                        </h3>
-                        <div className='ml-6 text-sm font-medium text-slate-900'>
-                            {formData.booked_for_name}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* ℹ️ INFO BOX for DUAL SELECTION (Educational, not warning) */}
-            {isDualSelection && (
-                <div className='bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6'>
-                    <div className='flex gap-3'>
-                        <Info
-                            size={18}
-                            className='text-blue-600 shrink-0 mt-0.5'
-                        />
-                        <div>
-                            <p className='text-sm font-semibold text-blue-900 mb-2'>
-                                Dual Selection Explained
-                            </p>
-                            <p className='text-sm text-blue-800 mb-2'>
-                                You've chosen TWO options for flexibility:
-                            </p>
-                            <ul className='text-sm text-blue-800 space-y-1 ml-2'>
-                                <li>
-                                    {isSpecialized ? (
-                                        <>
-                                            ⏳ <strong>Primary:</strong> {formData.time} appointment
-                                            will be <strong>FOR APPROVAL</strong>
-                                        </>
-                                    ) : (
-                                        <>
-                                            ✅ <strong>Primary:</strong> {formData.time} appointment
-                                            will be <strong>CONFIRMED</strong>
-                                        </>
-                                    )}
-                                </li>
-                                <li>
-                                    ⏳ <strong>Secondary:</strong> {formData.waitlist_time} waitlist
-                                    for a backup option
-                                </li>
-                                <li>
-                                    📧 If the {formData.waitlist_time} slot opens, you can decide to
-                                    switch or keep {formData.time}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ⏳ INFO BOX for SPECIALIZED SERVICE (Approval Required) */}
-            {hasBooking && isSpecialized && !isDualSelection && (
-                <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6'>
-                    <div className='flex gap-3'>
-                        <Info
-                            size={18}
-                            className='text-amber-600 shrink-0 mt-0.5'
-                        />
-                        <div>
-                            <p className='text-sm font-semibold text-amber-900 mb-2'>
-                                ⏳ Approval Required
-                            </p>
-                            <p className='text-sm text-amber-800 mb-2'>
-                                This is a specialized service. Your appointment request will be
-                                reviewed by our clinical team.
-                            </p>
-                            <ul className='text-sm text-amber-800 space-y-1 ml-2'>
-                                <li>✓ We'll confirm within 24-48 hours</li>
-                                <li>✓ Check your email for updates</li>
-                                <li>✓ No charge until approved</li>
-                                <li>
-                                    ✓ {formData.dentist_id ? 'The selected dentist will be notified' : 'The dentist will be assigned during review'}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ⏳ INFO BOX for SPECIALIZED SERVICE WITH WAITLIST (Dual) */}
-            {isDualSelection && isSpecialized && (
-                <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6'>
-                    <div className='flex gap-3'>
-                        <Info
-                            size={18}
-                            className='text-amber-600 shrink-0 mt-0.5'
-                        />
-                        <div>
-                            <p className='text-sm font-semibold text-amber-900 mb-2'>
-                                ⏳ Approval Required
-                            </p>
-                            <p className='text-sm text-amber-800 mb-2'>
-                                Your {formData.time} appointment is a specialized service and
-                                requires clinical review.
-                            </p>
-                            <ul className='text-sm text-amber-800 space-y-1 ml-2'>
-                                <li>✓ Primary appointment: Will be confirmed within 24-48 hours</li>
-                                <li>✓ Waitlist entry: Confirmed immediately</li>
-                                <li>✓ Check your email for review updates</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Info Banner - Read Only */}
-            <div className='bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6'>
-                <p className='text-sm text-blue-800'>
-                    <strong>ℹ️ All details are read-only.</strong> To make changes, click Back.
+        <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Header Section */}
+            <div className='mb-8 sm:mb-10'>
+                <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
+                    Review Your Request
+                </h2>
+                <p className='text-[13px] sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed font-medium'>
+                    Please carefully review your appointment details and patient information before final submission.
                 </p>
             </div>
 
-            {/* Navigation */}
-            <div className='flex justify-between'>
+            {error && (
+                <div className='bg-red-50 dark:bg-red-900/10 border-2 border-red-200 dark:border-red-900/20 text-red-700 dark:text-red-400 p-5 rounded-3xl mb-8 animate-in shake duration-500'>
+                    <div className="flex items-start gap-4 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                            <AlertCircle size={20} className="text-red-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold uppercase tracking-wider mb-1">Submission Error</h4>
+                            <p className="text-sm opacity-90 break-words leading-relaxed font-medium">
+                                {error}
+                            </p>
+                        </div>
+                    </div>
+                    <div className='flex flex-wrap gap-3'>
+                        <button
+                            onClick={handleRetry}
+                            disabled={submitting || isRetrying}
+                            className='flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-bold rounded-xl transition-all shadow-theme-md disabled:cursor-not-allowed uppercase tracking-widest'
+                        >
+                            {submitting || isRetrying ? (
+                                <>
+                                    <div className='w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                                    Retrying...
+                                </>
+                            ) : (
+                                <>
+                                    <RefreshCw size={14} />
+                                    Retry Submission
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => onEdit(1)} // Back to DateTime
+                            disabled={submitting || isRetrying}
+                            className='px-6 py-2.5 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs font-bold rounded-xl transition-all disabled:opacity-50 uppercase tracking-widest'
+                        >
+                            Change Selection
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className='w-full space-y-6'>
+                {/* 1. Service Selection */}
+                <ReviewSection title="Service Selection" onEditClick={() => onEdit(0)}>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7">
+                        <div>
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                Selected Treatment
+                            </p>
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Stethoscope size={16} className="text-brand-500" />
+                                {formData.service_name || 'No service selected'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                Duration
+                            </p>
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white">
+                                {formData.service_duration ? `${formData.service_duration} mins` : '-'}
+                            </p>
+                        </div>
+                    </div>
+                </ReviewSection>
+
+                {/* 2. Date & Time (Conditional based on hasBooking, hasWaitlist) */}
+                <ReviewSection title="Date & Time" onEditClick={() => onEdit(1)}>
+                    {hasBooking && (
+                        <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 ${isDualSelection ? 'pb-6 border-b border-gray-50 dark:border-gray-800/50 mb-6' : ''}`}>
+                            <div className="lg:col-span-2">
+                                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                                    Primary Appointment
+                                </p>
+                            </div>
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Appointment Date
+                                </p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Calendar size={16} className="text-brand-500" />
+                                    {formatDate(formData.date)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Selected Timeslot
+                                </p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Clock size={16} className="text-brand-500" />
+                                    {formatTime(formData.time)}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {hasWaitlist && (
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7">
+                            <div className="lg:col-span-2">
+                                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    Waitlist Preference
+                                </p>
+                            </div>
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Preferred Date
+                                </p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 text-amber-700 dark:text-amber-400/90">
+                                    <Calendar size={16} className="text-amber-500" />
+                                    {formatDate(formData.waitlist_date)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Preferred Timeslot
+                                </p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 text-amber-700 dark:text-amber-400/90">
+                                    <Clock size={16} className="text-amber-500" />
+                                    {formatTime(formData.waitlist_time)}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </ReviewSection>
+
+                {/* 3. Patient Details */}
+                <ReviewSection title="Patient Details" onEditClick={() => onEdit(2)}>
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-7">
+                        <div className="min-w-0">
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                Full Name
+                            </p>
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
+                                <User size={16} className="text-brand-500 shrink-0" />
+                                <span className="truncate">{book_for_others ? formData.booked_for_name : (user?.full_name || user?.name || 'Authorized User')}</span>
+                            </p>
+                        </div>
+                        <div className='min-w-0'>
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                Contact Email <span className="opacity-40 font-normal italic text-[9px]">(primary)</span>
+                            </p>
+                            <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white break-all flex items-center gap-2">
+                                <Mail size={16} className="text-brand-500 shrink-0" />
+                                {user?.email}
+                            </p>
+                        </div>
+                        {book_for_others && formData.booked_for_phone && (
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                    Patient Phone
+                                </p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <Phone size={16} className="text-brand-500" />
+                                    {formData.booked_for_phone}
+                                </p>
+                            </div>
+                        )}
+                        <div>
+                            <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                Booking Mode
+                            </p>
+                            <p className="text-[13px] sm:text-[14px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest mt-1">
+                                {book_for_others ? 'Representative booking' : 'Direct Booking'}
+                            </p>
+                        </div>
+                    </div>
+                </ReviewSection>
+
+                {/* Waitlist Only Banner */}
+                {isWaitlistOnly && (
+                    <div className='bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 md:p-8 animate-in zoom-in-95 duration-500 overflow-hidden'>
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+                                    <AlertCircle size={22} className="sm:w-6 sm:h-6" />
+                                </div>
+                                <h4 className="text-[15px] sm:text-base md:text-lg font-black text-amber-900 dark:text-white uppercase tracking-tight leading-tight">Waitlist Only Entry</h4>
+                            </div>
+                            
+                            <div className='space-y-4 text-sm text-amber-800 dark:text-amber-100/80 leading-relaxed font-medium'>
+                                <p>You are joining the waitlist for <strong className="text-amber-950 dark:text-white">{formatTime(formData.waitlist_time)}</strong>. No appointment is confirmed yet.</p>
+                                
+                                <ul className="space-y-3 pt-1">
+                                    <li className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        <p>Viewing status: You can monitor your waitlist request and position directly in your patient dashboard.</p>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                        <p>We'll notify you immediately via email at <strong className="break-all">{user?.email}</strong> if this slot becomes available.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {hasBooking && (
+                    <div className={`bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/10 rounded-3xl p-6 md:p-8 animate-in zoom-in-95 duration-500 overflow-hidden ${isDualSelection ? 'border-dashed' : ''}`}>
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/20">
+                                    <ShieldCheck size={22} className="sm:w-6 sm:h-6" />
+                                </div>
+                                <h4 className="text-[15px] sm:text-base md:text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight">
+                                    Clinical Approval Required
+                                </h4>
+                            </div>
+                            
+                            <div className='space-y-4 text-[13px] sm:text-[14px] text-gray-600 dark:text-gray-400 leading-relaxed font-medium'>
+                                <p>To ensure the best care, online requests are reviewed by our specialists. We'll verify the schedule and confirm your appointment within 24 hours.</p>
+                                
+                                <ul className="space-y-3 pt-2">
+                                    <li className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                        <p>Confirmation sent to <strong className="text-brand-600 dark:text-brand-400 break-all">{user?.email}</strong> and to your account login to see it.</p>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                        <p>Once approved, it will appear in your **Active Appointments**. You can view your active appointment request, see the status, and get updates directly in your patient dashboard.</p>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                                        <p>We'll also email you for any updates regarding your appoinments.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Final Navigation Footer */}
+            <div className='flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 sm:gap-0 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-100 dark:border-gray-800'>
                 <button
                     onClick={onBack}
-                    className='text-slate-500 hover:text-slate-700 font-medium text-sm px-4 py-2.5'
+                    disabled={submitting}
+                    className='w-full sm:w-auto text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[13px] sm:text-sm px-6 py-3 sm:px-8 transition-colors disabled:opacity-30 uppercase tracking-widest'
                 >
-                    ← Back
+                    Back
                 </button>
                 <button
-                    onClick={onNext}
-                    className='bg-sky-500 hover:bg-sky-600 text-white font-semibold px-8 py-3 rounded-xl 
-                               transition-colors shadow-lg shadow-sky-500/25'
+                    onClick={onSubmit}
+                    disabled={submitting}
+                    className='w-full sm:w-auto group bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black
+                               px-6 py-3.5 sm:px-12 sm:py-4.5 rounded-2xl transition-all shadow-theme-lg
+                               disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-[14px] sm:text-base uppercase tracking-widest'
                 >
-                    Next →
+                    {submitting ? (
+                        <>
+                            <div className='w-4 h-4 sm:w-5 sm:h-5 border-[3px] border-white border-t-transparent rounded-full animate-spin' />
+                            {isWaitlistOnly ? 'Adding to Waitlist...' : 'Submitting...'}
+                        </>
+                    ) : (
+                        <>
+                            {isWaitlistOnly ? 'Confirm Waitlist' : 'Confirm Booking'}
+                            <ShieldCheck size={20} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform" />
+                        </>
+                    )}
                 </button>
             </div>
         </div>

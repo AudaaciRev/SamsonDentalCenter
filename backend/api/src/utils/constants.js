@@ -66,7 +66,7 @@ export const CLINIC_CONFIG = {
     CANCEL_NOTICE_HOURS: 24, // <24h = LATE_CANCEL
     NO_SHOW_GRACE_MINUTES: 15, // Wait 15 min past appointment time before marking no-show
     NO_SHOW_RESTRICT_THRESHOLD: 3, // 3+ no-shows → restrict patient booking
-    NO_SHOW_RESTRICT_ADVANCE_DAYS: 3, // Restricted patients can only book 3 days ahead
+    NO_SHOW_RESTRICT_ADVANCE_DAYS: 5, // Restricted patients can only book 3 days ahead
     CANCEL_RESTRICT_THRESHOLD: 3, // 3+ cancellations → restrict patient booking
     REMINDER_HOURS: [48, 24], // Send reminders 48h and 24h before
     CONFIRM_REMINDER_HOURS: 48, // 48h reminder asks patient to confirm

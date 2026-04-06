@@ -44,8 +44,13 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const [formData, setFormData] = useState({
         service_id: initialServiceId || '',
         service_name: initialServiceName || '',
+        service_duration: '',
         date: '',
         time: '',
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        suffix_name: '',
         full_name: '',
         email: '',
         phone: '',
@@ -90,12 +95,49 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     };
 
     const prevStep = () => {
-        if (step > 0) setStep((s) => s - 1);
+        if (step > 0) {
+            const nextIdx = step - 1;
+            // ✅ Reset states when going back to Service step
+            if (nextIdx === 0) {
+                slotHold.releaseHold();
+                setFormData(prev => ({
+                    ...prev,
+                    date: '',
+                    time: '',
+                    first_name: '',
+                    last_name: '',
+                    middle_name: '',
+                    suffix_name: '',
+                    full_name: '',
+                    email: '',
+                    phone: ''
+                }));
+            }
+            setStep(nextIdx);
+        }
     };
 
     // Issue #3: Only allow going back to completed steps
     const goToStep = (index) => {
-        if (index < step) setStep(index);
+        if (index < step) {
+            // ✅ Reset states when navigating back to Service step via breadcrumbs
+            if (index === 0) {
+                slotHold.releaseHold();
+                setFormData(prev => ({
+                    ...prev,
+                    date: '',
+                    time: '',
+                    first_name: '',
+                    last_name: '',
+                    middle_name: '',
+                    suffix_name: '',
+                    full_name: '',
+                    email: '',
+                    phone: ''
+                }));
+            }
+            setStep(index);
+        }
     };
 
     // Issue #7: Add timeout handling and network error detection
@@ -176,8 +218,13 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         setFormData({
             service_id: '',
             service_name: '',
+            service_duration: '',
             date: '',
             time: '',
+            first_name: '',
+            last_name: '',
+            middle_name: '',
+            suffix_name: '',
             full_name: '',
             email: '',
             phone: '',
