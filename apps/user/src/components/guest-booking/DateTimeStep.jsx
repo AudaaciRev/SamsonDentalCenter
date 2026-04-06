@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, RefreshCw, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Lock, Calendar as CalendarIcon, Clock as ClockIcon, Info } from 'lucide-react';
 import useSlots from '../../hooks/useSlots';
 
 const DateTimeStep = ({
@@ -13,18 +13,14 @@ const DateTimeStep = ({
     sessionId,
     slotHold,
 }) => {
-    // ✅ Initialize slot hold hook with session ID
     const { activeHold, holdSlot, releaseHold, formattedTime, holdLoading, holdError } = slotHold;
 
-    // Simple date picker state — starts from today
     const today = useMemo(() => {
         const d = new Date();
         d.setHours(0, 0, 0, 0);
         return d;
     }, []);
 
-    // Issue #1: Fixed week navigation bounds
-    // Max booking days ahead (90 days is reasonable, adjust as needed)
     const MAX_BOOKING_DAYS_AHEAD = 90;
     const maxDate = useMemo(
         () => new Date(today.getTime() + MAX_BOOKING_DAYS_AHEAD * 24 * 60 * 60 * 1000),
@@ -33,11 +29,10 @@ const DateTimeStep = ({
 
     const [weekStart, setWeekStart] = useState(() => {
         const d = new Date(today);
-        d.setDate(d.getDate() - d.getDay()); // Start of current week (Sunday)
+        d.setDate(d.getDate() - d.getDay()); 
         return d;
     });
 
-    // Generate 7 days for the visible week
     const weekDays = useMemo(() => {
         return Array.from({ length: 7 }, (_, i) => {
             const d = new Date(weekStart);
@@ -51,14 +46,11 @@ const DateTimeStep = ({
             const next = new Date(prev);
             next.setDate(next.getDate() + (direction === 'next' ? 7 : -7));
 
-            // ✅ FIXED: Only allow forward if within max booking range
-            // ✅ FIXED: Only allow backward if the week end date (Saturday) would be before today
             if (direction === 'next' && next > maxDate) {
                 return prev;
             }
-            // Calculate end of week (Saturday) for backward navigation check
             const nextWeekEnd = new Date(next);
-            nextWeekEnd.setDate(nextWeekEnd.getDate() + 6); // Saturday of that week
+            nextWeekEnd.setDate(nextWeekEnd.getDate() + 6);
 
             if (direction === 'prev' && nextWeekEnd < today) {
                 return prev;
@@ -68,7 +60,6 @@ const DateTimeStep = ({
         });
     };
 
-    // ✅ FIX: Use local date parts to avoid timezone shifting (e.g. UTC-8 or UTC+8 issues)
     const formatDateKey = (d) => {
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -76,9 +67,6 @@ const DateTimeStep = ({
         return `${year}-${month}-${day}`;
     };
 
-    // ✅ Guest booking: Fetch ALL slots (available + full) so we can see OUR own holds
-    // Filter out other full slots in the render logic below
-    // Only fetch if both date and serviceId are valid
     const {
         slots,
         nextAvailableDate,
@@ -87,80 +75,49 @@ const DateTimeStep = ({
     } = useSlots(selectedDate || null, serviceId || null, true, sessionId);
 
     const handleDateClick = (date) => {
-        // Create a copy and normalize to midnight local time
         const d = new Date(date);
         d.setHours(0, 0, 0, 0);
-
         const key = formatDateKey(d);
 
-        // ✅ Ensure the calendar jumps to the week of the selected date
         const newWeekStart = new Date(d);
-        newWeekStart.setDate(d.getDate() - d.getDay()); // Sunday of that week
+        newWeekStart.setDate(d.getDate() - d.getDay());
         newWeekStart.setHours(0, 0, 0, 0);
         setWeekStart(newWeekStart);
 
-        onUpdate({ date: key, time: '' }); // Reset time when date changes
+        onUpdate({ date: key, time: '' });
     };
 
-    // ✅ Handle time slot click with auto-switch and toggle-off logic
     const handleTimeClick = async (slotData) => {
         if (!serviceId || !selectedDate) return;
 
-        // ✅ NEW: Added toggle behavior (click again to release)
         const isCurrentlySelected = selectedTime === slotData.rawTime;
 
         if (isCurrentlySelected) {
-            // ✅ Toggle OFF: Click again to remove the hold on backend
             await releaseHold();
             onUpdate({ time: '' });
             return;
         }
 
-        // Call backend to hold slot - auto-switch if already has hold on different time
         const holdResult = await holdSlot(serviceId, selectedDate, slotData.rawTime);
 
         if (holdResult?.success) {
-            // ✅ Update time only after hold is confirmed
             onUpdate({ time: slotData.rawTime });
-        } else if (holdResult?.error === 'SLOT_TAKEN') {
-            // ✅ FIX: Show user-friendly error when slot was taken by someone else
-            // holdError is already set by holdSlot, so it will show in the error banner
-            return;
         }
     };
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    // Issue #3: Check if week navigation buttons should be disabled
     const canGoPrev = weekStart > today;
     const canGoNext = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000) <= maxDate;
 
-    // ✅ Format date and time for display in hold indicator
     const formatHoldDateTime = () => {
         if (!activeHold) return '';
         const date = new Date(activeHold.date);
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const monthNames = [
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'May',
-            'Jun',
-            'Jul',
-            'Aug',
-            'Sep',
-            'Oct',
-            'Nov',
-            'Dec',
-        ];
-
         const dayName = dayNames[date.getDay()];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthName = monthNames[date.getMonth()];
         const day = date.getDate();
         const year = date.getFullYear();
 
-        // Format time from activeHold.time (HH:MM to 12-hour format)
         const [hours, minutes] = activeHold.time.split(':');
         const hour = parseInt(hours, 10);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -172,120 +129,97 @@ const DateTimeStep = ({
 
     return (
         <div>
-            <h2 className='text-xl font-bold text-slate-900 mb-2'>Pick Date & Time</h2>
-            <p className='text-slate-500 text-sm mb-6'>
-                Choose your preferred appointment date and available time slot.
-            </p>
+            <div className='mb-8'>
+                <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>Pick Date & Time</h2>
+                <p className='text-gray-500 dark:text-gray-400 text-sm'>
+                    Choose your preferred appointment date and available time slot.
+                </p>
+            </div>
 
-            {/* ✅ Hold Status Indicator with Date & Time */}
-            {/* ✅ FIX: Only show if selected date matches held date (not on different dates) */}
+            {/* Hold Status Indicator */}
             {activeHold && selectedDate === activeHold.date && (
-                <div className='mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
-                    <div className='flex items-start gap-2'>
-                        <Lock
-                            size={16}
-                            className='text-amber-600 mt-1 shrink-0'
-                        />
+                <div className='mb-6 p-4 bg-brand-50/50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 rounded-2xl'>
+                    <div className='flex items-start gap-4'>
+                        <div className='w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-theme-xs shrink-0'>
+                            <Lock size={18} className='text-brand-500' />
+                        </div>
                         <div className='grow'>
-                            <p className='text-sm font-medium text-amber-900'>
-                                📅 {formatHoldDateTime()}
+                            <p className='text-sm font-bold text-gray-900 dark:text-white'>
+                                Slot Reserved
                             </p>
-                            <p className='text-sm font-medium text-amber-900 mt-1'>
-                                Reserved for {activeHold.expires_in_minutes} minutes
+                            <p className='text-xs text-brand-600 dark:text-brand-400 font-medium mt-0.5'>
+                                {formatHoldDateTime()}
                             </p>
-                            <p className='text-xs text-amber-700 mt-1'>
-                                Time remaining: <strong>{formattedTime}</strong>
-                            </p>
+                            <div className='flex items-center gap-2 mt-2'>
+                                <div className='h-1 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
+                                    <div className='h-full bg-brand-500 animate-pulse' style={{ width: '60%' }} />
+                                </div>
+                                <span className='text-[10px] font-bold text-gray-500 whitespace-nowrap uppercase'>
+                                    Expires in {formattedTime}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ✅ Hold Error */}
             {holdError && (
-                <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-lg'>
-                    <p className='text-sm text-red-700'>{holdError}</p>
+                <div className='mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-2xl flex gap-3'>
+                    <Info size={18} className='text-red-500 shrink-0' />
+                    <p className='text-sm text-red-700 dark:text-red-400 font-medium'>{holdError}</p>
                 </div>
             )}
 
             {/* Week navigation */}
-            <div className='flex items-center justify-between mb-4'>
-                <button
-                    onClick={() => navigateWeek('prev')}
-                    disabled={!canGoPrev}
-                    className='p-2 hover:bg-slate-100 rounded-lg transition-colors
-                               disabled:opacity-30 disabled:cursor-not-allowed'
-                    title='Previous week'
-                >
-                    <ChevronLeft size={18} />
-                </button>
-                <span className='text-sm font-medium text-slate-700'>
+            <div className='flex items-center justify-between mb-6'>
+                <h3 className='text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+                    <CalendarIcon size={16} className='text-brand-500' />
                     {weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <div className='relative group'>
+                </h3>
+                <div className='flex gap-2'>
+                    <button
+                        onClick={() => navigateWeek('prev')}
+                        disabled={!canGoPrev}
+                        className='p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-30'
+                    >
+                        <ChevronLeft size={20} className='text-gray-600 dark:text-gray-400' />
+                    </button>
                     <button
                         onClick={() => navigateWeek('next')}
                         disabled={!canGoNext}
-                        aria-label={
-                            !canGoNext
-                                ? `You can only book up to ${MAX_BOOKING_DAYS_AHEAD} days in advance`
-                                : 'Go to next week'
-                        }
-                        className='p-2 hover:bg-slate-100 rounded-lg transition-colors
-                                   disabled:opacity-30 disabled:cursor-not-allowed'
-                        title={
-                            !canGoNext
-                                ? `You can only book up to ${MAX_BOOKING_DAYS_AHEAD} days in advance`
-                                : 'Next week'
-                        }
+                        className='p-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-30'
                     >
-                        <ChevronRight size={18} />
+                        <ChevronRight size={20} className='text-gray-600 dark:text-gray-400' />
                     </button>
-                    {/* ✅ Visual tooltip for disabled state */}
-                    {!canGoNext && (
-                        <div className='absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none'>
-                            Max {MAX_BOOKING_DAYS_AHEAD} days ahead
-                            <div className='absolute top-full right-3 w-2 h-2 bg-slate-900 rotate-45 -mt-1'></div>
-                        </div>
-                    )}
                 </div>
             </div>
 
             {/* Day buttons */}
-            <div className='grid grid-cols-7 gap-2 mb-6'>
+            <div className='grid grid-cols-7 gap-2 mb-8'>
                 {weekDays.map((date) => {
                     const key = formatDateKey(date);
                     const isPast = date < today;
-                    const isSameDay = date.getTime() === today.getTime(); // ✅ NEW: Disable same-day bookings
+                    const isSameDay = date.getTime() === today.getTime();
                     const isSelected = key === selectedDate;
                     const isSunday = date.getDay() === 0;
                     const isBeyondMax = date > maxDate;
-                    const isDisabled = isPast || isSunday || isBeyondMax || isSameDay; // ✅ NEW: Added isSameDay
+                    const isDisabled = isPast || isSunday || isBeyondMax || isSameDay;
 
                     return (
                         <button
                             key={key}
                             onClick={() => !isDisabled && handleDateClick(date)}
                             disabled={isDisabled}
-                            className={`flex flex-col items-center p-2 rounded-xl text-xs transition-all ${
+                            className={`flex flex-col items-center py-3 rounded-2xl text-[10px] sm:text-xs transition-all ${
                                 isSelected
-                                    ? 'bg-sky-500 text-white ring-2 ring-sky-500/20'
+                                    ? 'bg-brand-500 text-white shadow-theme-md ring-4 ring-brand-500/10'
                                     : isDisabled
-                                      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
-                                      : 'bg-white border border-slate-100 hover:border-sky-200 text-slate-700 cursor-pointer'
+                                      ? 'bg-transparent text-gray-300 cursor-not-allowed opacity-50'
+                                      : 'bg-gray-50 dark:bg-gray-900/50 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400'
                             }`}
-                            title={
-                                isSameDay
-                                    ? 'Cannot book on the same day'
-                                    : isSunday
-                                      ? 'Clinic closed on Sundays'
-                                      : isPast
-                                        ? 'Date has passed'
-                                        : undefined
-                            }
                         >
-                            <span className='font-medium'>{dayNames[date.getDay()]}</span>
-                            <span className={`text-lg font-bold ${isSelected ? 'text-white' : ''}`}>
+                            <span className='font-bold uppercase tracking-wider mb-1'>{dayNames[date.getDay()]}</span>
+                            <span className={`text-base sm:text-lg font-black ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                                 {date.getDate()}
                             </span>
                         </button>
@@ -295,122 +229,86 @@ const DateTimeStep = ({
 
             {/* Time slots */}
             {selectedDate && (
-                <div className='mb-8'>
-                    <div className='flex items-center justify-between mb-3'>
-                        <h3 className='text-sm font-semibold text-slate-700'>Available Times</h3>
-                        {/* ✅ Refresh button to see updated availability */}
+                <div className='mb-10'>
+                    <div className='flex items-center justify-between mb-4'>
+                        <h3 className='text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+                            <ClockIcon size={16} className='text-brand-500' />
+                            Available Times
+                        </h3>
                         <button
                             onClick={refetchSlots}
                             disabled={slotsLoading}
-                            title='Refresh to see latest availability'
-                            className='flex items-center gap-1 px-3 py-1 text-xs bg-sky-50 hover:bg-sky-100 text-sky-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                            className='flex items-center gap-2 px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-900/50 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-100 dark:border-gray-700 transition-all disabled:opacity-50'
                         >
-                            <RefreshCw
-                                size={14}
-                                className={slotsLoading ? 'animate-spin' : ''}
-                            />
+                            <RefreshCw size={14} className={slotsLoading ? 'animate-spin' : ''} />
                             Refresh
                         </button>
                     </div>
+
                     {slotsLoading ? (
-                        // ✅ IMPROVEMENT #2: Visual loading continuity with spinner
-                        <div className='flex items-center justify-center py-8'>
-                            <div className='flex flex-col items-center gap-2'>
-                                <div className='w-5 h-5 border-3 border-slate-200 border-t-sky-500 rounded-full animate-spin' />
-                                <p className='text-sm text-slate-400'>Checking availability...</p>
-                            </div>
+                        <div className='flex flex-col items-center justify-center py-12 gap-3'>
+                            <div className='w-6 h-6 border-2 border-gray-200 border-t-brand-500 rounded-full animate-spin' />
+                            <p className='text-gray-400 text-xs font-medium'>Checking slots...</p>
                         </div>
                     ) : slots && slots.length > 0 ? (
-                        <div className='grid grid-cols-3 sm:grid-cols-5 gap-2'>
+                        <div className='grid grid-cols-2 xsm:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3'>
                             {slots.map((slot) => {
-                                // ✅ Guest booking shows only available slots
-                                // Each slot has: {time, rawTime, displayTime, available}
-                                const isHeldByMe =
-                                    activeHold?.time === slot.rawTime &&
-                                    selectedDate === activeHold.date;
-
-                                // ✅ NEW: If I hold it, it's effectively available to ME
+                                const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
                                 const effectiveAvailable = slot.available + (isHeldByMe ? 1 : 0);
-                                const isAvailable = effectiveAvailable > 0;
+                                if (effectiveAvailable <= 0) return null;
 
                                 const isSelected = selectedTime === slot.rawTime;
-                                const isActuallyHeldByMe = isHeldByMe; // same thing, just for clarity below
-
-                                // Skip if not available AND not held by me (since guest only shows available slots)
-                                if (!isAvailable) return null;
 
                                 return (
                                     <button
                                         key={slot.rawTime}
                                         onClick={() => handleTimeClick(slot)}
                                         disabled={holdLoading}
-                                        title={`Available (${slot.available} dentist${slot.available > 1 ? 's' : ''})`}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all relative ${
+                                        className={`py-3 rounded-2xl text-xs font-bold transition-all relative ${
                                             isSelected
-                                                ? 'bg-sky-500 text-white ring-2 ring-sky-500/20'
+                                                ? 'bg-brand-500 text-white shadow-theme-md ring-4 ring-brand-500/10'
                                                 : isHeldByMe
-                                                  ? 'bg-amber-100 border border-amber-300 text-amber-900'
-                                                  : 'bg-white border border-slate-100 text-slate-700 hover:border-sky-200 hover:shadow-md disabled:opacity-50'
+                                                  ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400'
+                                                  : 'bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                                         }`}
                                     >
                                         {slot.displayTime}
-                                        {/* ✅ Show hold lock icon */}
-                                        {isHeldByMe && (
-                                            <Lock
-                                                size={12}
-                                                className='absolute top-1 right-1'
-                                            />
-                                        )}
+                                        {isHeldByMe && <Lock size={10} className='absolute top-2 right-2' />}
                                     </button>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className='text-sm text-slate-500 py-4 bg-slate-50 rounded-xl px-4 flex flex-col gap-2'>
-                            <p>No available slots for this date.</p>
-                            {/* ✅ NEW: Suggest next available date if provided by backend */}
+                        <div className='p-6 bg-gray-50 dark:bg-gray-900/50 rounded-2xl text-center border-2 border-dashed border-gray-200 dark:border-gray-700'>
+                            <p className='text-gray-500 text-sm font-medium mb-1'>No slots available for this date.</p>
                             {nextAvailableDate && (
-                                <p className='text-sky-600 font-medium text-sm'>
-                                    Next available date:{' '}
-                                    <button
-                                        onClick={() =>
-                                            handleDateClick(new Date(nextAvailableDate))
-                                        }
-                                        className='underline hover:text-sky-700 transition-colors'
-                                    >
-                                        {new Date(nextAvailableDate).toLocaleDateString(
-                                            'en-US',
-                                            {
-                                                weekday: 'short',
-                                                month: 'short',
-                                                day: 'numeric',
-                                            },
-                                        )}
-                                    </button>
-                                </p>
+                                <button
+                                    onClick={() => handleDateClick(new Date(nextAvailableDate))}
+                                    className='text-brand-500 text-sm font-bold hover:underline'
+                                >
+                                    Try {new Date(nextAvailableDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
+                                </button>
                             )}
-                            {!nextAvailableDate && <p>Try another day.</p>}
                         </div>
                     )}
                 </div>
             )}
 
             {/* Navigation */}
-            <div className='flex justify-between'>
+            <div className='flex justify-between items-center pt-6 border-t border-gray-100 dark:border-gray-700'>
                 <button
                     onClick={onBack}
-                    className='text-slate-500 hover:text-slate-700 font-medium text-sm px-4 py-2.5'
+                    className='text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-bold text-base px-8 py-3 transition-colors'
                 >
-                    ← Back
+                    Back
                 </button>
                 <button
                     onClick={onNext}
                     disabled={!selectedDate || !selectedTime}
-                    className='bg-sky-500 hover:bg-sky-600 text-white font-semibold
-                               px-6 py-2.5 rounded-xl transition-colors
-                               disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-bold px-10 py-4 rounded-2xl transition-all shadow-theme-md disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 text-base'
                 >
-                    Next: Your Info →
+                    Review Details
+                    <ArrowRight size={20} />
                 </button>
             </div>
         </div>

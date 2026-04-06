@@ -1,32 +1,20 @@
 import { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowRight, Clock as ClockIcon } from 'lucide-react';
 import useServices from '../../hooks/useServices';
 import { useAuth } from '../../context/AuthContext';
 import SpecializedServiceModal from './SpecializedServiceModal';
 
-/**
- * Service selection step - displays both general and specialized services.
- *
- * Two-Tier Behavior:
- * - GENERAL services: Direct selection → proceed to next step
- * - SPECIALIZED services: Show lock icon → open modal on click → redirect to login/register
- */
 const ServiceStep = ({ selectedServiceId, onSelect, onNext, onUpdateFields }) => {
     const { services, loading, error } = useServices();
     const { user } = useAuth();
     const [specializedService, setSpecializedService] = useState(null);
-
     const [filter, setFilter] = useState('all');
 
     const handleSelect = (service) => {
-        // If specialized service AND user is NOT logged in → show modal
         if (service.tier === 'specialized' && !user) {
             setSpecializedService(service);
             return;
         }
-
-        // ✅ When service changes, clear the previously selected date and time
-        // (Different services have different time slots)
         onSelect(service.id, service.name, service.tier);
         if (onUpdateFields) {
             onUpdateFields({ date: '', time: '' });
@@ -40,84 +28,90 @@ const ServiceStep = ({ selectedServiceId, onSelect, onNext, onUpdateFields }) =>
 
     return (
         <div>
-            <h2 className='text-xl font-bold text-slate-900 mb-2'>Select a Service</h2>
-            <p className='text-slate-500 text-sm mb-6'>
-                Choose the dental service you'd like to book.
-            </p>
+            <div className='mb-8 sm:mb-10'>
+                <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
+                    Select a Service
+                </h2>
+                <p className='text-[13px] sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-3xl leading-relaxed'>
+                    Choose the dental service you'd like to book from our available options.
+                </p>
+            </div>
 
             {/* Service Type Filter */}
-            <div className='flex flex-wrap gap-2 mb-6'>
+            <div className='flex items-center gap-1.5 sm:gap-2 mb-8 sm:mb-10 bg-gray-100 dark:bg-gray-800/50 p-1.5 sm:p-2 rounded-2xl w-fit'>
                 {['all', 'general', 'specialized'].map((t) => (
                     <button
                         key={t}
                         onClick={() => setFilter(t)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all ${
+                        className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition-all duration-300 ${
                             filter === t
-                                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20 ring-2 ring-sky-500/10'
-                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                                ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-theme-sm ring-1 ring-black/5 dark:ring-white/5'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                         }`}
                     >
-                        {t === 'all' ? 'All Services' : `${t} Services`}
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
                     </button>
                 ))}
             </div>
 
-            {loading && <div className='text-center text-slate-400 py-12'>Loading services...</div>}
-
-            {error && (
-                <div className='text-center text-red-500 py-12'>
-                    Failed to load services. Please try again.
+            {loading ? (
+                <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className='h-[180px] bg-gray-100 dark:bg-gray-800 animate-pulse rounded-2xl' />
+                    ))}
                 </div>
-            )}
-
-            {!loading && !error && filteredServices && filteredServices.length > 0 && (
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8'>
+            ) : error ? (
+                <div className='text-center text-rose-500 py-10'>{error}</div>
+            ) : (
+                <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
                     {filteredServices.map((service) => {
-                        const isSelected = service.id === selectedServiceId;
+                        const isSelected = String(service.id) === String(selectedServiceId);
                         const isSpecialized = service.tier === 'specialized';
-                        const isLocked = isSpecialized && !user; // Only locked if specialized AND not logged in
+                        const isLocked = isSpecialized && !user;
 
                         return (
                             <button
                                 key={service.id}
                                 onClick={() => handleSelect(service)}
-                                className={`text-left p-4 rounded-xl border-2 transition-all relative ${
+                                className={`text-left p-4 sm:p-5 rounded-2xl border transition-all relative group flex flex-col h-full min-h-[160px] sm:min-h-[180px] ${
                                     isSelected
-                                        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-500/20'
+                                        ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-500/10 shadow-theme-sm'
                                         : isLocked
-                                          ? 'border-amber-100 bg-amber-50/30 hover:border-amber-200 cursor-pointer'
-                                          : 'border-slate-100 bg-white hover:border-sky-200 hover:bg-sky-50/50'
+                                          ? 'border-gray-200 bg-gray-50/50 opacity-90 dark:border-gray-800 dark:bg-white/[0.02]'
+                                          : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] hover:border-brand-300 dark:hover:border-brand-500/50 hover:shadow-theme-md'
                                 }`}
                             >
-                                {/* Lock icon badge for locked services */}
                                 {isLocked && (
-                                    <div className='absolute top-3 right-3 bg-amber-500 text-white rounded-full p-1.5 shadow-lg'>
-                                        <Lock size={14} />
+                                    <div className='absolute top-4 right-4 sm:top-5 sm:right-5 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 shadow-theme-xs'>
+                                        <Lock size={14} className="sm:hidden" />
+                                        <Lock size={16} className="hidden sm:block" />
                                     </div>
                                 )}
 
-                                <h3 className='font-semibold text-slate-900 text-sm pr-8'>
-                                    {service.name}
-                                </h3>
-                                <p className='text-xs text-slate-500 mt-1 line-clamp-2'>
-                                    {service.description}
-                                </p>
-
-                                {/* Show "Login required" label only for locked services */}
-                                {isLocked && (
-                                    <p className='text-xs text-amber-600 font-medium mt-2'>
-                                        🔒 Login required to book
+                                <div className="flex-grow mb-4 sm:mb-5">
+                                    <h3 className={`font-bold text-[13px] sm:text-sm md:text-base lg:text-lg pr-8 sm:pr-10 leading-tight mb-1 sm:mb-1.5 ${
+                                        isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-800 dark:text-white/90'
+                                    }`}>
+                                        {service.name}
+                                    </h3>
+                                    <p className='text-[12px] sm:text-[13px] text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed'>
+                                        {service.description}
                                     </p>
-                                )}
+                                </div>
 
-                                <div className='flex items-center gap-3 mt-2'>
-                                    <span className='text-xs text-sky-600 font-medium'>
-                                        ⏱ {service.duration_minutes} min
-                                    </span>
-                                    {service.price && (
-                                        <span className='text-xs text-slate-700 font-bold'>
-                                            ₱{Number(service.price).toLocaleString()}
-                                        </span>
+                                <div className='flex items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-800'>
+                                    <div className='flex items-center gap-2 sm:gap-3'>
+                                        <div className='flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 shadow-theme-xs'>
+                                            <ClockIcon size={12} className='sm:hidden text-brand-500' />
+                                            <ClockIcon size={14} className='hidden sm:block text-brand-500' />
+                                            {service.duration_minutes}m
+                                        </div>
+                                    </div>
+                                    
+                                    {isLocked && (
+                                        <div className='flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md border border-amber-100 dark:border-amber-500/20'>
+                                            Locked
+                                        </div>
                                     )}
                                 </div>
                             </button>
@@ -127,22 +121,24 @@ const ServiceStep = ({ selectedServiceId, onSelect, onNext, onUpdateFields }) =>
             )}
 
             {!loading && !error && (!services || services.length === 0) && (
-                <div className='text-center text-slate-400 py-12'>
-                    No services available at the moment.
+                <div className='text-center text-gray-400 py-20'>
+                    <p className='font-medium'>No services available at the moment.</p>
                 </div>
             )}
 
             {/* Navigation */}
-            <div className='flex justify-end'>
+            <div className='flex justify-end pt-6 border-t border-gray-100 dark:border-gray-700'>
                 <button
                     onClick={onNext}
                     disabled={!selectedServiceId}
-                    className='bg-sky-500 hover:bg-sky-600 active:bg-sky-700
-                               text-white font-semibold px-6 py-2.5 rounded-xl
-                               transition-colors shadow-lg shadow-sky-500/20
-                               disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='bg-brand-500 hover:bg-brand-600 active:scale-95
+                               text-white font-bold px-10 py-4 rounded-2xl
+                               transition-all shadow-theme-md disabled:opacity-30 
+                               disabled:cursor-not-allowed disabled:active:scale-100
+                               flex items-center gap-2 text-base'
                 >
-                    Next: Pick Date & Time →
+                    Continue to Schedule
+                    <ArrowRight size={20} />
                 </button>
             </div>
 
