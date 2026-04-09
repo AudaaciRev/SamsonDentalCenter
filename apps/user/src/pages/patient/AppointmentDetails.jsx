@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import { Badge } from '../../components/ui';
 import useAppointmentDetail from '../../hooks/useAppointmentDetail';
-import { STATUS_LABEL, STATUS_COLOR, formatDate, formatTime } from '../../hooks/useAppointments';
+import { STATUS_LABEL, STATUS_COLOR, formatDate, formatTime, formatFullDateTime } from '../../hooks/useAppointments';
 
 // ---------------------------------------------------------------------------
 // Icons
@@ -195,6 +195,10 @@ const AppointmentDetails = () => {
                                 </div>
                             </div>
                         </div>
+
+                        <p className='text-xs text-gray-400 mt-1 xl:text-right w-full'>
+                            Booked on: {formatFullDateTime(raw.created_at)}
+                        </p>
 
                         {/* Expandable status detail */}
                         {showStatusDetails && (
