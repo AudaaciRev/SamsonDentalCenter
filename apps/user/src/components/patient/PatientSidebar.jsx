@@ -175,13 +175,17 @@ const navItems = [
 ];
 
 const PatientSidebar = () => {
-    const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+    const { isExpanded, isMobileOpen, setIsMobileOpen, isHovered, setIsHovered } = useSidebar();
     const location = useLocation();
 
     const isActive = useCallback(
         (path) => location.pathname === path,
         [location.pathname]
     );
+    
+    useEffect(() => {
+        setIsMobileOpen(false);
+    }, [location.pathname]);
 
     return (
         <aside
