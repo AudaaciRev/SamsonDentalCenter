@@ -178,14 +178,14 @@ const NotificationsPage = () => {
     const parentPath = selectedId ? '/patient/notifications' : null;
 
     return (
-        <div className='flex flex-col h-[calc(100vh-110px)]'>
+        <div className='flex flex-col flex-grow'>
             <PageBreadcrumb 
                 pageTitle={breadcrumbTitle} 
                 parentName={parentName} 
                 parentPath={parentPath}
             />
             
-            <div className='flex-grow min-h-0 relative'>
+            <div className='flex-grow min-h-0 relative -mx-4 sm:mx-0'>
                 {selectedId ? (
                     <NotificationDetailView 
                         notification={selectedNotification}

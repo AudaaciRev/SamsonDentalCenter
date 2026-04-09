@@ -21,9 +21,9 @@ const NotificationInbox = ({
     onNotificationClick
 }) => {
     return (
-        <div className='flex flex-col h-full bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-theme-sm overflow-hidden'>
+        <div className='flex flex-col h-full bg-transparent sm:bg-white dark:sm:bg-gray-900 sm:rounded-3xl border-y border-gray-100 dark:border-gray-800 sm:border sm:shadow-theme-sm overflow-hidden'>
             {/* Header / Search Area */}
-            <div className='px-6 py-5 border-b border-gray-100 dark:border-gray-800 space-y-4'>
+            <div className='px-4 sm:px-6 py-5 border-b border-gray-100 dark:border-gray-800 space-y-4'>
                 <div className='relative'>
                     <span className='absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400'>
                         <Search size={18} />
@@ -86,7 +86,7 @@ const NotificationInbox = ({
             
             {/* Footer / Pagination Placeholder */}
             {notifications.length > 0 && (
-                <div className='px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-bold uppercase tracking-wider'>
+                <div className='px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-bold uppercase tracking-wider'>
                     <span>Showing {notifications.length} results</span>
                     <div className='flex items-center gap-4'>
                         <button className='hover:text-gray-600 transition-colors'>Older</button>
