@@ -183,6 +183,7 @@ const NotificationsPage = () => {
                 pageTitle={breadcrumbTitle} 
                 parentName={parentName} 
                 parentPath={parentPath}
+                className='mb-2'
             />
             
             <div className='flex-grow min-h-0 relative -mx-4 sm:mx-0'>

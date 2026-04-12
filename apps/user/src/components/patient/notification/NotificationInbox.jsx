@@ -61,7 +61,7 @@ const NotificationInbox = ({
             </div>
 
             {/* List Area */}
-            <div className='overflow-y-auto grow'>
+            <div className='overflow-y-auto grow pb-12 sm:pb-0'>
                 {notifications.length > 0 ? (
                     notifications.map((n) => (
                         <NotificationRow 
@@ -86,11 +86,11 @@ const NotificationInbox = ({
             
             {/* Footer / Pagination Placeholder */}
             {notifications.length > 0 && (
-                <div className='px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-bold uppercase tracking-wider'>
+                <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-4 sm:px-6 py-3.5 sm:py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-bold uppercase tracking-wider shadow-[0_-8px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-8px_20px_rgba(0,0,0,0.2)] sm:shadow-none'>
                     <span>Showing {notifications.length} results</span>
                     <div className='flex items-center gap-4'>
-                        <button className='hover:text-gray-600 transition-colors'>Older</button>
-                        <button className='hover:text-gray-600 transition-colors'>Newer</button>
+                        <button className='hover:text-brand-500 dark:hover:text-brand-400 transition-colors'>Older</button>
+                        <button className='hover:text-brand-500 dark:hover:text-brand-400 transition-colors'>Newer</button>
                     </div>
                 </div>
             )}

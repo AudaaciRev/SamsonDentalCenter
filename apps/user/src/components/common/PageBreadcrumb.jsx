@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 
-const PageBreadcrumb = ({ pageTitle, parentName, parentPath }) => {
+const PageBreadcrumb = ({ pageTitle, parentName, parentPath, className = 'mb-6' }) => {
     return (
-        <div className='flex flex-wrap items-center justify-between gap-3 mb-6'>
+        <div className={`flex flex-wrap items-center justify-between gap-3 ${className}`}>
             <h2 className='text-xl font-semibold text-gray-800 dark:text-white/90'>
                 {pageTitle}
             </h2>
