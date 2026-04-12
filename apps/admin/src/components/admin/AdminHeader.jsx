@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 import { useAuth } from '../../context/AuthContext';
@@ -56,7 +56,7 @@ const AdminHeader = () => {
                             className='flex items-center text-gray-700 dropdown-toggle'
                         >
                             <span className='mr-3 overflow-hidden rounded-full h-11 w-11 bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-sm'>
-                                {user?.full_name?.[0]?.toUpperCase() || 'D'}
+                                {user?.full_name?.[0]?.toUpperCase() || 'A'}
                             </span>
                             <span className='hidden sm:block mr-1 font-medium truncate max-w-[120px] text-theme-sm'>
                                 {user?.full_name?.split(' ')[0] || 'Admin'}
