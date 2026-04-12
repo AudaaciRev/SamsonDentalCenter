@@ -1,4 +1,4 @@
-// Table Component
+﻿// Table Component
 const Table = ({ children, className = '', ...props }) => {
     return (
         <table className={`min-w-full ${className}`} {...props}>
@@ -29,3 +29,7 @@ const TableCell = ({ children, isHeader = false, className = '', ...props }) => 
 };
 
 export { Table, TableHeader, TableBody, TableRow, TableCell };
+
+
+
+

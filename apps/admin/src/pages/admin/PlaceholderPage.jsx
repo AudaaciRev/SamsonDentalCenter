@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 
 const PlaceholderPage = ({ title }) => {
@@ -18,3 +18,7 @@ const PlaceholderPage = ({ title }) => {
 };
 
 export default PlaceholderPage;
+
+
+
+

@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
-import DashboardStats from '../../components/patient/dashboard/DashboardStats';
-import DashboardNotifications from '../../components/patient/dashboard/DashboardNotifications';
-import DashboardAppointments from '../../components/patient/dashboard/DashboardAppointments';
+import DashboardStats from '../../components/admin/dashboard/DashboardStats';
+import DashboardNotifications from '../../components/admin/dashboard/DashboardNotifications';
+import DashboardAppointments from '../../components/admin/dashboard/DashboardAppointments';
 
 const AdminDashboard = () => {
     return (
@@ -16,7 +16,7 @@ const AdminDashboard = () => {
                         Welcome back, Admin!
                     </h2>
                     <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                        Here's an overview of the clinic's management metrics and staff activities.
+                        Here's an overview of your schedule and admin activities.
                     </p>
                 </div>
 
@@ -41,3 +41,7 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+
+

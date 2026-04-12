@@ -1,4 +1,4 @@
-const Badge = ({
+﻿const Badge = ({
     variant = 'light',
     color = 'primary',
     size = 'md',
@@ -55,3 +55,7 @@ const Badge = ({
 };
 
 export default Badge;
+
+
+
+

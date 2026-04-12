@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+﻿import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
 import AdminPortalLayout from '../layouts/AdminPortalLayout';
@@ -19,13 +19,13 @@ const AppRoutes = () => {
         <>
             <ScrollToTop />
             <Routes>
-                {/* ── Auth ── */}
+                {/* Ã¢â€â‚¬Ã¢â€â‚¬ Auth Ã¢â€â‚¬Ã¢â€â‚¬ */}
                 <Route
                     path='/login'
                     element={<LoginPage />}
                 />
 
-                {/* ── Admin Portal (Sidebar Layout) ── */}
+                {/* Ã¢â€â‚¬Ã¢â€â‚¬ Admin Portal (Sidebar Layout) Ã¢â€â‚¬Ã¢â€â‚¬ */}
                 <Route
                     path='/'
                     element={
@@ -35,14 +35,14 @@ const AppRoutes = () => {
                     }
                 >
                     <Route index element={<AdminDashboard />} />
-                    <Route path='staff' element={<PlaceholderPage title="Staff Management" />} />
-                    <Route path='patients' element={<PlaceholderPage title="Patients" />} />
-                    <Route path='settings' element={<PlaceholderPage title="Clinic Settings" />} />
+                    <Route path='appointments' element={<PlaceholderPage title="Appointments" />} />
+                    <Route path='admins' element={<PlaceholderPage title="My Admins" />} />
+                    <Route path='schedule' element={<PlaceholderPage title="Schedule" />} />
                     <Route path='notifications' element={<PlaceholderPage title="Notifications" />} />
                     <Route path='profile' element={<PlaceholderPage title="Profile" />} />
                 </Route>
 
-                {/* ── Catch-all ── */}
+                {/* Ã¢â€â‚¬Ã¢â€â‚¬ Catch-all Ã¢â€â‚¬Ã¢â€â‚¬ */}
                 <Route
                     path='*'
                     element={
@@ -58,3 +58,7 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+
+
+
+

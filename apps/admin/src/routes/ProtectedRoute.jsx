@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+﻿import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
@@ -26,3 +26,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export default ProtectedRoute;
+
+
+
+

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 
 const Dropdown = ({ isOpen, onClose, children, className = '' }) => {
     const dropdownRef = useRef(null);
@@ -33,3 +33,7 @@ const Dropdown = ({ isOpen, onClose, children, className = '' }) => {
 };
 
 export default Dropdown;
+
+
+
+

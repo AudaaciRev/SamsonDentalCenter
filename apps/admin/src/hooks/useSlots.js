@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../utils/api';
 
 const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, dentistId = null) => {
@@ -7,7 +7,7 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // ✅ Ref for coordinating requests and debouncing
+    // âœ… Ref for coordinating requests and debouncing
     const fetchTimeoutRef = useRef(null);
     const isFetchingRef = useRef(false);
 
@@ -101,3 +101,7 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
 };
 
 export default useSlots;
+
+
+
+

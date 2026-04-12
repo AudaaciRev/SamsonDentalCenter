@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import useSlotHold from './useSlotHold';
@@ -29,13 +29,13 @@ const getOrCreateSessionId = () => {
  * Manages user booking wizard state and submission.
  *
  * Features:
- * - 4 steps (service → datetime → review → confirm) for booking self
- * - 5 steps (service → datetime → other_info → review → confirm) for booking others
+ * - 4 steps (service â†’ datetime â†’ review â†’ confirm) for booking self
+ * - 5 steps (service â†’ datetime â†’ other_info â†’ review â†’ confirm) for booking others
  * - Review step displays user details (read-only, no editing)
  * - No email input needed (uses account email from JWT)
  * - Two-tier system:
- *   - General services → CONFIRMED immediately
- *   - Specialized services → PENDING (awaiting approval)
+ *   - General services â†’ CONFIRMED immediately
+ *   - Specialized services â†’ PENDING (awaiting approval)
  * - API submission with timeout handling
  * - Requires authentication token
  * - Optional booked_for_name field for booking on behalf of others
@@ -51,32 +51,32 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
     const [book_for_others, setBookForOthers] = useState(false);
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState({
-        service_id: initialServiceId || '', // ✅ Pre-populate from URL param
-        service_name: initialServiceName || '', // ✅ Pre-populate from URL param
+        service_id: initialServiceId || '', // âœ… Pre-populate from URL param
+        service_name: initialServiceName || '', // âœ… Pre-populate from URL param
         date: '',
         time: '',
         booked_for_name: '', // Empty string = booking for self
-        dentist_id: '', // ✅ NEW: Preferred dentist (null = any available)
-        // ✅ NEW: Deferred Waitlist Fields
+        dentist_id: '', // âœ… NEW: Preferred dentist (null = any available)
+        // âœ… NEW: Deferred Waitlist Fields
         waitlist_date: '', // Selected full slot date
         waitlist_time: '', // Selected full slot time
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
-    // ✅ Track submission timestamp to prevent rapid resubmissions
+    // âœ… Track submission timestamp to prevent rapid resubmissions
     const [lastSubmissionTime, setLastSubmissionTime] = useState(null);
 
-    // ✅ Initialize slot hold hook at the wizard level to survive step changes
+    // âœ… Initialize slot hold hook at the wizard level to survive step changes
     const slotHold = useSlotHold(sessionId);
 
-    // ✅ Generate session ID on component mount
+    // âœ… Generate session ID on component mount
     useEffect(() => {
         const id = getOrCreateSessionId();
         setSessionId(id);
     }, []);
 
-    // ✅ Auto-release hold if user goes back and changes the service
+    // âœ… Auto-release hold if user goes back and changes the service
     useEffect(() => {
         if (slotHold.activeHold && slotHold.activeHold.service_id !== formData.service_id) {
             slotHold.releaseHold();
@@ -100,7 +100,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
 
     const setBookForOthersMode = (enabled) => {
         setBookForOthers(enabled);
-        // ✅ IMPROVEMENT #3: Clear booked_for_name if switching to "book for self"
+        // âœ… IMPROVEMENT #3: Clear booked_for_name if switching to "book for self"
         if (!enabled) {
             setFormData((prev) => ({ ...prev, booked_for_name: '' }));
         }
@@ -121,7 +121,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
 
     // Submit booking to API with unified atomic endpoint
     const submit = async () => {
-        // ✅ Implement client-side rate limiting (minimum 1 second between submissions)
+        // âœ… Implement client-side rate limiting (minimum 1 second between submissions)
         const now = Date.now();
         if (lastSubmissionTime && now - lastSubmissionTime < 1000) {
             setError('Please wait a moment before trying again.');
@@ -139,13 +139,13 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         }, 15000);
 
         try {
-            // ✅ Unified Atomic Body
+            // âœ… Unified Atomic Body
             const body = {
                 service_id: formData.service_id,
                 booking: formData.time ? {
                     date: formData.date,
                     time: formData.time,
-                    dentist_id: formData.dentist_id || null, // ✅ NEW: Preferred dentist
+                    dentist_id: formData.dentist_id || null, // âœ… NEW: Preferred dentist
                     booked_for_name: book_for_others && formData.booked_for_name.trim() 
                         ? formData.booked_for_name.trim() 
                         : null,
@@ -175,7 +175,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             const bookingSuccess = !!booking?.booked;
             const waitlistSuccess = !!waitlist?.success;
 
-            // ✅ NEW: More resilient success handling
+            // âœ… NEW: More resilient success handling
             const hasRequestedBooking = !!formData.time;
             const hasRequestedWaitlist = !!formData.waitlist_time;
 
@@ -193,7 +193,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                             : 'Waitlist confirmed!',
                 });
             }
-            // ✅ SCENARIO 4: Total Failure (Neither requested action succeeded) ❌
+            // âœ… SCENARIO 4: Total Failure (Neither requested action succeeded) âŒ
             else {
                 setResult(null);
                 setError(booking?.message || waitlist?.message || 'The selected slot is no longer available. Please try another time.');
@@ -221,16 +221,16 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             time: '',
             booked_for_name: '',
             dentist_id: '',
-            // ✅ Clear waitlist fields on reset
+            // âœ… Clear waitlist fields on reset
             waitlist_date: '',
             waitlist_time: '',
         });
         setError(null);
-        setSubmitting(false); // ✅ Safety reset
+        setSubmitting(false); // âœ… Safety reset
         setResult(null);
         setBookForOthers(false);
 
-        // ✅ Rotate session ID to ensure "Book Another" starts fresh
+        // âœ… Rotate session ID to ensure "Book Another" starts fresh
         const newId = generateSessionId();
         sessionStorage.setItem(STORAGE_KEY, newId);
         setSessionId(newId);
@@ -263,3 +263,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
 };
 
 export default useUserBooking;
+
+
+
+

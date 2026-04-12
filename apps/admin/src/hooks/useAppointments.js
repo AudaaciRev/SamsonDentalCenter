@@ -1,20 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * Fetches the current patient's appointments from the backend.
+ * Fetches the current admin's appointments from the backend.
  *
  * Backend endpoint: GET /api/v1/appointments/my
  * Query params: status, page, limit, sort
  *
- * Status map (backend → display):
- *   CONFIRMED     → Approved
- *   PENDING       → Pending
- *   CANCELLED     → Cancelled
- *   LATE_CANCEL   → Cancelled
- *   COMPLETED     → Completed
- *   NO_SHOW       → Missed
+ * Status map (backend â†’ display):
+ *   CONFIRMED     â†’ Approved
+ *   PENDING       â†’ Pending
+ *   CANCELLED     â†’ Cancelled
+ *   LATE_CANCEL   â†’ Cancelled
+ *   COMPLETED     â†’ Completed
+ *   NO_SHOW       â†’ Missed
  */
 
 // --- Utility helpers ---
@@ -41,7 +41,7 @@ export const STATUS_COLOR = {
 };
 
 /**
- * Format a date string 'YYYY-MM-DD' → 'Oct 24, 2024'
+ * Format a date string 'YYYY-MM-DD' â†’ 'Oct 24, 2024'
  */
 export const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -55,7 +55,7 @@ export const formatDate = (dateStr) => {
 };
 
 /**
- * Format a time string 'HH:MM:SS' or 'HH:MM' → '10:00 AM'
+ * Format a time string 'HH:MM:SS' or 'HH:MM' â†’ '10:00 AM'
  */
 export const formatTime = (timeStr) => {
     if (!timeStr) return '';
@@ -68,7 +68,7 @@ export const formatTime = (timeStr) => {
 };
 
 /**
- * Format an ISO timestamp string → 'Oct 24, 2024, 10:00 AM'
+ * Format an ISO timestamp string â†’ 'Oct 24, 2024, 10:00 AM'
  */
 export const formatFullDateTime = (isoStr) => {
     if (!isoStr) return '';
@@ -142,3 +142,7 @@ const useAppointments = ({ status = '', sort = 'desc', limit = DEFAULT_LIMIT } =
 };
 
 export default useAppointments;
+
+
+
+

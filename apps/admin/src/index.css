@@ -1,9 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap") layer(base);
+﻿@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap") layer(base);
 
 @import 'tailwindcss';
 
 /* 
-  ─── GLOBAL THEME CONFIGURATION ───
+  â”€â”€â”€ GLOBAL THEME CONFIGURATION â”€â”€â”€
   Edit the variables below to change the look and feel of the entire website.
 */
 :root {
@@ -158,7 +158,7 @@
     }
 }
 
-/* ── Sidebar Menu Utilities ── */
+/* â”€â”€ Sidebar Menu Utilities â”€â”€ */
 @utility menu-item {
     @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
 }
@@ -202,3 +202,6 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+
+

@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom';
+﻿import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/public/Navbar';
 import Footer from '../components/public/Footer';
 import ChatBot from '../components/public/ChatBot';
@@ -20,3 +20,7 @@ const PublicLayout = () => {
 };
 
 export default PublicLayout;
+
+
+
+

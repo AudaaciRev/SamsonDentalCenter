@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 
 /**
  * Hook that alerts clicks outside of the passed ref
@@ -24,3 +24,7 @@ const useClickOutside = (ref, handler) => {
 };
 
 export default useClickOutside;
+
+
+
+

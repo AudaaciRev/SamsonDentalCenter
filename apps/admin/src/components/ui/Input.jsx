@@ -1,4 +1,4 @@
-const Input = ({
+﻿const Input = ({
     type = 'text',
     id,
     name,
@@ -62,3 +62,7 @@ const Input = ({
 };
 
 export default Input;
+
+
+
+

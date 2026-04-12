@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
 const PageBreadcrumb = ({ pageTitle, parentName, parentPath, className = 'mb-6' }) => {
     return (
@@ -11,7 +11,7 @@ const PageBreadcrumb = ({ pageTitle, parentName, parentPath, className = 'mb-6' 
                     <li>
                         <Link
                             className='inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors'
-                            to='/patient'
+                            to='/admin'
                         >
                             Home
                             <svg
@@ -68,3 +68,7 @@ const PageBreadcrumb = ({ pageTitle, parentName, parentPath, className = 'mb-6' 
 };
 
 export default PageBreadcrumb;
+
+
+
+

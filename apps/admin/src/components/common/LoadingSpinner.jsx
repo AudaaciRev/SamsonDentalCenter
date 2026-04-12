@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import styles from './LoadingSpinner.module.css';
 
 const LoadingSpinner = ({ message = 'Loading...' }) => {
@@ -11,3 +11,7 @@ const LoadingSpinner = ({ message = 'Loading...' }) => {
 };
 
 export default LoadingSpinner;
+
+
+
+

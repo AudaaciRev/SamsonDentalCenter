@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Mail, Lock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -114,7 +114,7 @@ const LoginForm = ({ onSubmit, loading = false, error = null, showSignUpLink = t
                             if (passError) setPassError('');
                         }}
                         className={inputClassName(passError, pass)}
-                        placeholder='••••••••'
+                        placeholder='â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'
                     />
                 </InputGroup>
 
@@ -168,3 +168,7 @@ const LoginForm = ({ onSubmit, loading = false, error = null, showSignUpLink = t
 };
 
 export default LoginForm;
+
+
+
+

@@ -1,8 +1,8 @@
-import { SidebarProvider, useSidebar } from '../context/SidebarContext';
+﻿import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import { Outlet } from 'react-router-dom';
-import AdminHeader from '../components/patient/AdminHeader';
-import Backdrop from '../components/patient/Backdrop';
-import AdminSidebar from '../components/patient/AdminSidebar';
+import AdminHeader from '../components/admin/AdminHeader';
+import Backdrop from '../components/admin/Backdrop';
+import AdminSidebar from '../components/admin/AdminSidebar';
 
 const LayoutContent = () => {
     const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -38,3 +38,7 @@ const AdminPortalLayout = () => {
 };
 
 export default AdminPortalLayout;
+
+
+
+

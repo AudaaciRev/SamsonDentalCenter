@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+﻿import { useRef, useEffect } from 'react';
 
 export const Modal = ({
     isOpen,
@@ -83,3 +83,7 @@ export const Modal = ({
         </div>
     );
 };
+
+
+
+

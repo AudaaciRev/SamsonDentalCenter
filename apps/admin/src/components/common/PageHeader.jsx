@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
 const PageHeader = ({ overline, title, subtitle }) => {
@@ -8,10 +8,10 @@ const PageHeader = ({ overline, title, subtitle }) => {
 
   // Image mapping based on page name
   const imageConfig = {
-    "about us": "/images/characters/doctor-mask.png",
+    "about us": "/images/characters/Admin-mask.png",
     "contact us": "/images/characters/tooth-brush.png",
     "our services": "/images/characters/woman-braces.png",
-    "our dentists": "/images/characters/doctor-mask.png",
+    "our dentists": "/images/characters/Admin-mask.png",
     gallery: "/images/characters/woman-braces.png",
     appointment: "/images/characters/tooth-brush.png",
   };
@@ -37,7 +37,7 @@ const PageHeader = ({ overline, title, subtitle }) => {
       },
       "our dentists": {
         title: "Meet the team behind your smile.",
-        desc: "Our experts deliver top-quality treatments in a patient-focused environment.",
+        desc: "Our experts deliver top-quality treatments in a admin-focused environment.",
       },
       gallery: {
         title: "A glimpse into our clinical excellence.",
@@ -55,7 +55,7 @@ const PageHeader = ({ overline, title, subtitle }) => {
       contact: "contact us",
       inquiries: "contact us",
       services: "our services",
-      doctors: "our dentists",
+      Admins: "our dentists",
       team: "our dentists",
       booking: "appointment",
     };
@@ -122,7 +122,7 @@ const PageHeader = ({ overline, title, subtitle }) => {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-blue-900/10"></div>
       </div>
 
-      {/* Image — absolutely fills the right half, top to bottom */}
+      {/* Image â€” absolutely fills the right half, top to bottom */}
       <div className="hidden md:block absolute right-0 top-0 h-full w-1/2 z-0 overflow-hidden">
         {/* flex items-center justify-center */}
         <img
@@ -178,3 +178,7 @@ const PageHeader = ({ overline, title, subtitle }) => {
 };
 
 export default PageHeader;
+
+
+
+

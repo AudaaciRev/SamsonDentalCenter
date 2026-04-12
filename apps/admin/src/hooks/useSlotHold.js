@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../utils/api';
 
 /**
@@ -11,8 +11,8 @@ import { api } from '../utils/api';
  * @returns {object} hold state and actions
  */
 const useSlotHold = (sessionId) => {
-    // ✅ Initialize from localStorage to persist hold when navigating away and back
-    // ✅ Removed localStorage initialization to ensure hold resets on page refresh/reload
+    // âœ… Initialize from localStorage to persist hold when navigating away and back
+    // âœ… Removed localStorage initialization to ensure hold resets on page refresh/reload
     const [activeHold, setActiveHold] = useState(null);
 
     const [previousHoldId, setPreviousHoldId] = useState(null);
@@ -43,7 +43,7 @@ const useSlotHold = (sessionId) => {
             if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
             if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
-            // ✅ Clear localStorage on unmount - this ensures if they leave the booking it's cleared
+            // âœ… Clear localStorage on unmount - this ensures if they leave the booking it's cleared
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('activeSlotHold');
             }
@@ -67,7 +67,7 @@ const useSlotHold = (sessionId) => {
         }
     }, [activeHold?.hold_id]);
 
-    // ✅ Removed localStorage persistence effect — holds now live in memory only
+    // âœ… Removed localStorage persistence effect â€” holds now live in memory only
     // This allows a fresh start when the user reloads the page
 
     // Update countdown timer every second
@@ -106,10 +106,10 @@ const useSlotHold = (sessionId) => {
     /**
      * Hold a time slot - with auto-switch logic
      * If user already has a hold on DIFFERENT time on same date:
-     *   → Auto-release old hold
-     *   → Create new hold
+     *   â†’ Auto-release old hold
+     *   â†’ Create new hold
      * If user already has hold on SAME time:
-     *   → Return existing hold (no duplicate)
+     *   â†’ Return existing hold (no duplicate)
      *
      * @param {string} serviceId - Service UUID
      * @param {string} date - YYYY-MM-DD format
@@ -163,7 +163,7 @@ const useSlotHold = (sessionId) => {
                     return null;
                 }
             } catch (err) {
-                // ✅ FIX: Handle 409 Conflict when slot is already locked by someone else
+                // âœ… FIX: Handle 409 Conflict when slot is already locked by someone else
                 if (err.status === 409) {
                     const errorMsg =
                         'This time slot was just booked by someone else. Please refresh or choose a different time.';
@@ -247,3 +247,7 @@ const useSlotHold = (sessionId) => {
 };
 
 export default useSlotHold;
+
+
+
+

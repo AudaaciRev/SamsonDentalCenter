@@ -1,8 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+﻿const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 /**
  * Shared fetch wrapper.
- * All hooks use this — if the base URL or auth header format changes,
+ * All hooks use this â€” if the base URL or auth header format changes,
  * you only change this one file.
  */
 const request = async (method, path, { body = null, token = null, keepalive = false } = {}) => {
@@ -42,3 +42,7 @@ export const api = {
     patch: (path, body, token) => request('PATCH', path, { body, token }),
     delete: (path, token) => request('DELETE', path, { token }),
 };
+
+
+
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { User, Mail, Phone, Lock, ChevronRight, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -281,7 +281,7 @@ const RegisterForm = ({ onSubmit, loading = false, error = null }) => {
                                         signupErrors.password,
                                         signupData.password,
                                     )}
-                                    placeholder='••••••••'
+                                    placeholder='â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'
                                 />
                             </InputGroup>
                             <InputGroup
@@ -297,7 +297,7 @@ const RegisterForm = ({ onSubmit, loading = false, error = null }) => {
                                         signupErrors.confirmPassword,
                                         signupData.confirmPassword,
                                     )}
-                                    placeholder='••••••••'
+                                    placeholder='â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'
                                 />
                             </InputGroup>
                         </div>
@@ -338,3 +338,7 @@ const RegisterForm = ({ onSubmit, loading = false, error = null }) => {
 };
 
 export default RegisterForm;
+
+
+
+

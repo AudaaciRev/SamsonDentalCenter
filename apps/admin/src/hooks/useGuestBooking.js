@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import useSlotHold from './useSlotHold';
 
@@ -59,16 +59,16 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
 
-    // ✅ Initialize slot hold hook at the wizard level to survive step changes
+    // âœ… Initialize slot hold hook at the wizard level to survive step changes
     const slotHold = useSlotHold(sessionId);
 
-    // ✅ Generate session ID on component mount
+    // âœ… Generate session ID on component mount
     useEffect(() => {
         const id = getOrCreateSessionId();
         setSessionId(id);
     }, []);
 
-    // ✅ Auto-release hold if user goes back and changes the service
+    // âœ… Auto-release hold if user goes back and changes the service
     // This handles the case where a user already picked a time, then goes back to Step 1
     useEffect(() => {
         if (slotHold.activeHold && slotHold.activeHold.service_id !== formData.service_id) {
@@ -97,7 +97,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const prevStep = () => {
         if (step > 0) {
             const nextIdx = step - 1;
-            // ✅ Reset states when going back to Service step
+            // âœ… Reset states when going back to Service step
             if (nextIdx === 0) {
                 slotHold.releaseHold();
                 setFormData(prev => ({
@@ -120,7 +120,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     // Issue #3: Only allow going back to completed steps
     const goToStep = (index) => {
         if (index < step) {
-            // ✅ Reset states when navigating back to Service step via breadcrumbs
+            // âœ… Reset states when navigating back to Service step via breadcrumbs
             if (index === 0) {
                 slotHold.releaseHold();
                 setFormData(prev => ({
@@ -157,7 +157,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                 date: formData.date,
                 time: formData.time,
                 email: formData.email,
-                phone: formData.phone.replace(/\D/g, ''), // ✅ Sanitize: remove non-digits
+                phone: formData.phone.replace(/\D/g, ''), // âœ… Sanitize: remove non-digits
                 full_name: formData.full_name,
                 user_session_id: sessionId,
             };
@@ -168,7 +168,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
 
             if (data.booked) {
                 setResult(data);
-                setSubmitting(false); // ✅ Clear submitting state on success
+                setSubmitting(false); // âœ… Clear submitting state on success
                 // Clean up the hold
                 slotHold.clearHold();
             } else {
@@ -230,10 +230,10 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
             phone: '',
         });
         setError(null);
-        setSubmitting(false); // ✅ Safety reset
+        setSubmitting(false); // âœ… Safety reset
         setResult(null);
 
-        // ✅ Rotate session ID to ensure "Book Another" starts fresh
+        // âœ… Rotate session ID to ensure "Book Another" starts fresh
         const newId = generateSessionId();
         sessionStorage.setItem(STORAGE_KEY, newId);
         setSessionId(newId);
@@ -265,3 +265,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
 };
 
 export default useGuestBooking;
+
+
+
+

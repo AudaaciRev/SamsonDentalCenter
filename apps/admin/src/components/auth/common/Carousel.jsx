@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 export const Carousel = ({ className }) => {
@@ -59,7 +59,7 @@ export const Carousel = ({ className }) => {
                 <div className='space-y-8'>
                     <div className='inline-flex px-4 py-1.5 bg-white/10 border border-white/10 rounded-full backdrop-blur-md shadow-sm'>
                         <span className='text-[11px] font-bold text-blue-200 uppercase tracking-widest'>
-                            Patient Portal
+                            Admin Portal
                         </span>
                     </div>
 
@@ -96,3 +96,7 @@ export const Carousel = ({ className }) => {
 };
 
 export default Carousel;
+
+
+
+

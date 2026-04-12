@@ -1,4 +1,4 @@
-const Label = ({ htmlFor, children, className = '' }) => {
+﻿const Label = ({ htmlFor, children, className = '' }) => {
     return (
         <label
             htmlFor={htmlFor}
@@ -10,3 +10,7 @@ const Label = ({ htmlFor, children, className = '' }) => {
 };
 
 export default Label;
+
+
+
+

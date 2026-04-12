@@ -1,9 +1,19 @@
-function App() {
+﻿import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './routes/AppRoutes';
+import useSmoothScroll from './hooks/useSmoothScroll';
+
+const App = () => {
+    useSmoothScroll();
+
     return (
-        <div>
-            <h1>Admin Portal</h1>
-        </div>
+        <BrowserRouter>
+            <AppRoutes />
+        </BrowserRouter>
     );
-}
+};
 
 export default App;
+
+
+
+
