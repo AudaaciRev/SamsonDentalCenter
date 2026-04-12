@@ -26,7 +26,7 @@ const MyAppointments = () => {
     const [statusFilter, setStatusFilter] = useState('');
 
     const { appointments, page, totalPages, loading, error, goToPage, prevPage, nextPage } =
-        useAppointments({ status: statusFilter, sort: 'desc', limit: 5 });
+        useAppointments({ status: statusFilter, sort: 'desc', limit: 10 });
 
     // Client-side search against service / dentist / date
     const filtered = search.trim()

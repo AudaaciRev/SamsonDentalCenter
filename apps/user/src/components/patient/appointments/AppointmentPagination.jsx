@@ -1,9 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from './AppointmentIcons';
 
 const AppointmentPagination = ({ page, totalPages, prevPage, nextPage, goToPage, totalItems }) => {
-    // Hide entirely if no results found
-    if (!totalItems || totalItems === 0) return null;
-
     const pageNumbers = () => {
         if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
         const pages = new Set([1, 2, page - 1, page, page + 1, totalPages - 1, totalPages]);
@@ -11,6 +8,7 @@ const AppointmentPagination = ({ page, totalPages, prevPage, nextPage, goToPage,
     };
 
     const renderPageButtons = () => {
+        if (!totalItems || totalItems === 0 || !totalPages || totalPages < 1) return null;
         const nums = pageNumbers();
         const result = [];
         nums.forEach((num, i) => {
@@ -25,7 +23,7 @@ const AppointmentPagination = ({ page, totalPages, prevPage, nextPage, goToPage,
                 <button
                     key={num}
                     onClick={() => goToPage(num)}
-                    className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded-lg transition-colors ${num === page
+                    className={`w-8 h-8 flex items-center justify-center text-sm font-bold rounded-lg transition-colors ${num === page
                             ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
                             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05]'
                         }`}
@@ -43,7 +41,7 @@ const AppointmentPagination = ({ page, totalPages, prevPage, nextPage, goToPage,
                 {/* Left: Results Text */}
                 <div className='w-auto sm:w-1/3 text-left'>
                     <span className='text-[10px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap'>
-                        Showing {totalItems || 'many'} results
+                        Showing {totalItems ?? 0} results
                     </span>
                 </div>
 
