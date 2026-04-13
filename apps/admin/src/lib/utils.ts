@@ -1,0 +1,15 @@
+﻿/**
+ * Utility function to conditionally join classnames together
+ * Works with Tailwind CSS classes
+ */
+export function cn(...classes: (string | undefined | null | false)[]): string {
+    return classes
+        .filter((c) => typeof c === 'string')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+
+
+

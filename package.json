@@ -1,5 +1,21 @@
 {
+<<<<<<< HEAD
+  "name": "primera-dental",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "predev": "npm run links",
+    "links": "echo \"\n🚀 PrimeraDental Apps Ready:\n----------------------------\n🦷 API:         http://localhost:5000\n👤 User:        http://localhost:5173\n🔑 Admin:       http://localhost:5174\n📋 Secretary:   http://localhost:5175\n🩺 Doctor:      http://localhost:5176\n----------------------------\n\"",
+    "build": "turbo build",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
+  },
+  "packageManager": "pnpm@10.29.3"
+=======
   "dependencies": {
     "helmet": "^8.1.0"
   }
+>>>>>>> e8350de382f3529895ebe3913b2cf2bd29c6df8a
 }

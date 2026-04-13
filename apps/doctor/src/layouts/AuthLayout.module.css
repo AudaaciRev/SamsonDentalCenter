@@ -1,0 +1,15 @@
+.wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .wrapper {
+        align-items: stretch;
+        padding: 0;
+    }
+}
