@@ -12,7 +12,6 @@ import LoginPage from '../pages/auth/LoginPage';
 
 // Secretary pages
 import SecretaryDashboard from '../pages/secretary/SecretaryDashboard';
-import PlaceholderPage from '../pages/secretary/PlaceholderPage';
 
 const AppRoutes = () => {
     return (
@@ -35,13 +34,6 @@ const AppRoutes = () => {
                     }
                 >
                     <Route index element={<SecretaryDashboard />} />
-                    <Route path='appointments' element={<PlaceholderPage title="Appointments" />} />
-                    <Route path='patients' element={<PlaceholderPage title="Patients" />} />
-                    <Route path='schedule' element={<PlaceholderPage title="Schedule" />} />
-                    <Route path='inventory' element={<PlaceholderPage title="Inventory" />} />
-                    <Route path='billing' element={<PlaceholderPage title="Billing" />} />
-                    <Route path='notifications' element={<PlaceholderPage title="Notifications" />} />
-                    <Route path='profile' element={<PlaceholderPage title="Profile" />} />
                 </Route>
 
                 {/* ── Catch-all ── */}

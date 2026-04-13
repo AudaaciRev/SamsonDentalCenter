@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 import { useAuth } from '../../context/AuthContext';
-import PatientNotification from './PatientNotification';
 
 const SecretaryHeader = () => {
     const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
@@ -43,13 +42,10 @@ const SecretaryHeader = () => {
                             </svg>
                         )}
                     </button>
-
                 </div>
 
-                {/* Right: User Info & Notifications */}
+                {/* Right: User Info & Notifications (Notifications removed for cleanup) */}
                 <div className='flex items-center gap-2 lg:gap-4'>
-                    <PatientNotification />
-
                     <div className='relative'>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
