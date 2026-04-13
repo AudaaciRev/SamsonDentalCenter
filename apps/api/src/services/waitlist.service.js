@@ -7,6 +7,7 @@ import {
     APPOINTMENT_SOURCE,
 } from '../utils/constants.js';
 import { AppError } from '../utils/errors.js';
+import { sendWaitlistOffer } from './notification.service.js';
 
 /**
  * Add a patient to the waitlist.
@@ -256,12 +257,17 @@ export const notifyWaitlist = async (freedSlot) => {
     console.log(`✅ [WAITLIST] Notified patient ${firstInLine.patient_id} for ${date} @ ${start_time}`);
 
     // ── 3. Create a notification record ──
-    await supabaseAdmin.from('notifications').insert({
-        user_id: firstInLine.patient_id,
-        type: 'WAITLIST',
-        channel: 'in_app',
-        title: 'A slot is available!',
-        message: `A slot opened up on ${date} at ${start_time}. You have ${CLINIC_CONFIG.WAITLIST_TIMEOUT_MINUTES} minutes to confirm.`,
+    const { data: service } = await supabaseAdmin
+        .from('services')
+        .select('name')
+        .eq('id', service_id)
+        .single();
+
+    await sendWaitlistOffer(firstInLine.patient_id, {
+        date,
+        start_time,
+        service: service?.name,
+        timeout_minutes: CLINIC_CONFIG.WAITLIST_TIMEOUT_MINUTES
     });
 
     return {

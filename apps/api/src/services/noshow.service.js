@@ -1,6 +1,7 @@
 import { AppError } from '../utils/errors.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { APPOINTMENT_STATUS, CLINIC_CONFIG } from '../utils/constants.js';
+import { sendNoShowNotice, sendRestrictionNotice } from './notification.service.js';
 
 /**
  * Mark an appointment as NO_SHOW and log it.
@@ -56,12 +57,9 @@ export const markNoShow = async (appointmentId) => {
     });
 
     // ── 4. Create in-app notification for the patient ──
-    await supabaseAdmin.from('notifications').insert({
-        user_id: appointment.patient_id,
-        type: 'NO_SHOW',
-        channel: 'in_app',
-        title: 'Missed Appointment',
-        message: `You missed your appointment on ${appointment.appointment_date} at ${appointment.start_time}. Would you like to reschedule?`,
+    await sendNoShowNotice(appointment.patient_id, {
+        date: appointment.appointment_date,
+        start_time: appointment.start_time,
     });
 
     // ── 5. Get patient's total no-show count ──
@@ -94,12 +92,9 @@ export const markNoShow = async (appointmentId) => {
             .eq('id', appointment.patient_id);
 
         // Notify patient about the restriction
-        await supabaseAdmin.from('notifications').insert({
-            user_id: appointment.patient_id,
-            type: 'RESTRICTION',
-            channel: 'in_app',
-            title: 'Booking Restrictions Applied',
-            message: `Due to ${noShowCount} missed appointments, your booking has been restricted. You can only book up to ${CLINIC_CONFIG.NO_SHOW_RESTRICT_ADVANCE_DAYS} days in advance and a deposit may be required. Please contact the clinic for more information.`,
+        await sendRestrictionNotice(appointment.patient_id, {
+            noShowCount,
+            maxAdvanceDays: CLINIC_CONFIG.NO_SHOW_RESTRICT_ADVANCE_DAYS
         });
     }
 

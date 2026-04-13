@@ -6,6 +6,7 @@ import NotificationDetailView from '../../components/patient/notification/Notifi
 import useNotifications from '../../hooks/useNotifications';
 import { formatFullDateTime } from '../../hooks/useAppointments';
 import { Clock } from 'lucide-react';
+import { renderNotification } from '../../utils/notificationRenderer.jsx';
 
 const NotificationsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -49,21 +50,25 @@ const NotificationsPage = () => {
     };
 
     // Map Backend structure to Frontend needs
-    const mappedNotifications = notifications.map(n => ({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        fullMessage: n.message, // Assuming same for now
-        category: n.type,
-        time: n.sent_at ? formatFullDateTime(n.sent_at) : '',
-        isRead: n.is_read,
-        isStarred: false
-    }));
+    const mappedNotifications = notifications.map(n => {
+        const rendered = renderNotification(n);
+        return {
+            id: n.id,
+            title: rendered.title,
+            message: rendered.message,
+            fullMessage: rendered.message,
+            searchText: rendered.text,
+            category: n.type,
+            time: n.sent_at ? formatFullDateTime(n.sent_at) : '',
+            isRead: n.is_read,
+            isStarred: false
+        };
+    });
 
     // Filter Logic
     const filtered = mappedNotifications.filter(n => {
         const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             n.message.toLowerCase().includes(searchQuery.toLowerCase());
+                             n.searchText.toLowerCase().includes(searchQuery.toLowerCase());
         
         if (!matchesSearch) return false;
         

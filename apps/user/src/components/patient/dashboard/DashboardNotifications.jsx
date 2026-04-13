@@ -3,6 +3,7 @@ import { Bell, CheckCircle2, Info, AlertCircle, Calendar, Trash2 } from 'lucide-
 import useNotifications from '../../../hooks/useNotifications';
 import { formatFullDateTime } from '../../../hooks/useAppointments';
 import { Link } from 'react-router-dom';
+import { renderNotification } from '../../../utils/notificationRenderer.jsx';
 
 const DashboardNotifications = () => {
     const { notifications, loading, markAllRead } = useNotifications();
@@ -47,24 +48,27 @@ const DashboardNotifications = () => {
                         <p className='text-xs'>No notifications yet</p>
                     </div>
                 ) : (
-                    notifications.slice(0, 4).map((n) => (
-                        <Link key={n.id} to={`/patient/notifications?id=${n.id}`} className='flex items-start gap-4 hover:bg-gray-50/50 p-1 -m-1 rounded-lg transition-colors'>
-                            <div className='mt-0.5 shrink-0'>
-                                {getIcon(n.type)}
-                            </div>
-                            <div className='flex-grow min-w-0'>
-                                <h4 className={`text-sm font-medium leading-none mb-1.5 truncate ${!n.is_read ? 'text-gray-900 font-bold' : 'text-gray-600'}`}>
-                                    {n.title}
-                                </h4>
-                                <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mb-1.5'>
-                                    {n.message}
-                                </p>
-                                <span className='text-[10px] text-gray-400 dark:text-gray-500'>
-                                    {n.sent_at ? formatFullDateTime(n.sent_at) : ''}
-                                </span>
-                            </div>
-                        </Link>
-                    ))
+                    notifications.slice(0, 4).map((n) => {
+                        const rendered = renderNotification(n);
+                        return (
+                            <Link key={n.id} to={`/patient/notifications?id=${n.id}`} className='flex items-start gap-4 hover:bg-gray-50/50 p-1 -m-1 rounded-lg transition-colors'>
+                                <div className='mt-0.5 shrink-0'>
+                                    {getIcon(n.type)}
+                                </div>
+                                <div className='flex-grow min-w-0'>
+                                    <h4 className={`text-sm font-medium leading-none mb-1.5 truncate ${!n.is_read ? 'text-gray-900 font-bold' : 'text-gray-600'}`}>
+                                        {rendered.title}
+                                    </h4>
+                                    <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mb-1.5'>
+                                        {rendered.message}
+                                    </p>
+                                    <span className='text-[10px] text-gray-400 dark:text-gray-500'>
+                                        {n.sent_at ? formatFullDateTime(n.sent_at) : ''}
+                                    </span>
+                                </div>
+                            </Link>
+                        );
+                    })
                 )}
             </div>
             
