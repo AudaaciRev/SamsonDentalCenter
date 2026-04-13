@@ -52,11 +52,12 @@ const NotificationsPage = () => {
     // Map Backend structure to Frontend needs
     const mappedNotifications = notifications.map(n => {
         const rendered = renderNotification(n);
+        const rich = renderNotification(n, { isRich: true });
         return {
             id: n.id,
             title: rendered.title,
             message: rendered.message,
-            fullMessage: rendered.message,
+            richMessage: rich.message,
             category: n.type,
             time: n.sent_at ? formatFullDateTime(n.sent_at) : '',
             isRead: n.is_read,

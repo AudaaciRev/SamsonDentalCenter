@@ -61,9 +61,10 @@ const NotificationDetailView = ({ notification, onBack, onToggleStar, onToggleRe
                 </div>
 
                 <div className='prose prose-sm dark:prose-invert max-w-none pt-4 sm:pt-6'>
-                    <p className='text-gray-600 dark:text-gray-400 leading-relaxed text-sm sm:text-base whitespace-pre-wrap'>
-                        {fullMessage || message}
-                    </p>
+                    <div 
+                        className='text-gray-600 dark:text-gray-400 leading-relaxed text-sm sm:text-base whitespace-pre-wrap'
+                        dangerouslySetInnerHTML={{ __html: notification.richMessage || notification.message }}
+                    />
                     
                     <p className='mt-10 sm:mt-12 text-[13px] sm:text-sm text-gray-400 italic font-medium'>
                         Best regards,<br />
