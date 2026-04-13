@@ -2,6 +2,7 @@ import { AppError } from '../utils/errors.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { assignDentist } from './dentist-assignment.service.js';
 import { APPOINTMENT_STATUS, APPROVAL_STATUS, SERVICE_TIER } from '../utils/constants.js';
+import { voidWaitlistForApprovedAppointment } from './waitlist.service.js';
 
 // ═══════════════════════════════════════════════
 // APPROVAL WORKFLOW (Two-Tier System)
@@ -635,6 +636,20 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
         .single();
 
     if (updateErr) throw { status: 500, message: updateErr.message };
+
+    // ── 4. VOID linked waitlist entries ──
+    // If this appointment was a "Primary" for a waitlist entry, void those entries now.
+    try {
+        await voidWaitlistForApprovedAppointment(appointmentId, {
+            date: updated.appointment_date,
+            start_time: updated.start_time,
+            service: updated.service?.name,
+            patient_id: updated.patient_id,
+        });
+    } catch (err) {
+        // Non-critical — don't fail the approval
+        console.warn(`⚠️ [ADMIN] Failed to void linked waitlist entries: ${err.message}`);
+    }
 
     return updated;
 };

@@ -7,7 +7,7 @@ import {
     APPOINTMENT_SOURCE,
 } from '../utils/constants.js';
 import { AppError } from '../utils/errors.js';
-import { sendWaitlistOffer } from './notification.service.js';
+import { sendWaitlistOffer, sendApprovalNotice, sendNotification } from './notification.service.js';
 
 /**
  * Add a patient to the waitlist.
@@ -76,6 +76,22 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
         .eq('service_id', serviceId)
         .eq('status', WAITLIST_STATUS.WAITING);
 
+    // ── 4. In-app notification ──
+    const serviceName = data.service?.name;
+    const timeStr = time ? ` at ${time}` : '';
+    const hasBackup = !!backup_appointment_id;
+
+    await sendNotification(
+        patientId,
+        'WAITLIST',
+        'Waitlist Request Received',
+        hasBackup
+            ? `We've added you to the waitlist for ${serviceName} on ${date}${timeStr}. You also have a Primary Appointment secured for your preferred slot.`
+            : `We've added you to the waitlist for ${serviceName} on ${date}${timeStr}. We'll notify you if an earlier slot becomes available!`,
+        'in_app',
+        { service: serviceName, date, time, action: 'waitlist_joined', has_backup: hasBackup }
+    );
+
     return {
         success: true,
         message: 'Added to waitlist',
@@ -105,7 +121,13 @@ export const getMyWaitlist = async (patientId) => {
     `,
         )
         .eq('patient_id', patientId)
-        .in('status', [WAITLIST_STATUS.WAITING, WAITLIST_STATUS.NOTIFIED])
+        .in('status', [
+            WAITLIST_STATUS.WAITING, 
+            WAITLIST_STATUS.NOTIFIED,
+            WAITLIST_STATUS.CANCELLED,
+            WAITLIST_STATUS.EXPIRED,
+            WAITLIST_STATUS.CONFIRMED
+        ])
         .order('preferred_date')
         .order('created_at');
 
@@ -123,8 +145,9 @@ export const getMyWaitlist = async (patientId) => {
 
     return data.map((entry) => {
         const key = `${entry.preferred_date}-${entry.service_id}-${entry.preferred_time || 'any'}`;
-        const displayStatus =
-            entry.status === WAITLIST_STATUS.NOTIFIED ? 'OFFER_PENDING' : entry.status;
+        
+        let displayStatus = entry.status;
+        if (entry.status === WAITLIST_STATUS.NOTIFIED) displayStatus = 'OFFER_PENDING';
 
         return {
             id: entry.id,
@@ -132,18 +155,39 @@ export const getMyWaitlist = async (patientId) => {
             service_name: entry.service?.name,
             preferred_date: entry.preferred_date,
             preferred_time: entry.preferred_time,
-            position: positionMap[key],
+            position: entry.status === WAITLIST_STATUS.WAITING ? positionMap[key] : null,
             status: displayStatus,
             offer_expires_at: entry.expires_at,
             joined_at: entry.created_at,
+            backup_appointment_id: entry.backup_appointment_id,
         };
     });
 };
 
 /**
  * Cancel a waitlist entry.
+ *
+ * @param {string} waitlistId
+ * @param {string} patientId
+ * @param {boolean} removeBackup - If true, also cancel the linked backup appointment
  */
-export const cancelWaitlistEntry = async (waitlistId, patientId) => {
+export const cancelWaitlistEntry = async (waitlistId, patientId, removeBackup = false) => {
+    // Fetch the entry first (to get backup_appointment_id)
+    const { data: entry, error: fetchErr } = await supabaseAdmin
+        .from('waitlist')
+        .select('id, backup_appointment_id, status')
+        .eq('id', waitlistId)
+        .eq('patient_id', patientId)
+        .single();
+
+    if (fetchErr || !entry) {
+        throw new AppError('Waitlist entry not found.', 404);
+    }
+
+    if (![WAITLIST_STATUS.WAITING, WAITLIST_STATUS.NOTIFIED].includes(entry.status)) {
+        throw new AppError('Waitlist entry cannot be cancelled in its current state.', 400);
+    }
+
     const { data, error } = await supabaseAdmin
         .from('waitlist')
         .update({
@@ -151,16 +195,94 @@ export const cancelWaitlistEntry = async (waitlistId, patientId) => {
             updated_at: new Date().toISOString(),
         })
         .eq('id', waitlistId)
-        .eq('patient_id', patientId)
-        .eq('status', WAITLIST_STATUS.WAITING)
         .select()
         .single();
 
     if (error || !data) {
-        throw new AppError('Waitlist entry not found or cannot be cancelled.', 404);
+        throw new AppError('Failed to cancel waitlist entry.', 500);
     }
 
-    return { message: 'Removed from waitlist.', entry: data };
+    // ── In-app notification for manual cancellation ──
+    const hasPrimary = !!entry.backup_appointment_id;
+    await sendNotification(
+        patientId,
+        'WAITLIST',
+        'Waitlist Request Cancelled',
+        removeBackup && hasPrimary
+            ? `You've been removed from the waitlist and your associated Primary Appointment has also been cancelled.`
+            : `You've been removed from the waitlist as requested.`,
+        'in_app',
+        { waitlist_id: waitlistId, action: 'waitlist_cancelled', primary_cancelled: removeBackup && hasPrimary }
+    );
+
+
+    // If patient chose to also cancel the backup appointment
+    if (removeBackup && entry.backup_appointment_id) {
+        const { cancelAppointment } = await import('./appointment.service.js');
+        try {
+            await cancelAppointment(
+                entry.backup_appointment_id,
+                patientId,
+                'Auto-cancelled: patient removed themself from the waitlist.',
+                true, // sendEmail
+                false, // removeWaitlist — already handling here
+            );
+            console.log(`🔗 [WAITLIST] Cascade-cancelled Primary Appointment ${entry.backup_appointment_id}`);
+        } catch (err) {
+            // Non-critical: if appointment is already cancelled or not found, don't fail
+            console.warn(`⚠️ [WAITLIST] Could not cascade-cancel Primary Appointment: ${err.message}`);
+        }
+    }
+
+    return {
+        message: 'Removed from waitlist.',
+        entry: data,
+        backup_cancelled: removeBackup && !!entry.backup_appointment_id,
+    };
+};
+
+/**
+ * Void a waitlist entry because its backup appointment was approved.
+ * Sends a specific in-app notification: "Your appointment is approved! We've removed you from the waitlist."
+ *
+ * @param {string} backupAppointmentId - The appointment UUID that was approved
+ * @param {object} appointmentDetails - { date, start_time, end_time, service, patient_id }
+ */
+export const voidWaitlistForApprovedAppointment = async (backupAppointmentId, appointmentDetails) => {
+    const { date, start_time, service, patient_id } = appointmentDetails;
+
+    // Find all active waitlist entries linked to this appointment
+    const { data: entries } = await supabaseAdmin
+        .from('waitlist')
+        .select('id, patient_id')
+        .eq('backup_appointment_id', backupAppointmentId)
+        .in('status', [WAITLIST_STATUS.WAITING, WAITLIST_STATUS.NOTIFIED]);
+
+    if (!entries || entries.length === 0) return;
+
+    // Mark them all as cancelled
+    await supabaseAdmin
+        .from('waitlist')
+        .update({ status: WAITLIST_STATUS.CANCELLED, updated_at: new Date().toISOString() })
+        .eq('backup_appointment_id', backupAppointmentId)
+        .in('status', [WAITLIST_STATUS.WAITING, WAITLIST_STATUS.NOTIFIED]);
+
+    // Send specific notification to each affected patient
+    for (const entry of entries) {
+        const notifyPatientId = entry.patient_id || patient_id;
+        if (!notifyPatientId) continue;
+
+        await sendNotification(
+            notifyPatientId,
+            'CONFIRMATION',
+            'Primary Appointment Approved — Waitlist Removed',
+            `Your Primary Appointment for ${service} on ${date} at ${start_time} is approved! We've automatically removed you from the waitlist for this slot.`,
+            'in_app',
+            { service, date, start_time, action: 'waitlist_voided_on_approval' }
+        );
+
+        console.log(`✅ [WAITLIST] Voided entry for patient ${notifyPatientId} — Primary Appointment approved.`);
+    }
 };
 
 /**
@@ -373,6 +495,17 @@ export const confirmWaitlistOffer = async (waitlistId, patientId) => {
 
         console.log(`🔄 [WAITLIST] Swap complete: ${existingAppointment.start_time} → ${entry.preferred_time}`);
     }
+
+    // ── In-app notification for successful claim ──
+    await sendNotification(
+        patientId,
+        'WAITLIST',
+        'Waitlist Slot Secured',
+        `Success! You've claimed the earlier slot for ${entry.service?.name} on ${entry.preferred_date} at ${entry.preferred_time}. ${existingAppointment ? 'Your previous Primary Appointment has been cancelled.' : ''}`,
+        'in_app',
+        { waitlist_id: waitlistId, action: 'waitlist_claimed', date: entry.preferred_date, time: entry.preferred_time }
+    );
+
 
     // ── 6. Mark waitlist entry as confirmed and CLAIMED ──
     await supabaseAdmin

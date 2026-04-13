@@ -45,10 +45,12 @@ export const getMine = async (req, res, next) => {
 
 /**
  * DELETE /api/waitlist/:id
+ * Body: { remove_backup? } — if true, also cancel the linked backup appointment
  */
 export const remove = async (req, res, next) => {
     try {
-        const result = await cancelWaitlistEntry(req.params.id, req.user.id);
+        const removeBackup = req.body?.remove_backup === true;
+        const result = await cancelWaitlistEntry(req.params.id, req.user.id, removeBackup);
         res.json(result);
     } catch (err) {
         next(err);

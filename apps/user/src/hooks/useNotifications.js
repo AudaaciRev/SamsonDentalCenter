@@ -20,7 +20,26 @@ const useNotifications = () => {
         setError(null);
         try {
             const data = await api.get('/notifications/my', token);
-            setNotifications(data.notifications || []);
+            // Parse JSON messages if needed (Module 09 notifications use JSON metadata)
+            const parsed = (data.notifications || []).map(n => {
+                if (n.message && n.message.startsWith('{')) {
+                    try {
+                        const meta = JSON.parse(n.message);
+                        if (meta._isJSON) {
+                            return {
+                                ...n,
+                                title: meta._title || n.title,
+                                message: meta._fallback || n.message,
+                                metadata: meta
+                            };
+                        }
+                    } catch (e) {
+                        return n;
+                    }
+                }
+                return n;
+            });
+            setNotifications(parsed);
         } catch (err) {
             setError(err.message || 'Failed to load notifications.');
         } finally {

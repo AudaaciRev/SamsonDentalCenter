@@ -27,6 +27,7 @@ export const sendNotification = async (userId, type, title, message, channel = '
             channel,
             title,
             message: messageContent,
+            sent_at: new Date().toISOString(),
         })
         .select()
         .single();

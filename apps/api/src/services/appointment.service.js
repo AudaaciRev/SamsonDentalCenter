@@ -625,6 +625,7 @@ export const cancelAppointment = async (
     patientId,
     reason = '',
     sendEmail = true,
+    removeWaitlist = false,
 ) => {
     // ── 1. Get the appointment ──
     const { data: appointment, error: fetchError } = await supabaseAdmin
@@ -716,6 +717,28 @@ export const cancelAppointment = async (
         console.log(
             `⚠️ Late cancellation by patient ${patientId} — ${hoursUntil.toFixed(1)}h before appointment`,
         );
+    }
+
+    // ── 7. CASCADE: Cancel linked waitlist entry if requested ──
+    if (removeWaitlist) {
+        try {
+            const { cancelWaitlistEntry } = await import('./waitlist.service.js');
+            // Find waitlist entry where this appointment is the Primary Appointment
+            const { data: linkedWaitlist } = await supabaseAdmin
+                .from('waitlist')
+                .select('id')
+                .eq('backup_appointment_id', appointmentId)
+                .eq('patient_id', patientId)
+                .in('status', ['WAITING', 'NOTIFIED'])
+                .maybeSingle();
+
+            if (linkedWaitlist) {
+                await cancelWaitlistEntry(linkedWaitlist.id, patientId, false);
+                console.log(`🔗 [APPOINTMENT] Cascade-cancelled linked waitlist entry ${linkedWaitlist.id}`);
+            }
+        } catch (err) {
+            console.warn(`⚠️ [APPOINTMENT] Could not cascade-cancel waitlist: ${err.message}`);
+        }
     }
 
     return {
