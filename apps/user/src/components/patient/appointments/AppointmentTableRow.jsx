@@ -11,8 +11,13 @@ const getInitial = (name = '') => name.replace(/^Dr\.\s*/i, '').charAt(0).toUppe
 
 const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown, onViewDetails }) => {
     const { label: displayStatus, color: badgeColor } = getDisplayStatus(appointment.status, appointment.approval_status);
-    const dentistName = appointment.dentist || 'TBD';
-    const patientName = appointment.booked_for_name || user?.full_name || '—';
+    const dentistName = (typeof appointment.dentist === 'object' && appointment.dentist?.profile)
+        ? `${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name} ${appointment.dentist.profile.middle_name || ''} ${appointment.dentist.profile.suffix || ''}`.replace(/\s+/g, ' ').trim()
+        : (appointment.dentist || 'TBD');
+
+    const patientName = (appointment.last_name || appointment.first_name)
+        ? `${appointment.last_name || ''}, ${appointment.first_name || ''} ${appointment.middle_name || ''} ${appointment.suffix || ''}`.replace(/\s+/g, ' ').trim()
+        : (appointment.booked_for_name || '—');
 
     return (
         <div 

@@ -22,11 +22,11 @@ export default function UserMetaCard() {
                 <div className='flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='flex flex-col items-center w-full gap-6 xl:flex-row'>
                         <div className='w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-50 text-brand-600 font-bold text-2xl'>
-                            {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+                            {user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user?.full_name?.charAt(0).toUpperCase() || 'U')}
                         </div>
                         <div className='order-3 xl:order-2'>
                             <h4 className='mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left'>
-                                {user?.full_name || 'Patient Name'}
+                                {user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'Patient Name')}
                             </h4>
                             <div className='flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left'>
                                 <p className='text-sm text-gray-500 dark:text-gray-400'>
@@ -74,10 +74,26 @@ export default function UserMetaCard() {
                         </p>
                     </div>
                     <form className='flex flex-col h-full overflow-hidden' onSubmit={handleSave}>
-                        <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3'>
-                            <div>
-                                <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Full Name</Label>
-                                <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.full_name || ''} />
+                        <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3 space-y-4'>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Last Name</Label>
+                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.last_name || ''} />
+                                </div>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">First Name</Label>
+                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.first_name || ''} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Middle Name</Label>
+                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.middle_name || ''} />
+                                </div>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Suffix</Label>
+                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.suffix || ''} />
+                                </div>
                             </div>
                         </div>
                         <div className='flex items-center gap-3 px-2 mt-6 lg:justify-end'>

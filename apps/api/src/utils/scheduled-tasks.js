@@ -46,14 +46,14 @@ export const startScheduledTasks = () => {
             const { data: appointments } = await supabaseAdmin
                 .from('appointments')
                 .select(
-                    '*, service:services(id, name), dentist:dentists(profile:profiles(full_name))',
+                    '*, service:services(id, name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
                 )
                 .eq('appointment_date', dateStr)
                 .eq('status', 'CONFIRMED')
                 .eq('reminder_48h_sent', false);
 
             for (const appt of appointments || []) {
-                const dentistName = appt.dentist?.profile?.full_name || 'Assigned';
+                const dentistName = appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'Assigned');
 
                 if (appt.patient_id) {
                     // ── AUTHENTICATED PATIENT: in-app notification + plain email ──
@@ -66,12 +66,13 @@ export const startScheduledTasks = () => {
 
                     const { data: patient } = await supabaseAdmin
                         .from('profiles')
-                        .select('email, full_name')
+                        .select('email, full_name, first_name, last_name, middle_name, suffix')
                         .eq('id', appt.patient_id)
                         .single();
 
                     if (patient?.email) {
-                        await sendPatientReminderEmail(patient.email, patient.full_name, {
+                        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+                        await sendPatientReminderEmail(patient.email, patientDisplayName, {
                             date: appt.appointment_date,
                             start_time: appt.start_time,
                             service: appt.service?.name,
@@ -87,7 +88,8 @@ export const startScheduledTasks = () => {
                         appt.start_time,
                     );
 
-                    await sendGuestReminderEmail(appt.guest_email, appt.guest_name, {
+                    const guestDisplayName = appt.guest_first_name ? `${appt.guest_first_name} ${appt.guest_last_name}`.trim() : appt.guest_name;
+                    await sendGuestReminderEmail(appt.guest_email, guestDisplayName, {
                         date: appt.appointment_date,
                         start_time: appt.start_time,
                         service: appt.service?.name,
@@ -123,13 +125,13 @@ export const startScheduledTasks = () => {
             const { data: appointments } = await supabaseAdmin
                 .from('appointments')
                 .select(
-                    '*, service:services(id, name), dentist:dentists(profile:profiles(full_name))',
+                    '*, service:services(id, name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
                 )
                 .eq('appointment_date', tomorrowStr)
                 .eq('status', 'CONFIRMED');
 
             for (const appt of appointments || []) {
-                const dentistName = appt.dentist?.profile?.full_name || 'Assigned';
+                const dentistName = appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'Assigned');
 
                 if (appt.patient_id) {
                     // ── AUTHENTICATED PATIENT: in-app notification + plain email ──
@@ -145,12 +147,13 @@ export const startScheduledTasks = () => {
 
                     const { data: patient } = await supabaseAdmin
                         .from('profiles')
-                        .select('email, full_name')
+                        .select('email, full_name, first_name, last_name, middle_name, suffix')
                         .eq('id', appt.patient_id)
                         .single();
 
                     if (patient?.email) {
-                        await sendPatientReminderEmail(patient.email, patient.full_name, {
+                        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+                        await sendPatientReminderEmail(patient.email, patientDisplayName, {
                             date: appt.appointment_date,
                             start_time: appt.start_time,
                             service: appt.service?.name,
@@ -344,7 +347,7 @@ export const testSend24hReminder = async (appointmentId) => {
     try {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
-            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name))')
+            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))')
             .eq('id', appointmentId)
             .single();
 
@@ -363,7 +366,7 @@ export const testSend24hReminder = async (appointmentId) => {
         // Fetch patient email
         const { data: patient, error: patientError } = await supabaseAdmin
             .from('profiles')
-            .select('email, full_name')
+            .select('email, full_name, first_name, last_name, middle_name, suffix')
             .eq('id', appointment.patient_id)
             .single();
 
@@ -371,10 +374,11 @@ export const testSend24hReminder = async (appointmentId) => {
             throw new Error('Patient email not found');
         }
 
-        const dentistName = appointment.dentist?.profile?.full_name || 'Assigned';
+        const dentistName = appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned');
 
         // Send the reminder
-        await sendPatientReminderEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendPatientReminderEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: appointment.service?.name || 'Dental appointment',
@@ -387,7 +391,7 @@ export const testSend24hReminder = async (appointmentId) => {
             message: `24h reminder sent to ${patient.email}`,
             details: {
                 appointmentId,
-                patientName: patient.full_name,
+                patientName: patientDisplayName,
                 patientEmail: patient.email,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,
@@ -413,7 +417,7 @@ export const testSend48hReminder = async (appointmentId) => {
     try {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
-            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name))')
+            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))')
             .eq('id', appointmentId)
             .single();
 
@@ -432,7 +436,7 @@ export const testSend48hReminder = async (appointmentId) => {
         // Fetch patient email
         const { data: patient, error: patientError } = await supabaseAdmin
             .from('profiles')
-            .select('email, full_name')
+            .select('email, full_name, first_name, last_name, middle_name, suffix')
             .eq('id', appointment.patient_id)
             .single();
 
@@ -440,10 +444,11 @@ export const testSend48hReminder = async (appointmentId) => {
             throw new Error('Patient email not found');
         }
 
-        const dentistName = appointment.dentist?.profile?.full_name || 'Assigned';
+        const dentistName = appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned');
 
         // Send the reminder
-        await sendPatientReminderEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendPatientReminderEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: appointment.service?.name || 'Dental appointment',
@@ -456,7 +461,7 @@ export const testSend48hReminder = async (appointmentId) => {
             message: `48h reminder sent to ${patient.email}`,
             details: {
                 appointmentId,
-                patientName: patient.full_name,
+                patientName: patientDisplayName,
                 patientEmail: patient.email,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,
@@ -482,7 +487,7 @@ export const testSendGuestReminder = async (appointmentId) => {
     try {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
-            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name))')
+            .select('*, service:services(name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))')
             .eq('id', appointmentId)
             .single();
 
@@ -505,10 +510,11 @@ export const testSendGuestReminder = async (appointmentId) => {
             appointment.start_time,
         );
 
-        const dentistName = appointment.dentist?.profile?.full_name || 'Assigned';
+        const dentistName = appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned');
 
         // Send the reminder
-        await sendGuestReminderEmail(appointment.guest_email, appointment.guest_name, {
+        const guestDisplayName = appointment.guest_first_name ? `${appointment.guest_first_name} ${appointment.guest_last_name}`.trim() : appointment.guest_name;
+        await sendGuestReminderEmail(appointment.guest_email, guestDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: appointment.service?.name || 'Dental appointment',
@@ -523,7 +529,7 @@ export const testSendGuestReminder = async (appointmentId) => {
             message: `Guest reminder sent to ${appointment.guest_email}`,
             details: {
                 appointmentId,
-                guestName: appointment.guest_name,
+                guestName: guestDisplayName,
                 guestEmail: appointment.guest_email,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,

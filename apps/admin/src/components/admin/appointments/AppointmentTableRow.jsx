@@ -1,4 +1,4 @@
-﻿import { Badge, Dropdown, DropdownItem } from '../../ui';
+import { Badge, Dropdown, DropdownItem } from '../../ui';
 import { ThreeDotsIcon } from './AppointmentIcons';
 import { STATUS_LABEL, STATUS_COLOR, formatDate, formatTime } from '../../../hooks/useAppointments';
 
@@ -13,7 +13,9 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
     const displayStatus = STATUS_LABEL[appointment.status] || appointment.status;
     const badgeColor = STATUS_COLOR[displayStatus] || 'primary';
     const dentistName = appointment.dentist || 'TBD';
-    const adminName = appointment.booked_for_name || user?.full_name || 'â€”';
+    const adminName = (appointment.last_name && appointment.first_name)
+        ? `${appointment.last_name}, ${appointment.first_name} ${appointment.middle_name || ''} ${appointment.suffix || ''}`.replace(/\s+/g, ' ').trim()
+        : (appointment.booked_for_name || user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || '—'));
 
     return (
         <div 

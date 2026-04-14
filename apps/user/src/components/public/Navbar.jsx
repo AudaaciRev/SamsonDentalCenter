@@ -216,7 +216,7 @@ const Navbar = () => {
                                         ? 'hover:bg-slate-100 bg-white ring-1 ring-slate-200'
                                         : 'hover:bg-white/20 bg-white/10 ring-1 ring-white/20'
                                         }`}
-                                    title={user ? user.full_name || user.email : 'Guest Menu'}
+                                    title={user ? (user.first_name ? `${user.last_name}, ${user.first_name}` : user.email) : 'Guest Menu'}
                                 >
                                     <span
                                         className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm ${user
@@ -229,8 +229,7 @@ const Navbar = () => {
                                             }`}
                                     >
                                         {user ? (
-                                            user.full_name?.charAt(0).toUpperCase() ||
-                                            user.email?.charAt(0).toUpperCase()
+                                            user.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user.email?.charAt(0).toUpperCase() || 'U')
                                         ) : (
                                             <svg
                                                 className='w-5 h-5'
@@ -272,9 +271,9 @@ const Navbar = () => {
                                 {isProfileMenuOpen && (
                                     <div className='absolute right-0 mt-3 w-[260px] rounded-2xl shadow-theme-lg z-50 p-3 border bg-white border-gray-200'>
                                         <div className='px-4 py-2 mb-2'>
-                                            <span className='block font-semibold text-sm truncate text-gray-800'>
-                                                {user ? user.full_name || 'User' : 'Guest User'}
-                                            </span>
+                                            <p className='truncate text-sm font-bold text-gray-900 dark:text-white'>
+                                                {user ? (user.first_name ? `${user.last_name}, ${user.first_name}` : 'Authorized User') : 'Guest User'}
+                                            </p>
                                             <span className='mt-0.5 block text-xs truncate text-gray-500'>
                                                 {user ? user.email : 'Welcome to Primera Dental'}
                                             </span>
@@ -446,13 +445,12 @@ const Navbar = () => {
                         ) : (
                             <div className='space-y-4'>
                                 <div className='flex items-center gap-3 px-2'>
-                                    <div className='w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold'>
-                                        {user.full_name?.charAt(0).toUpperCase() ||
-                                            user.email?.charAt(0).toUpperCase()}
+                                    <div className='flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-base font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 ring-2 ring-white dark:ring-gray-900'>
+                                        {user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U')}
                                     </div>
                                     <div className='flex flex-col min-w-0'>
                                         <span className='font-bold text-sm text-slate-800 truncate'>
-                                            {user.full_name || 'User'}
+                                            {user.first_name ? `${user.first_name} ${user.last_name}` : 'Authorized User'}
                                         </span>
                                         <span className='text-xs text-slate-500 truncate'>
                                             {user.email}

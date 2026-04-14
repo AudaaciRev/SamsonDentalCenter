@@ -57,7 +57,6 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
             .join(' ');
         
         onUpdate(part + '_name', value);
-        onUpdate('full_name', fullName);
 
         if (errors[part]) {
             setErrors(prev => ({ ...prev, [part]: undefined }));

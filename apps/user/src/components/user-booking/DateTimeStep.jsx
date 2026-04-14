@@ -347,16 +347,16 @@ const DateTimeStep = ({
                         {s.photo_url ? (
                             <img
                                 src={s.photo_url}
-                                alt={s.profile?.full_name}
+                                alt={s.profile?.first_name ? `${s.profile.last_name}, ${s.profile.first_name}` : s.profile?.full_name}
                                 className='w-10 h-10 rounded-full object-cover border border-slate-200'
                             />
                         ) : (
                             <div className='w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold'>
-                                {s.profile?.full_name?.charAt(0)}
+                                {s.profile?.first_name ? s.profile.first_name[0] : (s.profile?.full_name?.charAt(0))}
                             </div>
                         )}
                         <div>
-                            <p className='text-sm font-bold text-slate-900'>Dr. {s.profile?.full_name}</p>
+                            <p className='text-sm font-bold text-slate-900'>Dr. {s.profile?.first_name ? `${s.profile.last_name}, ${s.profile.first_name} ${s.profile.middle_name || ''} ${s.profile.suffix || ''}`.replace(/\s+/g, ' ').trim() : s.profile?.full_name}</p>
                             <p className='text-xs text-slate-500 capitalize'>{s.tier} Specialist</p>
                         </div>
                     </button>

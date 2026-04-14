@@ -54,8 +54,10 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         service_id: initialServiceId || '', // ✅ Pre-populate from URL param
         service_name: initialServiceName || '', // ✅ Pre-populate from URL param
         date: '',
-        time: '',
-        booked_for_name: '', // Empty string = booking for self
+        booked_for_first_name: '',
+        booked_for_last_name: '',
+        booked_for_middle_name: '',
+        booked_for_suffix_name: '',
         dentist_id: '', // ✅ NEW: Preferred dentist (null = any available)
         // ✅ NEW: Deferred Waitlist Fields
         waitlist_date: '', // Selected full slot date
@@ -100,9 +102,9 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
 
     const setBookForOthersMode = (enabled) => {
         setBookForOthers(enabled);
-        // ✅ IMPROVEMENT #3: Clear booked_for_name if switching to "book for self"
+        // ✅ IMPROVEMENT #3: Clear booked_for_suffix_name if switching to "book for self"
         if (!enabled) {
-            setFormData((prev) => ({ ...prev, booked_for_name: '' }));
+            setFormData((prev) => ({ ...prev, booked_for_suffix_name: '' }));
         }
     };
 
@@ -146,9 +148,12 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                     date: formData.date,
                     time: formData.time,
                     dentist_id: formData.dentist_id || null, // ✅ NEW: Preferred dentist
-                    booked_for_name: book_for_others && formData.booked_for_name.trim() 
-                        ? formData.booked_for_name.trim() 
-                        : null,
+                    booked_for_name_parts: book_for_others ? {
+                        first: formData.booked_for_first_name,
+                        last: formData.booked_for_last_name,
+                        middle: formData.booked_for_middle_name,
+                        suffix: formData.booked_for_suffix_name,
+                    } : null,
                     user_session_id: sessionId,
                 } : null,
                 waitlist: formData.waitlist_time ? {
@@ -156,9 +161,12 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                     time: formData.waitlist_time,
                     priority: 0,
                     dentist_id: formData.dentist_id || null,
-                    booked_for_name: book_for_others && formData.booked_for_name.trim() 
-                        ? formData.booked_for_name.trim() 
-                        : null,
+                    booked_for_name_parts: book_for_others ? {
+                        first: formData.booked_for_first_name,
+                        last: formData.booked_for_last_name,
+                        middle: formData.booked_for_middle_name,
+                        suffix: formData.booked_for_suffix_name,
+                    } : null,
                 } : null
             };
 
@@ -219,7 +227,10 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             service_name: '',
             date: '',
             time: '',
-            booked_for_name: '',
+            booked_for_first_name: '',
+            booked_for_last_name: '',
+            booked_for_middle_name: '',
+            booked_for_suffix_name: '',
             dentist_id: '',
             // ✅ Clear waitlist fields on reset
             waitlist_date: '',

@@ -108,7 +108,11 @@ const UserBookingSuccess = ({ result, onReset }) => {
                                         Patient
                                     </p>
                                     <p className="text-[11px] sm:text-[13px] md:text-[14px] font-bold text-gray-900 dark:text-white">
-                                        {bookingResult.appointment?.booked_for_name || bookingResult.booked_for_name || 'Yourself'}
+                                        {bookingResult.appointment?.last_name || bookingResult.last_name 
+                                            ? `${bookingResult.appointment?.last_name || bookingResult.last_name}, ${bookingResult.appointment?.first_name || bookingResult.first_name} ${bookingResult.appointment?.middle_name || bookingResult.middle_name || ''} ${bookingResult.appointment?.suffix || bookingResult.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                                            : bookingResult.appointment?.guest_last_name || bookingResult.guest_last_name
+                                                ? `${bookingResult.appointment?.guest_last_name || bookingResult.guest_last_name}, ${bookingResult.appointment?.guest_first_name || bookingResult.guest_first_name} ${bookingResult.appointment?.guest_middle_name || bookingResult.guest_middle_name || ''} ${bookingResult.appointment?.guest_suffix || bookingResult.guest_suffix || ''}`.replace(/\s+/g, ' ').trim()
+                                                : bookingResult.appointment?.booked_for_name || bookingResult.booked_for_name || 'Yourself'}
                                     </p>
                                 </div>
                             </div>
@@ -178,7 +182,9 @@ const UserBookingSuccess = ({ result, onReset }) => {
                                         Patient
                                     </p>
                                     <p className="text-[11px] sm:text-[13px] md:text-[14px] font-bold text-gray-900 dark:text-white">
-                                        {waitlistResult.booked_for_name || 'Yourself'}
+                                        {waitlistResult.last_name 
+                                            ? `${waitlistResult.last_name}, ${waitlistResult.first_name} ${waitlistResult.middle_name || ''} ${waitlistResult.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                                            : waitlistResult.booked_for_name || 'Yourself'}
                                     </p>
                                 </div>
                             </div>

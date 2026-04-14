@@ -20,7 +20,7 @@ export const getTodaySchedule = async (dentistId) => {
         .select(
             `
       *,
-      patient:profiles!appointments_patient_id_fkey(id, full_name, phone, no_show_count, is_booking_restricted, medical_alerts, allergies),
+      patient:profiles!appointments_patient_id_fkey(id, full_name, first_name, last_name, middle_name, suffix, phone, no_show_count, is_booking_restricted, medical_alerts, allergies),
       service:services(name, duration_minutes, price, tier)
     `,
         )
@@ -39,7 +39,9 @@ export const getTodaySchedule = async (dentistId) => {
         service_tier: appt.service_tier || appt.service?.tier || 'general',
         patient: {
             id: appt.patient?.id || null,
-            name: appt.patient?.full_name || appt.guest_name || 'Guest',
+            name: (appt.patient?.first_name || appt.patient?.last_name)
+                ? `${appt.patient.last_name || ''}, ${appt.patient.first_name || ''} ${appt.patient.middle_name || ''} ${appt.patient.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                : (appt.guest_name || 'Guest'),
             phone: appt.patient?.phone || appt.guest_phone,
             no_show_count: appt.patient?.no_show_count || 0,
             is_restricted: appt.patient?.is_booking_restricted || false,
@@ -64,7 +66,7 @@ export const getScheduleRange = async (dentistId, startDate, endDate) => {
         .select(
             `
       *,
-      patient:profiles!appointments_patient_id_fkey(full_name, no_show_count),
+      patient:profiles!appointments_patient_id_fkey(full_name, first_name, last_name, middle_name, suffix, no_show_count),
       service:services(name, duration_minutes, tier)
     `,
         )
@@ -84,7 +86,9 @@ export const getScheduleRange = async (dentistId, startDate, endDate) => {
         end_time: appt.end_time,
         status: appt.status,
         service_tier: appt.service_tier || appt.service?.tier || 'general',
-        patient: appt.patient?.full_name || appt.guest_name || 'Guest',
+        patient: (appt.patient?.first_name || appt.patient?.last_name)
+            ? `${appt.patient.last_name || ''}, ${appt.patient.first_name || ''} ${appt.patient.middle_name || ''} ${appt.patient.suffix || ''}`.replace(/\s+/g, ' ').trim()
+            : (appt.guest_name || 'Guest'),
         service: appt.service?.name,
         duration: appt.service?.duration_minutes,
     }));
@@ -203,7 +207,7 @@ export const getPatientHistory = async (patientId) => {
     // First, get patient's medical info
     const { data: patientProfile } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, medical_alerts, allergies')
+        .select('full_name, first_name, last_name, middle_name, suffix, medical_alerts, allergies')
         .eq('id', patientId)
         .single();
 
@@ -214,7 +218,7 @@ export const getPatientHistory = async (patientId) => {
             `
       *,
       appointment:appointments(appointment_date, start_time),
-      dentist:dentists(profile:profiles(full_name))
+      dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .eq('patient_id', patientId)
@@ -225,7 +229,9 @@ export const getPatientHistory = async (patientId) => {
     return {
         patient: {
             id: patientId,
-            name: patientProfile?.full_name,
+            name: patientProfile?.first_name 
+                ? `${patientProfile.last_name}, ${patientProfile.first_name} ${patientProfile.middle_name || ''} ${patientProfile.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                : (patientProfile?.full_name || 'Unknown'),
             // 🚨 MEDICAL INFO - DISPLAYED AT TOP OF HISTORY
             medical_alerts: patientProfile?.medical_alerts,
             allergies: patientProfile?.allergies,
@@ -447,14 +453,23 @@ export const createFollowUp = async (dentistId, followUpData) => {
             reason: followUpData.reason,
             urgency: followUpData.urgency || 'normal', // 'normal', 'soon', 'urgent'
         })
-        .select()
+        .select(`
+            *,
+            service:services!recommended_service_id(name),
+            dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
+        `)
         .single();
 
     if (error) throw new AppError(error.message, 500);
 
     // Notify patient about follow-up
     try {
-        await sendFollowUpReminder(appt.patient_id, followUp);
+        const dentistName = followUp.dentist?.profile?.first_name ? `${followUp.dentist.profile.last_name}, ${followUp.dentist.profile.first_name}` : followUp.dentist?.profile?.full_name;
+        await sendFollowUpReminder(appt.patient_id, {
+            ...followUp,
+            dentist_name: dentistName,
+            service_name: followUp.service?.name
+        });
     } catch (e) {
         // Non-critical
     }
@@ -469,7 +484,10 @@ export const reportDelay = async (dentistId, appointmentId, delayMinutes, reason
     // Verify appointment
     const { data: appt } = await supabaseAdmin
         .from('appointments')
-        .select('id, dentist_id, patient_id, start_time, appointment_date')
+        .select(`
+            id, dentist_id, patient_id, start_time, appointment_date,
+            dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
+        `)
         .eq('id', appointmentId)
         .eq('dentist_id', dentistId)
         .eq('status', APPOINTMENT_STATUS.CONFIRMED)
@@ -490,12 +508,14 @@ export const reportDelay = async (dentistId, appointmentId, delayMinutes, reason
 
     // Notify the patient
     try {
+        const dentistName = appt.dentist?.profile?.first_name ? `${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : appt.dentist?.profile?.full_name;
         await sendDelayNotification(appt.patient_id, {
             appointment_id: appointmentId,
-            delay_minutes: delayMinutes,
+            estimated_delay_minutes: delayMinutes,
             reason: reason || 'Your dentist is running behind schedule.',
             original_time: appt.start_time,
             date: appt.appointment_date,
+            dentist_name: dentistName
         });
     } catch (e) {
         // Non-critical
@@ -520,7 +540,7 @@ export const getDoctorProfile = async (dentistId) => {
         .select(
             `
       *,
-      profile:profiles(full_name, email, phone)
+      profile:profiles(full_name, first_name, last_name, middle_name, suffix, email, phone)
     `,
         )
         .eq('id', dentistId)
@@ -553,7 +573,7 @@ export const updateDoctorProfile = async (dentistId, updates) => {
         .select(
             `
       *,
-      profile:profiles(full_name, email)
+      profile:profiles(full_name, first_name, last_name, middle_name, suffix, email)
     `,
         )
         .single();
@@ -602,7 +622,7 @@ export const getDoctorFeedback = async (dentistId) => {
         .select(
             `
       id, rating, comment, is_anonymous, created_at,
-      patient:profiles(full_name, id)
+      patient:profiles(full_name, first_name, last_name, middle_name, suffix, id)
     `,
         )
         .eq('dentist_id', dentistId)
@@ -615,6 +635,11 @@ export const getDoctorFeedback = async (dentistId) => {
         ...f,
         patient: f.is_anonymous
             ? { name: 'Anonymous' }
-            : { name: f.patient?.full_name, id: f.patient?.id },
+            : { 
+                name: f.patient?.first_name 
+                    ? `${f.patient.last_name}, ${f.patient.first_name} ${f.patient.middle_name || ''} ${f.patient.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                    : (f.patient?.full_name || 'Patient'),
+                id: f.patient?.id 
+            },
     }));
 };

@@ -51,7 +51,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         last_name: '',
         middle_name: '',
         suffix_name: '',
-        full_name: '',
         email: '',
         phone: '',
     });
@@ -108,7 +107,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
                     phone: ''
                 }));
@@ -131,7 +129,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
                     phone: ''
                 }));
@@ -158,7 +155,12 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                 time: formData.time,
                 email: formData.email,
                 phone: formData.phone.replace(/\D/g, ''), // ✅ Sanitize: remove non-digits
-                full_name: formData.full_name,
+                guestNameParts: {
+                    first: formData.first_name,
+                    last: formData.last_name,
+                    middle: formData.middle_name,
+                    suffix: formData.suffix_name,
+                },
                 user_session_id: sessionId,
             };
 
@@ -225,7 +227,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
             last_name: '',
             middle_name: '',
             suffix_name: '',
-            full_name: '',
             email: '',
             phone: '',
         });

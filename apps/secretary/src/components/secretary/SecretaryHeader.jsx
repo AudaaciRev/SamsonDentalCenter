@@ -52,11 +52,14 @@ const SecretaryHeader = () => {
                             className='flex items-center text-gray-700 dropdown-toggle'
                         >
                             <span className='mr-3 overflow-hidden rounded-full h-11 w-11 bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-sm'>
-                                {user?.full_name?.[0]?.toUpperCase() || 'S'}
+                                {user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user?.email?.[0]?.toUpperCase() || 'S')}
                             </span>
-                            <span className='hidden sm:block mr-1 font-medium truncate max-w-[120px] text-theme-sm'>
-                                {user?.full_name?.split(' ')[0] || 'Secretary'}
-                            </span>
+                            <div className='hidden sm:block mr-1 text-left'>
+                                <p className='text-xs text-gray-500'>Hello,</p>
+                                <p className='font-medium truncate max-w-[120px] text-theme-sm'>
+                                    {user?.first_name || 'Secretary'}
+                                </p>
+                            </div>
                             <svg className={`stroke-gray-500 transition-transform duration-200 flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} width='18' height='20' viewBox='0 0 18 20' fill='none' xmlns='http://www.w3.org/2000/svg'>
                                 <path d='M4.3125 8.65625L9 13.3437L13.6875 8.65625' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
                             </svg>
@@ -68,7 +71,7 @@ const SecretaryHeader = () => {
                                 <div className='absolute right-0 mt-2 w-[260px] bg-white rounded-2xl border border-gray-200 shadow-theme-lg z-50 p-3'>
                                     <div>
                                         <span className='block font-medium text-gray-700 text-sm truncate'>
-                                            {user?.full_name || 'Secretary'}
+                                            {user?.first_name ? `${user.first_name} ${user.last_name}` : 'Secretary'}
                                         </span>
                                         <span className='mt-0.5 block text-xs text-gray-500 truncate'>
                                             {user?.email}

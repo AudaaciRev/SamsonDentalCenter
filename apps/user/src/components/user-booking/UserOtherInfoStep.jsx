@@ -71,7 +71,6 @@ const UserOtherInfoStep = ({ formData, book_for_others, onUpdate, setBookForOthe
 
         onUpdate({
             [`booked_for_${part}_name`]: value,
-            booked_for_name: fullName
         });
 
         if (errors[part]) {
@@ -131,32 +130,89 @@ const UserOtherInfoStep = ({ formData, book_for_others, onUpdate, setBookForOthe
                 {!book_for_others ? (
                     /* CASE: MYSELF */
                     <section className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50">
-                            <div className="w-10 h-10 flex items-center justify-center text-brand-500">
-                                <UserCircle size={24} />
+                        <section>
+                            <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6">
+                                <UserCircle size={20} className="text-brand-500" />
+                                <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Account Identity</h3>
                             </div>
-                            <div>
-                                <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Your Account Profile</h3>
-                                <p className="text-[10px] sm:text-[11px] text-brand-600 font-bold uppercase tracking-widest mt-1 opacity-80">Linked Appointment</p>
-                            </div>
-                        </div>
 
-                        <div className="px-6 py-10 sm:px-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                                <div className="min-w-0 flex flex-col justify-center">
-                                    <label className={labelClasses}>Full Name</label>
-                                    <div className='h-12 flex items-center px-4 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl text-[15px] font-bold text-slate-700 dark:text-white/80 overflow-hidden'>
-                                        <span className="truncate w-full">{user?.full_name || user?.name || 'Authorized User'}</span>
+                            <div className="px-6 pb-10 sm:px-10 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                                    <div>
+                                        <label className={labelClasses}>First Name</label>
+                                        <input
+                                            type='text'
+                                            value={user?.first_name || ''}
+                                            readOnly
+                                            className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"}
+                                        />
                                     </div>
-                                </div>
-                                <div className="min-w-0 flex flex-col justify-center">
-                                    <label className={labelClasses}>Email Address</label>
-                                    <div className='min-h-[3rem] py-3 flex items-center px-4 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl text-[14px] font-medium text-slate-500 dark:text-white/40 break-all leading-tight'>
-                                        {user?.email}
+                                    <div>
+                                        <label className={labelClasses}>Last Name</label>
+                                        <input
+                                            type='text'
+                                            value={user?.last_name || ''}
+                                            readOnly
+                                            className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClasses}>Middle Name</label>
+                                        <input
+                                            type='text'
+                                            value={user?.middle_name || ''}
+                                            readOnly
+                                            className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClasses}>Suffix</label>
+                                        <input
+                                            type='text'
+                                            value={user?.suffix || ''}
+                                            readOnly
+                                            className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
+
+                        <section>
+                            <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6">
+                                <Contact size={20} className="text-brand-500" />
+                                <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Contact Details</h3>
+                            </div>
+
+                            <div className="px-6 pb-10 sm:px-10 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                                    <div>
+                                        <label className={labelClasses}>Email Address</label>
+                                        <div className="relative group">
+                                            <input
+                                                type='email'
+                                                value={user?.email || ''}
+                                                readOnly
+                                                className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50 pr-10"}
+                                            />
+                                            <Mail size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 opacity-50" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={labelClasses}>Phone Number</label>
+                                        <div className="relative group">
+                                            <input
+                                                type='tel'
+                                                value={user?.phone || ''}
+                                                readOnly
+                                                className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50 pr-10"}
+                                            />
+                                            <Phone size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 opacity-50" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
                         {/* Information Banner (Myself) */}
                         <div className="mx-6 sm:mx-10 mt-2 mb-10 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-500 overflow-hidden">

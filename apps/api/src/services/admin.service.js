@@ -23,7 +23,7 @@ export const getPendingRequests = async () => {
       *,
       patient:profiles!appointments_patient_id_fkey(id, full_name, email, phone, no_show_count, cancellation_count, is_booking_restricted),
       service:services(name, duration_minutes, price, tier),
-      dentist:dentists(id, profile:profiles(full_name))
+      dentist:dentists(id, profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         // Show everything that is PENDING approval and has been confirmed by the patient (either logged in or via email)
@@ -96,7 +96,7 @@ export const recordPayment = async (paymentData, supervisorId) => {
 export const getPaymentDetails = async (appointmentId) => {
     const { data, error } = await supabaseAdmin
         .from('payment_records')
-        .select('*, received_by:profiles(full_name)')
+        .select('*, received_by:profiles(full_name, first_name, last_name, middle_name, suffix)')
         .eq('appointment_id', appointmentId)
         .maybeSingle();
 
@@ -259,7 +259,7 @@ export const getFeedback = async (dentistId = null) => {
     let query = supabaseAdmin
         .from('patient_feedback')
         .select(
-            '*, appointment:appointments(appointment_date, service:services(name)), patient:profiles(full_name), dentist:dentists(profile:profiles(full_name))',
+            '*, appointment:appointments(appointment_date, service:services(name)), patient:profiles(full_name, first_name, last_name, middle_name, suffix), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
         )
         .order('created_at', { ascending: false });
 
@@ -631,7 +631,7 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
             *,
             patient:profiles!appointments_patient_id_fkey(full_name, email),
             service:services(name, price),
-            dentist:dentists(id, profile:profiles(full_name))
+            dentist:dentists(id, profile:profiles(full_name, first_name, last_name, middle_name, suffix))
         `)
         .single();
 
@@ -901,7 +901,7 @@ export const getBlocks = async (dentistId = null, fromDate = null) => {
         .select(
             `
                 *,
-                dentist: dentists(profile: profiles(full_name))
+                dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
                     `,
         )
         .order('block_date', { ascending: true });
@@ -999,7 +999,7 @@ export const getPatientAppointmentHistory = async (patientId) => {
             `
                     *,
                     service: services(name, price, tier),
-                        dentist: dentists(profile: profiles(full_name))
+                        dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .eq('patient_id', patientId)
@@ -1217,7 +1217,7 @@ export const getAllAppointmentsFiltered = async (filters = {}, page = 1, limit =
         *,
         patient: profiles!appointments_patient_id_fkey(full_name, email, phone),
             service: services(name, duration_minutes, price, tier),
-                dentist: dentists(profile: profiles(full_name))
+                dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
                     `,
             { count: 'exact' },
         )
@@ -1264,7 +1264,7 @@ export const getTodayAppointmentsFiltered = async () => {
                     *,
                     patient: profiles!appointments_patient_id_fkey(full_name, phone),
                         service: services(name, tier),
-                            dentist: dentists(profile: profiles(full_name))
+                            dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .eq('appointment_date', today)
@@ -1526,7 +1526,7 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         *,
         patient: profiles!appointments_patient_id_fkey(full_name, email),
         service: services(name, price),
-        dentist: dentists(profile: profiles(full_name))
+        dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
             `,
         )
         .single();

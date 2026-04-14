@@ -500,8 +500,9 @@ export const validateGuestActionToken = async (token, expectedAction) => {
             appointment:appointments(
                 id, appointment_date, start_time, end_time, status,
                 guest_email, guest_name, guest_phone,
+                guest_first_name, guest_last_name, guest_middle_name, guest_suffix,
                 service:services(id, name, duration_minutes),
-                dentist:dentists(profile:profiles(full_name))
+                dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
             )
         `,
         )

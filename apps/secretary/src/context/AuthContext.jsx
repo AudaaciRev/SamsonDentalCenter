@@ -39,11 +39,14 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const register = async (email, password, full_name, phone) => {
+    const register = async (email, password, { first_name, last_name, middle_name, suffix }, phone) => {
         const data = await api.post('/auth/register', {
             email,
             password,
-            full_name,
+            first_name,
+            last_name,
+            middle_name,
+            suffix,
             phone,
         });
 

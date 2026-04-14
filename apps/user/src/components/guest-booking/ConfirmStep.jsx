@@ -133,7 +133,7 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
                                 Full Name
                             </p>
                             <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate">
-                                {formData.full_name}
+                                {formData.first_name ? `${formData.last_name}, ${formData.first_name} ${formData.middle_name || ''} ${formData.suffix_name || ''}`.replace(/\s+/g, ' ').trim() : (formData.full_name || '—')}
                             </p>
                         </div>
                         <div className="min-w-0">

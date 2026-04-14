@@ -239,7 +239,12 @@ const UserReviewStep = ({ formData, book_for_others, onSubmit, onBack, onEdit, s
                             </p>
                             <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
                                 <User size={16} className="text-brand-500 shrink-0" />
-                                <span className="truncate">{book_for_others ? formData.booked_for_name : (user?.full_name || user?.name || 'Authorized User')}</span>
+                                <span className="truncate">
+                                    {book_for_others 
+                                        ? `${formData.booked_for_last_name || ''}, ${formData.booked_for_first_name || ''} ${formData.booked_for_middle_name || ''} ${formData.booked_for_suffix || formData.booked_for_suffix_name || ''}`.replace(/\s+/g, ' ').trim()
+                                        : (user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'Authorized User'))
+                                    }
+                                </span>
                             </p>
                         </div>
                         <div className='min-w-0'>

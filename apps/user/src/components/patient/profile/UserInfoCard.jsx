@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useModal } from '../../../hooks/useModal';
 import { Modal } from '../../ui/Modal';
 import Button from '../../ui/Button';
@@ -6,58 +7,72 @@ import Label from '../../ui/Label';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function UserInfoCard() {
-    const { user } = useAuth();
+    const { user, updateProfile } = useAuth();
     const { isOpen, openModal, closeModal } = useModal();
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        console.log('Saving changes...');
-        closeModal();
+        setIsSaving(true);
+        try {
+            const formData = new FormData(e.target);
+            const first_name = formData.get('first_name').trim();
+            const last_name = formData.get('last_name').trim();
+            const middle_name = formData.get('middle_name').trim();
+            const suffix = formData.get('suffix').trim();
+            const phone = formData.get('phone');
+            
+            await updateProfile({ 
+                first_name, 
+                last_name, 
+                middle_name, 
+                suffix, 
+                phone 
+            });
+            closeModal();
+        } catch (error) {
+            console.error('Failed to update personal info:', error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
             <div className='flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between'>
-                <div>
+                <div className="flex-1">
                     <h4 className='text-[clamp(16px,2vw,18px)] font-bold text-gray-900 dark:text-white lg:mb-6 mb-4'>
                         Personal Information
                     </h4>
 
-                    <div className='grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32'>
+                    <div className='grid grid-cols-1 gap-y-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8'>
                         <div>
-                            <p className='mb-1.5 text-[clamp(11px,0.8vw,12px)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
-                                Full Name
-                            </p>
-                            <p className='text-[clamp(14px,1vw,15px)] font-semibold text-gray-800 dark:text-white/90'>
-                                {user?.full_name || 'N/A'}
-                            </p>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Last Name</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.last_name || '—'}</p>
                         </div>
-
                         <div>
-                            <p className='mb-1.5 text-[clamp(11px,0.8vw,12px)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
-                                Email address
-                            </p>
-                            <p className='text-[clamp(14px,1vw,15px)] font-semibold text-gray-800 dark:text-white/90'>
-                                {user?.email || 'N/A'}
-                            </p>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>First Name</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.first_name || '—'}</p>
                         </div>
-
                         <div>
-                            <p className='mb-1.5 text-[clamp(11px,0.8vw,12px)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
-                                Phone
-                            </p>
-                            <p className='text-[clamp(14px,1vw,15px)] font-semibold text-gray-800 dark:text-white/90'>
-                                {user?.phone || 'N/A'}
-                            </p>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Middle Name</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.middle_name || '—'}</p>
                         </div>
-
                         <div>
-                            <p className='mb-1.5 text-[clamp(11px,0.8vw,12px)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
-                                Role
-                            </p>
-                            <p className='text-[clamp(14px,1vw,15px)] font-medium text-gray-800 dark:text-white/90'>
-                                PATIENT
-                            </p>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Suffix</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.suffix || '—'}</p>
+                        </div>
+                        <div className="sm:col-span-2">
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Email Address</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.email || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Phone</p>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.phone || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Role</p>
+                            <p className='text-sm font-medium text-gray-800 dark:text-white/90 uppercase tracking-tighter'>PATIENT</p>
                         </div>
                     </div>
                 </div>
@@ -86,35 +101,89 @@ export default function UserInfoCard() {
                 </Button>
             </div>
 
-            <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[500px] m-4'>
-                <div className='no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 sm:p-8'>
-                    <div className='px-2 pr-14'>
-                        <h4 className='mb-2 text-[clamp(20px,2.5vw,24px)] font-semibold text-gray-800 dark:text-white/90'>
-                            Edit Personal Information
+            <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[480px] w-[95%] sm:w-full m-auto'>
+                <div className='no-scrollbar relative w-full overflow-y-auto rounded-[2rem] bg-white p-6 dark:bg-gray-900 sm:p-8'>
+                    <div className='pr-8 sm:pr-12'>
+                        <h4 className='mb-1 text-xl font-bold text-gray-900 dark:text-white'>
+                            Edit Information
                         </h4>
-                        <p className='mb-6 text-[clamp(13px,1vw,14px)] text-gray-500 dark:text-gray-400 lg:mb-7'>
-                            Update your contact details.
+                        <p className='mb-6 text-sm text-gray-500 dark:text-gray-400'>
+                            Update your personal and contact details.
                         </p>
                     </div>
-                    <form className='flex flex-col h-full overflow-hidden' onSubmit={handleSave}>
-                        <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3'>
-                            <div className='grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2'>
-                                <div>
-                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Email</Label>
-                                    <Input className="text-[clamp(14px,1vw,15px)]" type='email' defaultValue={user?.email || ''} />
+                    <form className='flex flex-col gap-6' onSubmit={handleSave}>
+                        <div className='space-y-6'>
+                            <div className='grid grid-cols-2 gap-4'>
+                                <div className="col-span-1">
+                                    <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">First Name</Label>
+                                    <Input 
+                                        name="first_name"
+                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        defaultValue={user?.first_name}
+                                        required
+                                        placeholder="First"
+                                    />
                                 </div>
-                                <div>
-                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Phone</Label>
-                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.phone || ''} />
+                                <div className="col-span-1">
+                                    <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Last Name</Label>
+                                    <Input 
+                                        name="last_name"
+                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        defaultValue={user?.last_name}
+                                        required
+                                        placeholder="Last"
+                                    />
+                                </div>
+                                <div className="col-span-1">
+                                    <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Middle Name</Label>
+                                    <Input 
+                                        name="middle_name"
+                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        defaultValue={user?.middle_name}
+                                        placeholder="Middle"
+                                    />
+                                </div>
+                                <div className="col-span-1">
+                                    <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Suffix</Label>
+                                    <Input 
+                                        name="suffix"
+                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        defaultValue={user?.suffix}
+                                        placeholder="Jr/Sr/etc"
+                                    />
                                 </div>
                             </div>
+                            
+                            <div>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Phone Number</Label>
+                                <Input 
+                                    name="phone"
+                                    className="text-sm font-medium h-12 rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500/10" 
+                                    type='text' 
+                                    defaultValue={user?.phone || ''} 
+                                    placeholder="Enter your phone number"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Email Address</Label>
+                                <Input 
+                                    className="text-sm font-medium h-12 rounded-xl bg-gray-50/50 opacity-70 cursor-not-allowed border-gray-200" 
+                                    type='email' 
+                                    defaultValue={user?.email || ''} 
+                                    readOnly 
+                                    disabled
+                                />
+                                <p className="text-[10px] text-gray-400 mt-2 italic pl-1">Email cannot be changed.</p>
+                            </div>
                         </div>
-                        <div className='flex items-center gap-3 px-2 mt-6 lg:justify-end'>
-                            <Button variant='outline' onClick={closeModal}>
-                                Close
+
+                        <div className='flex items-center gap-3 mt-2 sm:justify-end'>
+                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                                Cancel
                             </Button>
-                            <Button type='submit'>
-                                Save Changes
+                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save'}
                             </Button>
                         </div>
                     </form>

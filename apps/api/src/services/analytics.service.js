@@ -135,7 +135,7 @@ export const getDentistPerformance = async (startDate, endDate) => {
             `
       dentist_id,
       status,
-      dentist:dentists(profile:profiles(full_name))
+      dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .gte('appointment_date', startDate)

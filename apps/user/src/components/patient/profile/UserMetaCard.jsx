@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useModal } from '../../../hooks/useModal';
 import { Modal } from '../../ui/Modal';
 import Button from '../../ui/Button';
@@ -6,14 +7,31 @@ import Label from '../../ui/Label';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function UserMetaCard() {
-    const { user } = useAuth();
+    const { user, updateProfile } = useAuth();
     const { isOpen, openModal, closeModal } = useModal();
+    const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = (e) => {
+    const AVATARS = [
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Mittens',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver'
+    ];
+
+    const handleSave = async (e) => {
         e.preventDefault();
-        // Handle save logic here
-        console.log('Saving changes...');
-        closeModal();
+        setIsSaving(true);
+        try {
+            await updateProfile({ avatar_url: selectedAvatar });
+            closeModal();
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -22,11 +40,15 @@ export default function UserMetaCard() {
                 <div className='flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='flex flex-col items-center w-full gap-6 xl:flex-row'>
                         <div className='w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-50 text-brand-600 font-bold text-2xl shadow-inner'>
-                            {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+                            {user?.avatar_url ? (
+                                <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                getInitials()
+                            )}
                         </div>
                         <div className='order-3 xl:order-2'>
                             <h4 className='mb-2 text-[clamp(18px,2vw,20px)] font-bold text-center text-gray-900 dark:text-white xl:text-left'>
-                                {user?.full_name || 'Patient Name'}
+                                {user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'Patient Name')}
                             </h4>
                             <div className='flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left'>
                                 <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium'>
@@ -63,29 +85,48 @@ export default function UserMetaCard() {
                     </Button>
                 </div>
             </div>
-            <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[500px] m-4'>
-                <div className='no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 sm:p-8'>
-                    <div className='px-2 pr-14'>
-                        <h4 className='mb-2 text-[clamp(20px,2.5vw,24px)] font-semibold text-gray-800 dark:text-white/90'>
-                            Edit Profile
+            <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[440px] w-[92%] m-auto'>
+                <div className='no-scrollbar relative w-full overflow-y-auto rounded-[2rem] bg-white p-6 dark:bg-gray-900 sm:p-8'>
+                    <div className='pr-8 sm:pr-12'>
+                        <h4 className='mb-1 text-xl font-bold text-gray-900 dark:text-white'>
+                            Edit Avatar
                         </h4>
-                        <p className='mb-6 text-[clamp(13px,1vw,14px)] text-gray-500 dark:text-gray-400 lg:mb-7'>
-                            Update your basic profile information.
+                        <p className='mb-6 text-sm text-gray-500 dark:text-gray-400'>
+                            Choose a custom profile avatar to personalize your account.
                         </p>
                     </div>
-                    <form className='flex flex-col h-full overflow-hidden' onSubmit={handleSave}>
-                        <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3'>
-                            <div>
-                                <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Full Name</Label>
-                                <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.full_name || ''} />
+                    <form className='flex flex-col gap-6' onSubmit={handleSave}>
+                        <div>
+                            <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-4 block">
+                                Choose Avatar
+                            </Label>
+                            <div className='grid grid-cols-3 gap-3 mb-2'>
+                                {AVATARS.map((url, i) => (
+                                    <div 
+                                        key={i}
+                                        onClick={() => setSelectedAvatar(url)}
+                                        className={`relative cursor-pointer group rounded-2xl border-2 transition-all duration-300 aspect-square overflow-hidden flex items-center justify-center p-1
+                                            ${selectedAvatar === url ? 'border-brand-500 bg-brand-50' : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'}`}
+                                    >
+                                        <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform" />
+                                        {selectedAvatar === url && (
+                                            <div className="absolute top-1 right-1 bg-brand-500 text-white rounded-full p-0.5 shadow-sm scale-90 sm:scale-100">
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className='flex items-center gap-3 px-2 mt-6 lg:justify-end'>
-                            <Button variant='outline' onClick={closeModal}>
-                                Close
+
+                        <div className='flex items-center gap-3 mt-4 sm:justify-end'>
+                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                                Cancel
                             </Button>
-                            <Button type='submit'>
-                                Save Changes
+                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save'}
                             </Button>
                         </div>
                     </form>

@@ -104,16 +104,22 @@ const AppointmentDetails = () => {
     }
 
     // --- Derive data ---
-    const dentistName = raw?.dentist?.profile?.full_name || raw?.dentist || 'TBD';
+    const dentistName = raw?.dentist?.profile?.first_name 
+        ? `${raw.dentist.profile.last_name}, ${raw.dentist.profile.first_name} ${raw.dentist.profile.middle_name || ''} ${raw.dentist.profile.suffix || ''}`.replace(/\s+/g, ' ').trim() 
+        : (raw?.dentist?.profile?.full_name || raw?.dentist || 'TBD');
     const specialization = raw?.dentist?.specialization || null;
     const serviceName = raw?.service?.name || raw?.service || '—';
     const { label: displayStatus, color: badgeColor } = getDisplayStatus(raw.status, raw.approval_status);
     const duration = raw ? getDuration(raw.start_time, raw.end_time) : null;
-    const patientLabel = raw?.booked_for_name
-        ? raw.booked_for_name
-        : raw?.patient_id
-          ? 'Yourself'
-          : raw?.guest_name || '—';
+    const patientLabel = (raw?.last_name || raw?.guest_last_name)
+        ? (raw.last_name 
+            ? `${raw.last_name}, ${raw.first_name} ${raw.middle_name || ''} ${raw.suffix || ''}`.replace(/\s+/g, ' ').trim()
+            : `${raw.guest_last_name}, ${raw.guest_first_name} ${raw.guest_middle_name || ''} ${raw.guest_suffix || ''}`.replace(/\s+/g, ' ').trim())
+        : raw?.booked_for_name
+          ? raw.booked_for_name
+          : raw?.patient_id
+            ? 'Yourself'
+            : '—';
     const isRepresentativeBooking = !!raw?.booked_for_name;
     const isCancellable = !['CANCELLED', 'LATE_CANCEL', 'COMPLETED', 'NO_SHOW'].includes(
         raw.status,

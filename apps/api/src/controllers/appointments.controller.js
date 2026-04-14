@@ -38,9 +38,9 @@ import { APPOINTMENT_SOURCE } from '../utils/constants.js';
  * @param {string} phone - Guest phone number
  * @param {string} full_name - Guest full name
  */
-export const bookGuest = async (req, res) => {
+export const bookGuest = async (req, res, next) => {
     try {
-        const { service_id, date, time, email, phone, full_name, user_session_id } = req.body;
+        const { service_id, date, time, email, phone, guestNameParts, user_session_id } = req.body;
 
         const result = await bookAppointmentGuest(
             service_id,
@@ -48,7 +48,7 @@ export const bookGuest = async (req, res) => {
             time,
             email,
             phone,
-            full_name,
+            guestNameParts,
             user_session_id,
         );
         return res.status(result.booked ? 201 : 409).json(result);
@@ -104,7 +104,7 @@ export const resendConfirmation = async (req, res) => {
  */
 export const bookUser = async (req, res, next) => {
     try {
-        const { service_id, date, time, booked_for_name, user_session_id, dentist_id } = req.body;
+        const { service_id, date, time, booked_for_name_parts, user_session_id, dentist_id } = req.body;
 
         // Check date is in the future (using Philippine Time)
         const todayPH = getTodayPH();
@@ -119,7 +119,7 @@ export const bookUser = async (req, res, next) => {
             date,
             time,
             true, // sendEmail
-            booked_for_name?.trim() || null, // null = for self, name = for someone else
+            booked_for_name_parts || null, // null = for self, parts = for someone else
             APPOINTMENT_SOURCE.USER_BOOKING, // source
             user_session_id,                 // user_session_id
             dentist_id,                      // preferredDentistId
@@ -162,7 +162,7 @@ export const submitWizard = async (req, res, next) => {
                     booking.date,
                     booking.time,
                     true, // sendEmail
-                    booking.booked_for_name?.trim() || null,
+                    booking.booked_for_name_parts || null,
                     APPOINTMENT_SOURCE.USER_BOOKING, // source
                     booking.user_session_id,         // user_session_id
                     booking.dentist_id,              // preferredDentistId
@@ -184,7 +184,7 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.date || waitlist.preferred_date,
                     waitlist.time || waitlist.preferred_time || null,
                     waitlist.priority || 0,
-                    waitlist.booked_for_name || booking?.booked_for_name || null,
+                    waitlist.booked_for_name_parts || booking?.booked_for_name_parts || null,
                     waitlist.dentist_id || null,
                     results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
                 );

@@ -19,7 +19,34 @@ import { sendWaitlistOfferEmail } from './email-confirmation.service.js';
  * @param {string} time - Preferred time 'HH:MM' (optional)
  * @param {number} priority - 0 = normal, 1 = urgent
  */
-export const joinWaitlist = async (patientId, serviceId, date, time = null, priority = 0, booked_for_name = null, preferred_dentist_id = null, backup_appointment_id = null) => {
+export const joinWaitlist = async (
+    patientId, 
+    serviceId, 
+    date, 
+    time = null, 
+    priority = 0, 
+    bookedForNameParts = null, // { first, last, middle, suffix }
+    preferred_dentist_id = null, 
+    backup_appointment_id = null
+) => {
+    let bookedForName = null;
+    let firstName = null;
+    let lastName = null;
+    let middleName = null;
+    let suffix = null;
+
+    if (bookedForNameParts) {
+        if (typeof bookedForNameParts === 'object') {
+            const { first, last, middle, suffix: sfx } = bookedForNameParts;
+            firstName = first;
+            lastName = last;
+            middleName = middle;
+            suffix = sfx;
+            bookedForName = `${last}, ${first} ${middle || ''} ${sfx || ''}`.replace(/\s+/g, ' ').trim();
+        } else {
+            bookedForName = bookedForNameParts;
+        }
+    }
     // ── 1. Check if already on waitlist for this date + service + time ──
     // FIX: Include preferred_time in the duplicate check.
     // Without this, a patient waiting for 09:00 would be blocked from also waiting for 10:00.
@@ -57,7 +84,11 @@ export const joinWaitlist = async (patientId, serviceId, date, time = null, prio
             backup_appointment_id,
             priority,
             status: WAITLIST_STATUS.WAITING,
-            booked_for_name: booked_for_name || null,
+            booked_for_name: bookedForName || null,
+            booked_for_first_name: firstName,
+            booked_for_last_name: lastName,
+            booked_for_middle_name: middleName,
+            booked_for_suffix: suffix,
         })
         .select(
             `
@@ -410,7 +441,7 @@ export const notifyWaitlist = async (freedSlot) => {
 
     const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, first_name, last_name, middle_name, suffix, email')
         .eq('id', firstInLine.patient_id)
         .single();
 
@@ -423,7 +454,11 @@ export const notifyWaitlist = async (freedSlot) => {
     });
 
     if (profile?.email) {
-        await sendWaitlistOfferEmail(profile.email, profile.full_name, {
+        const displayName = profile.first_name 
+            ? `${profile.first_name} ${profile.last_name}`.trim()
+            : profile.full_name;
+
+        await sendWaitlistOfferEmail(profile.email, displayName, {
             token: token,
             date,
             start_time,

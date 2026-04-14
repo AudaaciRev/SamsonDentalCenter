@@ -40,7 +40,11 @@ const ApprovalsPage = () => {
             id: req.id,
             patient: { 
                 id: req.patient_id,
-                name: req.patient?.full_name || req.guest_name || "Unknown Patient", 
+                name: (req.last_name || req.first_name) 
+                    ? `${req.last_name || ''}, ${req.first_name || ''} ${req.middle_name || ''} ${req.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                    : (req.patient?.first_name 
+                        ? `${req.patient.last_name}, ${req.patient.first_name} ${req.patient.middle_name || ''} ${req.patient.suffix || ''}`.replace(/\s+/g, ' ').trim()
+                        : (req.guest_name || "Unknown Patient")), 
                 phone: req.patient?.phone || req.guest_phone || "N/A", 
                 email: req.patient?.email || req.guest_email || "N/A", 
                 noShowCount: req.patient?.no_show_count || 0, 
@@ -52,7 +56,9 @@ const ApprovalsPage = () => {
             serviceTier: req.service_tier,
             requestedDate: req.appointment_date,
             requestedTime: formatTime(req.start_time),
-            dentist: req.dentist?.profile?.full_name || 'Unassigned',
+            dentist: req.dentist?.profile?.first_name 
+                ? `${req.dentist.profile.last_name}, ${req.dentist.profile.first_name} ${req.dentist.profile.middle_name || ''} ${req.dentist.profile.suffix || ''}`.replace(/\s+/g, ' ').trim() 
+                : 'Unassigned',
             dentistId: req.dentist?.id || req.dentist_id,
             createdAt: req.created_at,
             source: req.source,

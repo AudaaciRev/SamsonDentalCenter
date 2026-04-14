@@ -42,9 +42,12 @@ export const bookAppointmentGuest = async (
     time,
     guestEmail,
     guestPhone,
-    guestName,
+    guestNameParts, // { first, last, middle, suffix }
     userSessionId = null,
 ) => {
+    const { first, last, middle, suffix } = guestNameParts;
+    const guestName = `${last}, ${first} ${middle || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+
     // Normalize guest email
     const normalizedEmail = guestEmail?.trim().toLowerCase();
 
@@ -126,22 +129,24 @@ export const bookAppointmentGuest = async (
             guest_email: normalizedEmail,
             guest_phone: guestPhone,
             guest_name: guestName,
+            guest_first_name: first,
+            guest_last_name: last,
+            guest_middle_name: middle,
+            guest_suffix: suffix,
             dentist_id: finalDentistId,
             service_id: serviceId,
             appointment_date: date,
             start_time: time,
             end_time: endTime,
             status: APPOINTMENT_STATUS.PENDING,
-            approval_status: APPROVAL_STATUS.PENDING, // ✅ NEW: Match user booking
-            source: APPOINTMENT_SOURCE.GUEST_BOOKING, // ✅ NEW: Track source
+            approval_status: APPROVAL_STATUS.PENDING,
+            source: APPOINTMENT_SOURCE.GUEST_BOOKING,
         })
-        .select(
-            `
+        .select(`
             *,
             service:services(name, price),
-            dentist:dentists(profile:profiles(full_name))
-        `,
-        )
+            dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
+        `)
         .single();
 
     if (insertError) {
@@ -168,7 +173,7 @@ export const bookAppointmentGuest = async (
             start_time: appointment.start_time,
             end_time: appointment.end_time,
             service: appointment.service?.name,
-            dentist: appointment.dentist?.profile?.full_name || 'Assigned',
+            dentist: appointment.dentist?.profile?.first_name ? `${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             source: appointment.source, // ✅ NEW: Include source in response
         },
     };
@@ -195,16 +200,34 @@ export const bookAppointment = async (
     date,
     time,
     sendEmail = true,
-    bookedForName = null,
+    bookedForNameParts = null, // { first, last, middle, suffix } OR legacy string
     source = APPOINTMENT_SOURCE.USER_BOOKING,
     userSessionId = null,
     preferredDentistId = null,
 ) => {
+    let bookedForName = null;
+    let firstName = null;
+    let lastName = null;
+    let middleName = null;
+    let suffix = null;
+
+    if (bookedForNameParts) {
+        if (typeof bookedForNameParts === 'object') {
+            const { first, last, middle, suffix: sfx } = bookedForNameParts;
+            firstName = first;
+            lastName = last;
+            middleName = middle;
+            suffix = sfx;
+            bookedForName = `${last}, ${first} ${middle || ''} ${sfx || ''}`.replace(/\s+/g, ' ').trim();
+        } else {
+            bookedForName = bookedForNameParts;
+        }
+    }
     // ── 0. Check if patient is restricted (3+ no-shows or 3+ cancellations) ──
     const { data: patient } = await supabaseAdmin
         .from('profiles')
         .select(
-            'email, full_name, is_booking_restricted, max_advance_booking_days, deposit_required, no_show_count, cancellation_count',
+            'email, full_name, first_name, last_name, middle_name, suffix, is_booking_restricted, max_advance_booking_days, deposit_required, no_show_count, cancellation_count',
         )
         .eq('id', patientId)
         .single();
@@ -229,6 +252,15 @@ export const bookAppointment = async (
                 }
             }
         }
+    }
+
+    // ✅ NEW: Fallback for self-booking identity if parts weren't provided or are partial
+    if (!bookedForNameParts && patient) {
+        firstName = firstName || patient.first_name;
+        lastName = lastName || patient.last_name;
+        middleName = middleName || patient.middle_name;
+        suffix = suffix || patient.suffix;
+        bookedForName = bookedForName || patient.full_name;
     }
 
     // ── 1. Get service info (including TIER) ──
@@ -293,6 +325,10 @@ export const bookAppointment = async (
                 approval_status: APPROVAL_STATUS.PENDING,
                 source: source, // ✅ NEW: Track source
                 booked_for_name: bookedForName || null,
+                first_name: firstName,
+                last_name: lastName,
+                middle_name: middleName,
+                suffix: suffix,
                 // ✅ User is booking from their own account, auto-confirm their intent
                 patient_confirmed: true,
                 confirmed_at: new Date().toISOString(),
@@ -314,7 +350,8 @@ export const bookAppointment = async (
 
         // ── 5. Send booking request receipt email to authenticated patient ──
         if (patient?.email && sendEmail) {
-            await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
+            const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+            await sendBookingRequestReceivedEmail(patient.email, patientDisplayName, {
                 date: appointment.appointment_date,
                 start_time: appointment.start_time,
                 service: appointment.service?.name,
@@ -417,6 +454,10 @@ export const bookAppointment = async (
             source: source, // ✅ NEW: Track source
             // NULL = booked for self, a name = booked for someone else
             booked_for_name: bookedForName || null,
+            first_name: firstName,
+            last_name: lastName,
+            middle_name: middleName,
+            suffix: suffix,
             // ✅ User is booking from their own account, auto-confirm their intent
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
@@ -427,7 +468,7 @@ export const bookAppointment = async (
       service:services(name, duration_minutes, price),
       dentist:dentists(
         id,
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
         )
@@ -443,7 +484,8 @@ export const bookAppointment = async (
 
     // ── 5. Send booking request receipt email to authenticated patient ──
     if (patient?.email && sendEmail) {
-        await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendBookingRequestReceivedEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: appointment.service?.name,
@@ -475,7 +517,7 @@ export const bookAppointment = async (
             service_tier: 'general',
             duration: appointment.service?.duration_minutes,
             price: appointment.service?.price,
-            dentist: appointment.dentist?.profile?.full_name || 'Assigned',
+            dentist: appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             booked_for_name: appointment.booked_for_name || null,
             source: appointment.source,
         },
@@ -518,7 +560,7 @@ export const getPatientAppointments = async (
       *,
       service:services(name, duration_minutes, price),
       dentist:dentists(
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
             { count: 'exact' },
@@ -573,7 +615,7 @@ export const getPatientAppointments = async (
         approval_status: appt.approval_status,
         service: appt.service?.name,
         price: appt.service?.price,
-        dentist: appt.dentist?.profile?.full_name || 'TBD',
+        dentist: appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'TBD'),
         booked_for_name: appt.booked_for_name,
         is_walk_in: appt.is_walk_in,
         notes: appt.notes,
@@ -644,7 +686,7 @@ export const getAppointmentById = async (appointmentId, patientId) => {
       *,
       service:services(name, duration_minutes, price),
       dentist:dentists(
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
         )
@@ -741,7 +783,8 @@ export const cancelAppointment = async (
         .single();
 
     if (patient?.email && sendEmail) {
-        await sendCancellationEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendCancellationEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: service?.name || 'Dental appointment',
@@ -879,7 +922,8 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         .single();
 
     if (patient?.email) {
-        await sendRescheduleEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendRescheduleEmail(patient.email, patientDisplayName, {
             oldDate: original.appointment_date,
             oldTime: original.start_time,
             newDate: newBooking.appointment.date,
@@ -962,7 +1006,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             `
       *,
       service:services(name, price),
-      dentist:dentists(profile:profiles(full_name))
+      dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .single();
@@ -983,7 +1027,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             end_time: appointment.end_time,
             status: 'CONFIRMED',
             service: appointment.service?.name,
-            dentist: appointment.dentist?.profile?.full_name,
+            dentist: appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             is_walk_in: true,
             source: appointment.source, // ✅ NEW: Include source in response
         },
@@ -1029,7 +1073,7 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
         })
-        .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name))`)
+        .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))`)
         .single();
 
     if (insertError) throw new AppError(insertError.message, 500);
