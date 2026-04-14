@@ -8,6 +8,7 @@ import {
     rescheduleAppointment,
     cancelGuestAppointmentAction,
     insertConfirmedGuestAppointment,
+    rescheduleGuestAppointment,
 } from '../services/appointment.service.js';
 import {
     confirmAppointmentByToken,
@@ -406,6 +407,7 @@ export const guestRescheduleInfo = async (req, res, next) => {
                 date: result.appointment.appointment_date,
                 time: result.appointment.start_time,
                 service: result.appointment.service?.name,
+                service_id: result.appointment.service?.id,
                 dentist: result.appointment.dentist?.profile?.full_name || 'Assigned',
                 guest_name: result.appointment.guest_name,
             },
@@ -431,37 +433,19 @@ export const guestRescheduleInfo = async (req, res, next) => {
 export const guestRescheduleConfirm = async (req, res, next) => {
     try {
         const { token } = req.query;
-        const { date, time } = req.body;
+        const { date, time, user_session_id } = req.body;
 
         const result = await validateGuestActionToken(token, 'reschedule');
         const oldAppt = result.appointment;
 
-        // 1. Check new slot availability
-        const availability = await getAvailableSlots(date, oldAppt.service?.id);
+        // Atomic Reschedule: Book new -> Cancel old
+        const outcome = await rescheduleGuestAppointment(oldAppt, date, time, user_session_id);
 
-        const slotData = availability.all_slots.find((s) => s.time === time);
-        if (!slotData || slotData.available === 0) {
-            return res.status(409).json({
-                error: 'Selected time is not available. Please choose another.',
-                available_slots: availability.all_slots
-                    .filter((s) => s.available > 0)
-                    .map((s) => s.time),
-            });
+        if (!outcome.rescheduled) {
+            return res.status(outcome.message ? 409 : 200).json(outcome);
         }
 
-        // 2. Assign dentist for new slot
-        const endTime = addMinutesToTime(time, oldAppt.service?.duration_minutes || 30);
-        const dentistId = await assignDentist(date, time, endTime);
-
-        if (!dentistId) {
-            throw { status: 409, message: 'No dentist available for the new slot.' };
-        }
-
-        // 3. Create new appointment (CONFIRMED — guest already verified via original booking)
-        const newAppointment = await insertConfirmedGuestAppointment(oldAppt, dentistId, date, time, endTime);
-
-        // 4. Cancel old appointment
-        await cancelGuestAppointmentAction(oldAppt.id, 'Rescheduled by guest via reminder email link.');
+        const { newAppointment } = outcome;
 
         // 5. Trigger waitlist for the freed old slot
         await notifyWaitlist({

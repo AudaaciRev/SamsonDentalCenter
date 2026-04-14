@@ -1053,7 +1053,7 @@ export const cancelGuestAppointmentAction = async (appointmentId, reason) => {
     return updated;
 };
 
-export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, time, endTime) => {
+export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, time, endTime, userSessionId = null) => {
     const { data: newAppointment, error: insertError } = await supabaseAdmin
         .from('appointments')
         .insert({
@@ -1061,6 +1061,10 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
             guest_email: oldAppt.guest_email,
             guest_phone: oldAppt.guest_phone,
             guest_name: oldAppt.guest_name,
+            guest_first_name: oldAppt.guest_first_name,
+            guest_last_name: oldAppt.guest_last_name,
+            guest_middle_name: oldAppt.guest_middle_name,
+            guest_suffix: oldAppt.guest_suffix,
             dentist_id: dentistId,
             service_id: oldAppt.service?.id,
             appointment_date: date,
@@ -1076,8 +1080,83 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
         .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))`)
         .single();
 
-    if (insertError) throw new AppError(insertError.message, 500);
+    if (insertError) {
+        if (insertError.code === '23505') {
+            throw new AppError('This slot was just taken. Please try another time.', 409);
+        }
+        throw new AppError(insertError.message, 500);
+    }
+
+    // ✅ NEW: Release hold if it exists
+    if (userSessionId) {
+        try {
+            const { releaseHoldBySession } = await import('./slot-hold.service.js');
+            await releaseHoldBySession(userSessionId);
+        } catch (err) {
+            console.warn(`[RE-HOLD] Warning: Failed to release hold for session ${userSessionId}: ${err.message}`);
+        }
+    }
+
     return newAppointment;
+};
+
+/**
+ * Reschedule a guest appointment.
+ * Atomically: Book new -> Cancel old.
+ */
+export const rescheduleGuestAppointment = async (oldAppt, date, time, userSessionId = null) => {
+    // 1. Check availability for new slot (recognizing the guest's hold)
+    const availability = await getAvailableSlots(date, oldAppt.service?.id, userSessionId);
+    const slotData = availability.all_slots.find((s) => s.time === time);
+    
+    if (!slotData || slotData.available === 0) {
+        const suggestions = await getSuggestedSlots(date, oldAppt.service?.id, time);
+        return {
+            rescheduled: false,
+            message: 'Selected slot is no longer available.',
+            ...suggestions
+        };
+    }
+
+    // 2. Assign dentist for new slot
+    const endTime = addMinutesToTime(time, oldAppt.service?.duration_minutes || 30);
+    
+    // Check for held dentist first
+    let finalDentistId = null;
+    if (userSessionId) {
+        const { data: hold } = await supabaseAdmin
+            .from('slot_holds')
+            .select('dentist_id')
+            .eq('user_session_id', userSessionId)
+            .eq('appointment_date', date)
+            .eq('start_time', time)
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .single();
+        
+        if (hold?.dentist_id) {
+            finalDentistId = hold.dentist_id;
+        }
+    }
+
+    if (!finalDentistId) {
+        finalDentistId = await assignDentist(date, time, endTime, SERVICE_TIER.GENERAL, userSessionId);
+    }
+
+    if (!finalDentistId) {
+        throw new AppError('No dentist available for the new slot.', 409);
+    }
+
+    // 3. Create NEW appointment
+    const newAppointment = await insertConfirmedGuestAppointment(oldAppt, finalDentistId, date, time, endTime, userSessionId);
+
+    // 4. Cancel OLD appointment
+    await cancelGuestAppointmentAction(oldAppt.id, 'Rescheduled by guest via link.');
+
+    return {
+        rescheduled: true,
+        newAppointment
+    };
 };
 
 // ── End of Service ──

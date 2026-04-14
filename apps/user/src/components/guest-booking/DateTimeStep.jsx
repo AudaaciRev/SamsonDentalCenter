@@ -11,6 +11,7 @@ const DateTimeStep = ({
     onBack,
     sessionId,
     slotHold,
+    excludeAppointmentId,
 }) => {
     const { activeHold, holdSlot, releaseHold, formattedTime, holdLoading, holdError, timeRemaining } = slotHold;
     const [pendingSlot, setPendingSlot] = useState(null);
@@ -58,7 +59,7 @@ const DateTimeStep = ({
         nextAvailableDate,
         loading: slotsLoading,
         refetch: refetchSlots,
-    } = useSlots(selectedDate || null, serviceId || null, true, sessionId);
+    } = useSlots(selectedDate || null, serviceId || null, true, sessionId, null, excludeAppointmentId);
 
     const handleDateClick = (date) => {
         const key = formatDateKey(date);

@@ -1,10 +1,15 @@
-import RescheduleAppointment from '../../components/email-actions/RescheduleAppointment';
+import { useSearchParams } from 'react-router-dom';
+import useGuestReschedule from '../../hooks/useGuestReschedule';
+import RescheduleWizard from '../../components/guest-reschedule/RescheduleWizard';
 
 const RescheduleAppointmentPage = () => {
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token');
+    
+    const reschedule = useGuestReschedule(token);
+
     return (
-        <div className="pt-24 pb-12 min-h-[70vh]">
-            <RescheduleAppointment />
-        </div>
+        <RescheduleWizard reschedule={reschedule} />
     );
 };
 

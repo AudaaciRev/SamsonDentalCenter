@@ -173,6 +173,27 @@ export const releaseHold = async (holdId) => {
 };
 
 /**
+ * Release all active holds for a specific user session.
+ *
+ * @param {string} userSessionId - The browser session ID
+ * @returns {object} { released: true, count: number }
+ */
+export const releaseHoldBySession = async (userSessionId) => {
+    const { data, error } = await supabaseAdmin
+        .from('slot_holds')
+        .update({ status: 'released', updated_at: new Date().toISOString() })
+        .eq('user_session_id', userSessionId)
+        .eq('status', 'active');
+
+    if (error) {
+        console.error('Release holds by session error:', error);
+        return { released: false, error: error.message };
+    }
+
+    return { released: true, count: data?.length || 0 };
+};
+
+/**
  * Cleanup expired holds (optional cron job).
  *
  * Run periodically (every 1-5 minutes) to mark expired holds as 'expired'.

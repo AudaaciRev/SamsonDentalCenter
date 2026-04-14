@@ -37,6 +37,7 @@ export const getAvailableSlots = async (
     filterSessionId = null,
     skipNextSearch = false,
     dentistId = null,
+    excludeAppointmentId = null,
 ) => {
     // ✅ NEW: Check if date is today (same-day booking prevention)
     const today = new Date();
@@ -176,11 +177,16 @@ export const getAvailableSlots = async (
     // ✅ NOTE: Waitlist entries are in a separate table (waitlist), not appointments.
     // So we don't need to filter for WAITLISTED status — appointments only include
     // PENDING (awaiting approval) or CONFIRMED (secured slots).
-    const { data: existingAppointments } = await supabaseAdmin
+    let apptQuery = supabaseAdmin
         .from('appointments')
-        .select('dentist_id, start_time, end_time')
+        .select('id, dentist_id, start_time, end_time')
         .eq('appointment_date', date)
         .not('status', 'in', '("CANCELLED","LATE_CANCEL")');
+
+    if (excludeAppointmentId) {
+        apptQuery = apptQuery.neq('id', excludeAppointmentId);
+    }
+    const { data: existingAppointments } = await apptQuery;
 
     // ── 5b. Get active slot holds on that date (GLOBAL capacity check) ──
     const now = new Date();
@@ -299,10 +305,9 @@ export const getAvailableSlots = async (
     // ✅ If no slots available, find the next available date (unless we are already searching)
     if (totalAvailable === 0 && !skipNextSearch) {
         response.next_available_date = await findNextAvailableDate(
-            date,
-            serviceId,
             filterSessionId,
             dentistId,
+            excludeAppointmentId,
         );
     }
 
@@ -347,6 +352,7 @@ export const findNextAvailableDate = async (
     serviceId,
     filterSessionId = null,
     dentistId = null,
+    excludeAppointmentId = null,
 ) => {
     try {
         // 1. Get service tier to filter dentists efficiently
@@ -416,6 +422,7 @@ export const findNextAvailableDate = async (
                     filterSessionId,
                     true,
                     dentistId,
+                    excludeAppointmentId,
                 );
                 if (result.total_available > 0) {
                     return dateStr;

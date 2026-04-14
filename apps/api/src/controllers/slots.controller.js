@@ -14,7 +14,7 @@ export const getSuggestionsPublic = async (req, res, next) => {
 // ── FOR GUESTS (no auth) ──
 export const getAvailablePublic = async (req, res, next) => {
     try {
-        const { date, service_id, session_id, dentist_id } = req.query;
+        const { date, service_id, session_id, dentist_id, exclude_appointment_id } = req.query;
 
         // Check date is not in the past
         const requestedDate = new Date(date);
@@ -25,7 +25,14 @@ export const getAvailablePublic = async (req, res, next) => {
             return res.status(400).json({ error: 'Cannot check availability for past dates.' });
         }
 
-        const result = await getAvailableSlots(date, service_id, session_id, false, dentist_id);
+        const result = await getAvailableSlots(
+            date,
+            service_id,
+            session_id,
+            false,
+            dentist_id,
+            exclude_appointment_id
+        );
         res.json(result);
     } catch (err) {
         next(err);
@@ -41,7 +48,7 @@ export const getAvailablePublic = async (req, res, next) => {
 
 export const getAvailable = async (req, res, next) => {
     try {
-        const { date, service_id, session_id, dentist_id } = req.query;
+        const { date, service_id, session_id, dentist_id, exclude_appointment_id } = req.query;
 
         // Check date is not in the past
         const requestedDate = new Date(date);
@@ -53,7 +60,14 @@ export const getAvailable = async (req, res, next) => {
         }
 
         // ── Get available slots ──
-        const result = await getAvailableSlots(date, service_id, session_id, false, dentist_id);
+        const result = await getAvailableSlots(
+            date,
+            service_id,
+            session_id,
+            false,
+            dentist_id,
+            exclude_appointment_id
+        );
 
         res.json(result);
     } catch (err) {
