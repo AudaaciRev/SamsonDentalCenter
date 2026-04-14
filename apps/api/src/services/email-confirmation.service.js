@@ -232,16 +232,18 @@ export const sendBookingSuccessEmail = async (email, name, details) => {
             dentist,
         });
 
-        await resend.emails.send({
+        const result = await resend.emails.send({
             from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
             to: email,
             subject: '✅ Appointment Confirmed — Samson Dental',
             html,
         });
-        console.log(`📧 Booking success email sent to ${email}`);
+
+        console.log(`✅ [Email] SUCCESS: Booking confirmation sent to ${email}`, result);
+        return { success: true, result };
     } catch (err) {
-        console.error('Failed to send booking success email:', err.message);
-        // Don't throw — booking was successful, email failure shouldn't break it
+        console.error('❌ [Email] FAILED to send booking success email:', err.message);
+        return { success: false, error: err.message };
     }
 };
 

@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { autoDetectNoShows } from '../services/noshow.service.js';
 import { sendReminder, send48hConfirmReminder } from '../services/notification.service.js';
+import { sendSMS } from '../services/sms.service.js';
 import {
     sendGuestReminderEmail,
     sendPatientReminderEmail,
@@ -33,12 +34,16 @@ export const startScheduledTasks = () => {
         }
     });
 
+
     // ── 2. 48h reminders: every day at 8:00 AM ──
-    // Patients  -> in-app notification + plain reminder email (no links)
-    // Guests    -> reminder email with [Reschedule] [Cancel] action links
+    // Patients  -> in-app notification + plain reminder email (no links) + 48h SMS
+    // Guests    -> reminder email with [Reschedule] [Cancel] action links + 48h SMS
     cron.schedule('0 8 * * *', async () => {
         console.log('Sending 48h reminders...');
         try {
+            const now = new Date();
+            const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+            
             const dayAfterTomorrow = new Date();
             dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
             const dateStr = dayAfterTomorrow.toISOString().split('T')[0];
@@ -50,13 +55,19 @@ export const startScheduledTasks = () => {
                 )
                 .eq('appointment_date', dateStr)
                 .eq('status', 'CONFIRMED')
-                .eq('reminder_48h_sent', false);
+                .eq('reminder_48h_sent', false)
+                .lt('confirmed_at', twelveHoursAgo.toISOString());
+
+            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
+            const formatTime = (t) => t ? t.substring(0, 5) : '';
 
             for (const appt of appointments || []) {
                 const dentistName = appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'Assigned');
+                const serviceNameTruncated = truncate(appt.service?.name, 25);
+                const timePretty = formatTime(appt.start_time);
 
                 if (appt.patient_id) {
-                    // ── AUTHENTICATED PATIENT: in-app notification + plain email ──
+                    // ── AUTHENTICATED PATIENT: in-app notification + plain email + SMS ──
                     await send48hConfirmReminder(appt.patient_id, {
                         id: appt.id,
                         date: appt.appointment_date,
@@ -66,7 +77,7 @@ export const startScheduledTasks = () => {
 
                     const { data: patient } = await supabaseAdmin
                         .from('profiles')
-                        .select('email, full_name, first_name, last_name, middle_name, suffix')
+                        .select('email, phone_number, full_name, first_name, last_name, middle_name, suffix')
                         .eq('id', appt.patient_id)
                         .single();
 
@@ -80,27 +91,45 @@ export const startScheduledTasks = () => {
                             hoursUntil: 48,
                         });
                     }
-                } else if (appt.guest_email) {
-                    // ── GUEST: email with [Reschedule] [Cancel] links ──
-                    const { cancelToken, rescheduleToken } = await createGuestActionTokens(
-                        appt.id,
-                        appt.appointment_date,
-                        appt.start_time,
-                    );
 
+                    /*
+                    if (patient?.phone_number) {
+                        const smsMsg = `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appt.appointment_date} at ${timePretty}. Please confirm. Thank you!`;
+                        await sendSMS(patient.phone_number, smsMsg);
+                    }
+                    */
+
+                } else if (appt.guest_email || appt.guest_phone) {
+                    // ── GUEST: email with links + SMS ──
                     const guestDisplayName = appt.guest_first_name ? `${appt.guest_first_name} ${appt.guest_last_name}`.trim() : appt.guest_name;
-                    await sendGuestReminderEmail(appt.guest_email, guestDisplayName, {
-                        date: appt.appointment_date,
-                        start_time: appt.start_time,
-                        service: appt.service?.name,
-                        dentist: dentistName,
-                        cancelToken,
-                        rescheduleToken,
-                        hoursUntil: 48,
-                    });
+
+                    if (appt.guest_email) {
+                        const { cancelToken, rescheduleToken } = await createGuestActionTokens(
+                            appt.id,
+                            appt.appointment_date,
+                            appt.start_time,
+                        );
+
+                        await sendGuestReminderEmail(appt.guest_email, guestDisplayName, {
+                            date: appt.appointment_date,
+                            start_time: appt.start_time,
+                            service: appt.service?.name,
+                            dentist: dentistName,
+                            cancelToken,
+                            rescheduleToken,
+                            hoursUntil: 48,
+                        });
+                    }
+
+                    /*
+                    if (appt.guest_phone) {
+                        const smsMsg = `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appt.appointment_date} at ${timePretty}. Please confirm. Thank you!`;
+                        await sendSMS(appt.guest_phone, smsMsg);
+                    }
+                    */
                 }
 
-                // Mark reminder as sent (both guest and patient)
+                // Mark reminder as sent
                 await supabaseAdmin
                     .from('appointments')
                     .update({ reminder_48h_sent: true })
@@ -113,11 +142,14 @@ export const startScheduledTasks = () => {
     });
 
     // ── 3. 24h reminders: every day at 8:00 AM ──
-    // Patients  -> in-app notification + plain reminder email (no links)
-    // Guests    -> reminder email with [Reschedule] [Cancel] links (reuse tokens from 48h if they exist)
+    // Patients  -> in-app notification + plain reminder email + 24h SMS
+    // Guests    -> reminder email + 24h SMS
     cron.schedule('0 8 * * *', async () => {
         console.log('Sending 24h reminders...');
         try {
+            const now = new Date();
+            const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
@@ -128,13 +160,19 @@ export const startScheduledTasks = () => {
                     '*, service:services(id, name), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
                 )
                 .eq('appointment_date', tomorrowStr)
-                .eq('status', 'CONFIRMED');
+                .eq('status', 'CONFIRMED')
+                .lt('confirmed_at', twelveHoursAgo.toISOString());
+
+            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
+            const formatTime = (t) => t ? t.substring(0, 5) : '';
 
             for (const appt of appointments || []) {
                 const dentistName = appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'Assigned');
+                const serviceNameTruncated = truncate(appt.service?.name, 25);
+                const timePretty = formatTime(appt.start_time);
 
                 if (appt.patient_id) {
-                    // ── AUTHENTICATED PATIENT: in-app notification + plain email ──
+                    // ── AUTHENTICATED PATIENT: in-app notification + plain email + SMS ──
                     await sendReminder(
                         appt.patient_id,
                         {
@@ -147,7 +185,7 @@ export const startScheduledTasks = () => {
 
                     const { data: patient } = await supabaseAdmin
                         .from('profiles')
-                        .select('email, full_name, first_name, last_name, middle_name, suffix')
+                        .select('email, phone_number, full_name, first_name, last_name, middle_name, suffix')
                         .eq('id', appt.patient_id)
                         .single();
 
@@ -161,42 +199,59 @@ export const startScheduledTasks = () => {
                             hoursUntil: 24,
                         });
                     }
-                } else if (appt.guest_email) {
-                    // ── GUEST: reuse tokens from 48h job if they exist, else create new ──
-                    const { data: existingTokens } = await supabaseAdmin
-                        .from('guest_action_tokens')
-                        .select('token, action')
-                        .eq('appointment_id', appt.id)
-                        .is('used_at', null);
 
-                    let cancelToken, rescheduleToken;
+                    /*
+                    if (patient?.phone_number) {
+                        const smsMsg = `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appt.appointment_date} at ${timePretty}. See you soon!`;
+                        await sendSMS(patient.phone_number, smsMsg);
+                    }
+                    */
 
-                    if (existingTokens && existingTokens.length > 0) {
-                        // Tokens already exist from the 48h reminder — reuse them
-                        cancelToken = existingTokens.find((t) => t.action === 'cancel')?.token;
-                        rescheduleToken = existingTokens.find(
-                            (t) => t.action === 'reschedule',
-                        )?.token;
-                    } else {
-                        // No tokens yet (48h reminder was not sent) — create fresh ones
-                        const newTokens = await createGuestActionTokens(
-                            appt.id,
-                            appt.appointment_date,
-                            appt.start_time,
-                        );
-                        cancelToken = newTokens.cancelToken;
-                        rescheduleToken = newTokens.rescheduleToken;
+                } else if (appt.guest_email || appt.guest_phone) {
+                    const guestDisplayName = appt.guest_first_name ? `${appt.guest_first_name} ${appt.guest_last_name}`.trim() : appt.guest_name;
+
+                    if (appt.guest_email) {
+                        // ── GUEST: reuse tokens from 48h job if they exist, else create new ──
+                        const { data: existingTokens } = await supabaseAdmin
+                            .from('guest_action_tokens')
+                            .select('token, action')
+                            .eq('appointment_id', appt.id)
+                            .is('used_at', null);
+
+                        let cancelToken, rescheduleToken;
+
+                        if (existingTokens && existingTokens.length > 0) {
+                            cancelToken = existingTokens.find((t) => t.action === 'cancel')?.token;
+                            rescheduleToken = existingTokens.find(
+                                (t) => t.action === 'reschedule',
+                            )?.token;
+                        } else {
+                            const newTokens = await createGuestActionTokens(
+                                appt.id,
+                                appt.appointment_date,
+                                appt.start_time,
+                            );
+                            cancelToken = newTokens.cancelToken;
+                            rescheduleToken = newTokens.rescheduleToken;
+                        }
+
+                        await sendGuestReminderEmail(appt.guest_email, guestDisplayName, {
+                            date: appt.appointment_date,
+                            start_time: appt.start_time,
+                            service: appt.service?.name,
+                            dentist: dentistName,
+                            cancelToken,
+                            rescheduleToken,
+                            hoursUntil: 24,
+                        });
                     }
 
-                    await sendGuestReminderEmail(appt.guest_email, appt.guest_name, {
-                        date: appt.appointment_date,
-                        start_time: appt.start_time,
-                        service: appt.service?.name,
-                        dentist: dentistName,
-                        cancelToken,
-                        rescheduleToken,
-                        hoursUntil: 24,
-                    });
+                    /*
+                    if (appt.guest_phone) {
+                        const smsMsg = `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appt.appointment_date} at ${timePretty}. See you soon!`;
+                        await sendSMS(appt.guest_phone, smsMsg);
+                    }
+                    */
                 }
             }
             console.log(`   OK Sent ${appointments?.length || 0} 24h reminders.`);
@@ -204,6 +259,8 @@ export const startScheduledTasks = () => {
             console.error('   Error in 24h reminder:', err.message);
         }
     });
+
+
 
     // ── 4. Guest cleanup: every minute — cancel PENDING guests who did not confirm email ──
     cron.schedule('* * * * *', async () => {
@@ -341,9 +398,10 @@ export const startScheduledTasks = () => {
  * 🧪 TEST FUNCTION: Send 24h reminder email for an appointment immediately
  *
  * @param {string} appointmentId - The appointment UUID
+ * @param {number} hours - Hours until appointment (default 24)
  * @returns {object} Result with success status and details
  */
-export const testSend24hReminder = async (appointmentId) => {
+export const testSend24hReminder = async (appointmentId, hours = 24) => {
     try {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
@@ -383,16 +441,35 @@ export const testSend24hReminder = async (appointmentId) => {
             start_time: appointment.start_time,
             service: appointment.service?.name || 'Dental appointment',
             dentist: dentistName,
-            hoursUntil: 24,
+            hoursUntil: hours,
         });
+
+        /*
+        // Send SMS if phone exists
+        let smsResult = null;
+        if (patient.phone_number) {
+            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
+            const formatTime = (t) => t ? t.substring(0, 5) : '';
+            const serviceNameTruncated = truncate(appointment.service?.name, 25);
+            const timePretty = formatTime(appointment.start_time);
+
+            const smsMsg = hours === 48 
+                ? `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appointment.appointment_date} at ${timePretty}. Please confirm. Thank you!`
+                : `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appointment.appointment_date} at ${timePretty}. See you soon!`;
+            
+            smsResult = await sendSMS(patient.phone_number, smsMsg);
+        }
+        */
 
         return {
             success: true,
-            message: `24h reminder sent to ${patient.email}`,
+            message: `${hours}h reminder sent to ${patient.email}${smsResult?.success ? ' and SMS sent' : ''}`,
             details: {
                 appointmentId,
                 patientName: patientDisplayName,
                 patientEmail: patient.email,
+                patientPhone: patient.phone_number,
+                smsResult,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,
                 service: appointment.service?.name,
@@ -481,9 +558,10 @@ export const testSend48hReminder = async (appointmentId) => {
  * 🧪 TEST FUNCTION: Send guest reminder email with action tokens
  *
  * @param {string} appointmentId - The appointment UUID
+ * @param {number} hours - Hours until appointment (default 24)
  * @returns {object} Result with success status and details
  */
-export const testSendGuestReminder = async (appointmentId) => {
+export const testSendGuestReminder = async (appointmentId, hours = 24) => {
     try {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
@@ -521,16 +599,35 @@ export const testSendGuestReminder = async (appointmentId) => {
             dentist: dentistName,
             cancelToken,
             rescheduleToken,
-            hoursUntil: 24,
+            hoursUntil: hours,
         });
+
+        /*
+        // Send SMS if phone exists
+        let smsResult = null;
+        if (appointment.guest_phone) {
+            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
+            const formatTime = (t) => t ? t.substring(0, 5) : '';
+            const serviceNameTruncated = truncate(appointment.service?.name, 25);
+            const timePretty = formatTime(appointment.start_time);
+
+            const smsMsg = hours === 48 
+                ? `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appointment.appointment_date} at ${timePretty}. Please confirm. Thank you!`
+                : `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appointment.appointment_date} at ${timePretty}. See you soon!`;
+            
+            smsResult = await sendSMS(appointment.guest_phone, smsMsg);
+        }
+        */
 
         return {
             success: true,
-            message: `Guest reminder sent to ${appointment.guest_email}`,
+            message: `${hours}h Guest reminder sent to ${appointment.guest_email}${smsResult?.success ? ' and SMS sent' : ''}`,
             details: {
                 appointmentId,
                 guestName: guestDisplayName,
                 guestEmail: appointment.guest_email,
+                guestPhone: appointment.guest_phone,
+                smsResult,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,
                 service: appointment.service?.name,

@@ -1,6 +1,7 @@
 import { AppError } from '../utils/errors.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { formatDateLong, formatTimePretty, formatDateTimeRange } from '../utils/time.js';
+import { sendSMS } from './sms.service.js';
 
 /**
  * Send a notification to a user.
@@ -15,39 +16,49 @@ import { formatDateLong, formatTimePretty, formatDateTimeRange } from '../utils/
  * @param {object} metadata - Optional structured data for frontend rendering
  */
 export const sendNotification = async (userId, type, title, message, channel = 'in_app', metadata = null) => {
-    // If metadata is provided, we'll store a JSON string in the message column
-    // The frontend will detect this and render accordingly.
-    const messageContent = metadata ? JSON.stringify({ ...metadata, _isJSON: true, _title: title, _fallback: message }) : message;
-
-    const { data, error } = await supabaseAdmin
-        .from('notifications')
-        .insert({
-            user_id: userId,
-            type,
-            channel,
-            title,
-            message: messageContent,
-            sent_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-    if (error) {
-        // Don't crash the main flow if notification fails — just log it
-        console.error('Failed to send notification:', error.message);
-        return null;
+    // ── 0. Safety Check for In-App ──
+    // Guests don't have user IDs and thus can't receive in-app notifications.
+    if (channel === 'in_app' && !userId) {
+        return null; // Skip silently
     }
 
-    // ── Future: Plug in email/SMS here ──
-    // if (channel === 'email') await sendEmail(userId, title, message);
-    // if (channel === 'sms')   await sendSMS(userId, message);
-    //
-    // NOTE: Booking/cancellation/reschedule emails are already handled in
-    // email-confirmation.service.js (Module 06) using Resend.
-    // This service handles IN-APP notifications (the notification bell in UI).
+    // ── 1. Save to Database (if userId exists) ──
+    let data = null;
+    if (userId) {
+        const messageContent = metadata ? JSON.stringify({ ...metadata, _isJSON: true, _title: title, _fallback: message }) : message;
 
-    return data;
+        const { data: insertData, error } = await supabaseAdmin
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                type,
+                channel,
+                title,
+                message: messageContent,
+                sent_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Failed to send notification record:', error.message);
+            // We continue so SMS can still be attempted if applicable
+        } else {
+            data = insertData;
+        }
+    }
+
+    // ── 2. External Channels (SMS/Email) ──
+    let smsResult = null;
+    if (channel === 'sms' && metadata?.phone) {
+        const identifier = userId || 'Guest';
+        console.log(`[Notification] Triggering SMS for ${identifier} to ${metadata.phone}`);
+        smsResult = await sendSMS(metadata.phone, message);
+    }
+
+    return { ...data, smsResult };
 };
+
 
 // ─────────────────────────────────────────────
 // Typed helpers — call these from other modules
@@ -88,17 +99,38 @@ export const sendRequestReceived = async (userId, appointmentDetails) => {
 /**
  * Appointment approved.
  */
-export const sendApprovalNotice = async (userId, appointmentDetails) => {
+export const sendApprovalNotice = async (userId, appointmentDetails, phone = null) => {
     const { date, start_time, end_time, service } = appointmentDetails;
     const formattedRange = formatDateTimeRange(date, start_time, end_time);
-    return sendNotification(
+
+    const message = `Good news! Your ${service} appointment on ${formattedRange} has been approved. See you at the clinic!`;
+
+    // 1. In-App Notification
+    const inAppResult = await sendNotification(
         userId,
         'CONFIRMATION',
         'Appointment Approved!',
-        `Good news! Your ${service} appointment on ${formattedRange} has been approved. See you at the clinic!`,
+        message,
         'in_app',
         { service, date, start_time, end_time, action: 'approved' }
     );
+
+    /* 
+    // 2. SMS Notification (if phone provided)
+    let smsResult = null;
+    if (phone) {
+        smsResult = await sendNotification(
+            userId,
+            'CONFIRMATION',
+            'Appointment Approved!',
+            message,
+            'sms',
+            { phone, service, date, start_time, end_time }
+        );
+    }
+    */
+    
+    return { inAppResult, smsResult };
 };
 
 /**

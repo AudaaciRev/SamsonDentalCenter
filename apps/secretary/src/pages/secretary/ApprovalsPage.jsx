@@ -94,6 +94,11 @@ const ApprovalsPage = () => {
         
         const res = await approveRequest(id);
         if (res.success) {
+            console.log('📬 [Notification Status] Approval process completed:', {
+                email: res.notifications?.email,
+                sms: res.notifications?.sms,
+                inApp: res.notifications?.inApp
+            });
             if (selectedId === id) setSearchParams({});
         } else {
             alert(`Approval failed: ${res.error}`);

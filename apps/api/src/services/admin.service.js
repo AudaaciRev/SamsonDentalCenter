@@ -629,7 +629,7 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
         .eq('id', appointmentId)
         .select(`
             *,
-            patient:profiles!appointments_patient_id_fkey(full_name, email),
+            patient:profiles!appointments_patient_id_fkey(full_name, email, phone),
             service:services(name, price),
             dentist:dentists(id, profile:profiles(full_name, first_name, last_name, middle_name, suffix))
         `)

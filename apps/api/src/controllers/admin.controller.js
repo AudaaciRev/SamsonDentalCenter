@@ -227,9 +227,10 @@ export const approve = async (req, res, next) => {
         const { dentist_id } = req.body;
         const appointment = await approveRequest(req.params.id, req.user.id, dentist_id || null);
 
-        // Notify patient/guest
+        // 1. Email Notification
+        let emailResult = null;
         try {
-            await sendBookingSuccessEmail(appointment.patient?.email || appointment.guest_email, appointment.patient?.full_name || appointment.guest_name, {
+            emailResult = await sendBookingSuccessEmail(appointment.patient?.email || appointment.guest_email, appointment.patient?.full_name || appointment.guest_name, {
                 date: appointment.appointment_date,
                 start_time: appointment.start_time,
                 end_time: appointment.end_time,
@@ -238,19 +239,32 @@ export const approve = async (req, res, next) => {
             });
         } catch (e) {
             console.error('Failed to send approval email:', e);
+            emailResult = { success: false, error: e.message };
         }
 
-        // In-app notification
-        if (appointment.patient_id) {
-            await sendApprovalNotice(appointment.patient_id, {
-                date: appointment.appointment_date,
-                start_time: appointment.start_time,
-                end_time: appointment.end_time,
-                service: appointment.service?.name,
-            });
-        }
+        // 2. In-app & SMS notification
+        let inAppSmsResult = null;
+        const recipientPhone = appointment.patient?.phone || appointment.guest_phone;
+        
+        // Always try to send approval notice — the service will handle the patient vs guest distinction
+        // (Skipping in-app for guests, but sending SMS if phone is available)
+        inAppSmsResult = await sendApprovalNotice(appointment.patient_id, {
+            date: appointment.appointment_date,
+            start_time: appointment.start_time,
+            end_time: appointment.end_time,
+            service: appointment.service?.name,
+        }, recipientPhone);
 
-        res.json({ message: 'Appointment approved.', appointment });
+        res.json({ 
+            message: 'Appointment approved.', 
+            appointment,
+            notifications: {
+                email: emailResult,
+                inApp: inAppSmsResult?.inAppResult,
+                sms: inAppSmsResult?.smsResult
+            }
+        });
+
     } catch (err) {
         next(err);
     }
