@@ -290,9 +290,9 @@ export const cancel = async (req, res, next) => {
 export const reschedule = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { date, time } = req.body;
+        const { date, time, user_session_id, dentist_id } = req.body;
 
-        const result = await rescheduleAppointment(id, req.user.id, date, time);
+        const result = await rescheduleAppointment(id, req.user.id, date, time, user_session_id, dentist_id);
 
         if (result.rescheduled) {
             // ── Trigger waitlist notification for the FREED old slot ──

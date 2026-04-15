@@ -572,10 +572,16 @@ export const getPatientAppointments = async (
 
     // 🎯 FILTER LOGIC
     if (status === 'upcoming') {
-        // Upcoming = strictly approved/confirmed appointments in the future
-        query = query.or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`).gte('appointment_date', today);
+        // Upcoming = confirmed/approved future appointments, explicitly excluding any cancelled or rescheduled status
+        query = query
+            .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.RESCHEDULED})`)
+            .gte('appointment_date', today);
     } else if (status === 'confirmed') {
-        query = query.or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`).gte('appointment_date', today);
+        query = query
+            .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.RESCHEDULED})`)
+            .gte('appointment_date', today);
     } else if (status === 'pending') {
         // Pending = status is PENDING AND it hasn't been approved yet
         query = query.eq('status', APPOINTMENT_STATUS.PENDING).not('approval_status', 'eq', 'approved').gte('appointment_date', today);
@@ -866,7 +872,7 @@ export const cancelAppointment = async (
  * @param {string} newDate - New date 'YYYY-MM-DD'
  * @param {string} newTime - New time 'HH:MM'
  */
-export const rescheduleAppointment = async (appointmentId, patientId, newDate, newTime) => {
+export const rescheduleAppointment = async (appointmentId, patientId, newDate, newTime, userSessionId = null, preferredDentistId = null) => {
     // ── 1. Get the original appointment ──
     const { data: original, error } = await supabaseAdmin
         .from('appointments')
@@ -890,6 +896,10 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         newDate,
         newTime,
         false,
+        null,
+        undefined,
+        userSessionId,
+        preferredDentistId
     );
 
     if (!newBooking.booked) {
@@ -906,8 +916,24 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         };
     }
 
-    // ── 3. New slot booked! Now cancel the original (sendEmail = false — reschedule email sent instead) ──
-    const cancelResult = await cancelAppointment(appointmentId, patientId, 'Rescheduled to new time', false);
+    // ── 3. New slot booked! Mark the original as RESCHEDULED (distinct from CANCELLED) ──
+    await supabaseAdmin
+        .from('appointments')
+        .update({
+            status: APPOINTMENT_STATUS.RESCHEDULED,
+            cancellation_reason: 'Rescheduled to new time',
+            cancelled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId);
+
+    const freedSlot = {
+        date: original.appointment_date,
+        start_time: original.start_time,
+        end_time: original.end_time,
+        service_id: original.service_id,
+        dentist_id: original.dentist_id,
+    };
 
     // ── 4. Send reschedule email ──
     const { data: patient } = await supabaseAdmin
@@ -941,10 +967,10 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         old_appointment: {
             date: original.appointment_date,
             time: original.start_time,
-            status: 'CANCELLED',
+            status: 'RESCHEDULED',
         },
         new_appointment: newBooking.appointment,
-        freed_slot: cancelResult.freed_slot,
+        freed_slot: freedSlot,
     };
 };
 
@@ -1152,8 +1178,16 @@ export const rescheduleGuestAppointment = async (oldAppt, date, time, userSessio
     // 3. Create NEW appointment
     const newAppointment = await insertConfirmedGuestAppointment(oldAppt, finalDentistId, date, time, endTime, userSessionId);
 
-    // 4. Cancel OLD appointment
-    await cancelGuestAppointmentAction(oldAppt.id, 'Rescheduled by guest via link.');
+    // 4. Mark OLD appointment as RESCHEDULED
+    await supabaseAdmin
+        .from('appointments')
+        .update({
+            status: APPOINTMENT_STATUS.RESCHEDULED,
+            cancellation_reason: 'Rescheduled by guest via link.',
+            cancelled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', oldAppt.id);
 
     return {
         rescheduled: true,

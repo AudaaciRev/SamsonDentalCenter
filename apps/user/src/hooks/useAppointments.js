@@ -9,7 +9,8 @@ export const STATUS_LABEL = {
     CANCELLED: 'Cancelled',
     LATE_CANCEL: 'Late Cancel',
     NO_SHOW: 'Missed',
-    WAITLISTED: 'Waitlisted'
+    WAITLISTED: 'Waitlisted',
+    RESCHEDULED: 'Rescheduled',
 };
 
 // Semantic keys for Badge component and general consistency
@@ -22,20 +23,28 @@ export const STATUS_COLOR = {
     'Late Cancel': 'error',
     Missed: 'error',
     Waitlisted: 'primary',
-    Rejected: 'light'
+    Rejected: 'light',
+    Rescheduled: 'light',  // neutral — it's a clean handoff, not a problem
 };
 
 export const getDisplayStatus = (status, approvalStatus) => {
-    // Priority: approval_status for Specialized services
+    // Terminal statuses always win — a cancelled appointment is cancelled
+    // regardless of what approval_status says (can be 'approved' after a reschedule)
+    const TERMINAL = ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'COMPLETED', 'IN_PROGRESS', 'RESCHEDULED'];
+    if (TERMINAL.includes((status || '').toUpperCase())) {
+        const label = STATUS_LABEL[status] || status;
+        return { label, color: STATUS_COLOR[label] || 'light' };
+    }
+
+    // For non-terminal appointments, approval_status drives the badge
     const appStatus = (approvalStatus || '').toLowerCase();
-    
     if (appStatus === 'approved') {
         return { label: 'Approved', color: STATUS_COLOR.Approved };
     }
     if (appStatus === 'rejected') {
         return { label: 'Rejected', color: STATUS_COLOR.Rejected };
     }
-    
+
     // Fallback to primary status
     const label = STATUS_LABEL[status] || status;
     return {
@@ -112,7 +121,8 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
                     return isApproved && 
                            statusStr !== 'CANCELLED' && 
                            statusStr !== 'LATE_CANCEL' && 
-                           statusStr !== 'NO_SHOW';
+                           statusStr !== 'NO_SHOW' &&
+                           statusStr !== 'RESCHEDULED';
                 });
             } else if (status === 'pending') {
                 result = result.filter(a => {
@@ -157,7 +167,7 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
                 const statusStr = (a.status || '').toUpperCase();
                 const appStatusStr = (a.approval_status || '').toLowerCase();
                 return (appStatusStr === 'approved' || statusStr === 'CONFIRMED') && 
-                       !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes(statusStr);
+                       !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes(statusStr);
             }).length,
             pending: allAppointments.filter(a => {
                 const statusStr = (a.status || '').toUpperCase();

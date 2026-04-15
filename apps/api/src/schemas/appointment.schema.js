@@ -128,6 +128,8 @@ export const rescheduleSchema = z.object({
     body: z.object({
         date: stringRequired,
         time: stringRequired,
+        user_session_id: stringSchema,
+        dentist_id: stringSchema,
     }).passthrough(),
     query: z.any(),
 }).passthrough();

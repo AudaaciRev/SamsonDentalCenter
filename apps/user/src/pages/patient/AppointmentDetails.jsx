@@ -207,9 +207,7 @@ const AppointmentDetails = () => {
                     <AppointmentDetailFooter
                         isCancellable={isCancellable}
                         onCancelClick={() => setShowCancelModal(true)}
-                        onRescheduleClick={() => {
-                            /* Handle reschedule */
-                        }}
+                        onRescheduleClick={() => navigate(`/patient/appointments/${id}/reschedule`)}
                     />
                 </div>
             </div>

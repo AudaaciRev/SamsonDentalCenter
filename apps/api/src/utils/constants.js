@@ -9,6 +9,7 @@ export const APPOINTMENT_STATUS = {
     CANCELLED: 'CANCELLED', // Cancelled with ≥24h notice
     COMPLETED: 'COMPLETED', // Treatment done (dentist marks this)
     NO_SHOW: 'NO_SHOW', // Patient didn't show up
+    RESCHEDULED: 'RESCHEDULED', // Old slot — superseded by a new appointment
 };
 
 // Waitlist status values

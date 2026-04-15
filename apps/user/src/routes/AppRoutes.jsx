@@ -43,6 +43,7 @@ import PatientProfile from '../pages/patient/PatientProfile';
 import NotificationsPage from '../pages/patient/NotificationsPage';
 import WaitlistPage from '../pages/patient/WaitlistPage';
 import UserBookingPage from '../pages/patient/UserBookingPage';
+import UserReschedulePage from '../pages/patient/UserReschedulePage';
 
 const AppRoutes = () => {
     return (
@@ -158,6 +159,14 @@ const AppRoutes = () => {
                     element={
                         <ProtectedRoute>
                             <UserBookingPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path='/patient/appointments/:id/reschedule'
+                    element={
+                        <ProtectedRoute>
+                            <UserReschedulePage />
                         </ProtectedRoute>
                     }
                 />

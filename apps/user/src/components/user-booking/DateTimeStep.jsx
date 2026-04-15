@@ -19,6 +19,7 @@ const DateTimeStep = ({
     sessionId,
     slotHold,
     userWaitlist = [], // ✅ NEW: Prop from parent
+    disableWaitlist = false, // ✅ NEW: Disable waitlist functionality for reschedules
 }) => {
     const [specialists, setSpecialists] = useState([]);
     const [specialistsLoading, setSpecialistsLoading] = useState(false);
@@ -165,6 +166,8 @@ const DateTimeStep = ({
                     }
                 }
             } else {
+                if (disableWaitlist) return; // Do not process waitlist logic if disabled
+
                 // Full slot — toggle or show waitlist modal
                 const isSelectedForWaitlist = formData?.waitlist_time === slotData.rawTime;
                 const isAlreadyInDB = isSlotWaitlisted(slotData.rawTime);
@@ -302,11 +305,14 @@ const DateTimeStep = ({
         return `${dayName}, ${monthNames[date.getMonth()]} ${date.getDate()} at ${activeHold.time}`;
     };
 
-    // Filtered Slots for "Load More"
     const visibleSlots = useMemo(() => {
         if (!slots) return [];
         return slots
             .filter(slot => {
+                // Hide fully booked slots if waitlisting is disabled
+                if (disableWaitlist && slot.available <= 0 && !(activeHold?.time === slot.rawTime && selectedDate === activeHold.date)) {
+                    return false;
+                }
                 // Hide slots that the user is already waitlisted for
                 const isWaitlisted = isSlotWaitlisted(slot.rawTime);
                 if (isWaitlisted) return false;
@@ -315,7 +321,7 @@ const DateTimeStep = ({
                 return true; 
             })
             .slice(0, visibleCount);
-    }, [slots, visibleCount, activeHold, selectedDate]);
+    }, [slots, visibleCount, activeHold, selectedDate, disableWaitlist]);
 
     const hasMoreSlots = slots && slots.length > visibleCount;
 
