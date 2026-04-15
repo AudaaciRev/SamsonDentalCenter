@@ -4,7 +4,7 @@ import { Calendar } from 'lucide-react';
 
 const AppointmentTable = ({ appointments, loading, error, user, openDropdown, onToggleDropdown, onViewDetails }) => {
     return (
-        <div className='flex flex-col grow min-h-[400px] md:min-h-[285px]'>
+        <div className='flex flex-col grow min-h-120 md:min-h-140'>
             {/* Loading skeleton - only show on initial load with no data */}
             {loading && appointments.length === 0 && <AppointmentSkeleton />}
 
