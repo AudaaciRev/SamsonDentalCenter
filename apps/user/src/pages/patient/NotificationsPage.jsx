@@ -5,9 +5,10 @@ import NotificationInbox from '../../components/patient/notification/Notificatio
 import NotificationDetailView from '../../components/patient/notification/NotificationDetailView';
 import useNotifications from '../../hooks/useNotifications';
 import { formatFullDateTime } from '../../hooks/useAppointments';
-import { Clock, Inbox, Star, XCircle } from 'lucide-react';
+import { Clock, Inbox, Star, XCircle, Search } from 'lucide-react';
 import { renderNotification } from '../../utils/notificationRenderer';
 import NotificationStatusSummary from '../../components/patient/notification/NotificationStatusSummary';
+import NotificationSkeleton from '../../components/patient/notification/NotificationSkeleton';
 
 const NotificationsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -135,18 +136,26 @@ const NotificationsPage = () => {
 
     if (loading && notifications.length === 0) {
         return (
-            <>
+            <div className='flex flex-col h-full'>
                 <PageBreadcrumb pageTitle={breadcrumbTitle} />
-                <div className='flex items-center justify-center grow py-20'>
-                    <div className='animate-pulse flex flex-col items-center gap-4'>
-                        <Clock
-                            size={40}
-                            className='text-gray-200 dark:text-gray-800'
-                        />
-                        <div className='h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded-full' />
+                
+                <div className='flex flex-col grow'>
+                    {/* Skeleton Stats Summary */}
+                    <div className='grid grid-cols-2 md:grid-cols-5 gap-3 p-4 sm:p-6'>
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className='h-24 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl animate-pulse' />
+                        ))}
+                    </div>
+
+                    {/* Inbox Skeleton */}
+                    <div className='mx-4 sm:mx-6 flex flex-col grow bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
+                        <div className='p-6 border-b border-gray-100 dark:border-gray-800'>
+                            <div className='h-10 w-full bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse' />
+                        </div>
+                        <NotificationSkeleton rows={6} />
                     </div>
                 </div>
-            </>
+            </div>
         );
     }
 
