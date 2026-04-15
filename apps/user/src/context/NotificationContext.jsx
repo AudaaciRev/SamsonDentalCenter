@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from './AuthContext';
 import { supabase } from '../utils/supabase';
@@ -19,6 +19,15 @@ export const NotificationProvider = ({ children }) => {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const statsRef = useRef(stats);
+    const fetchNotificationsRef = useRef(null);
+    const fetchUnreadCountRef = useRef(null);
+
+    // Sync refs
+    useEffect(() => {
+        statsRef.current = stats;
+    }, [stats]);
 
     const sortNotifications = (notifs) => {
         return [...notifs].sort((a, b) => {
@@ -84,6 +93,11 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [token]);
 
+    useEffect(() => {
+        fetchNotificationsRef.current = fetchNotifications;
+        fetchUnreadCountRef.current = fetchUnreadCount;
+    }, [fetchNotifications, fetchUnreadCount]);
+
     const markRead = async (id, isRead = true) => {
         if (!token) return;
         try {
@@ -137,7 +151,7 @@ export const NotificationProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Failed to toggle star:', err);
-            refresh(); // Rollback on error
+            fetchNotifications(); // Rollback on error
             return { success: false, error: err.message };
         }
     };
@@ -163,7 +177,7 @@ export const NotificationProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Failed to toggle archive:', err);
-            refresh(); // Rollback on error
+            fetchNotifications(); // Rollback on error
             return { success: false, error: err.message };
         }
     };
@@ -182,60 +196,65 @@ export const NotificationProvider = ({ children }) => {
 
     // ── Supabase Realtime Subscription & Sync Logic ──
     useEffect(() => {
-        if (!token || !user?.id) return;
-
-        // 1. Initial listener for Realtime events
-        const channel = supabase
-            .channel(`notifs:${user.id}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `user_id=eq.${user.id}`,
-                },
-                (payload) => {
-                    console.log('Realtime notification received:', payload);
-                    
-                    if (payload.eventType === 'INSERT') {
-                        // Optimistically update the list if it's the first page
-                        setNotifications(prev => {
-                            // Avoid duplicates
-                            if (prev.find(n => n.id === payload.new.id)) return prev;
-                            const updated = [payload.new, ...prev];
-                            return sortNotifications(updated).slice(0, 10); // Keep it paged
-                        });
-                        setUnreadCount(prev => prev + 1);
-                        setStats(prev => ({ ...prev, unread: prev.unread + 1 }));
+        if (user?.id) {
+            console.log('Setting up notification subscription for user:', user.id);
+            const channel = supabase
+                .channel(`notifs:${user.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${user.id}`,
+                    },
+                    (payload) => {
+                        console.log('Realtime INSERT received:', payload);
+                        // Background refresh to stay in sync
+                        fetchNotificationsRef.current(1, 10, false, true);
+                        fetchUnreadCountRef.current(true);
                     }
-                    
-                    // Always refresh to stay in sync with server metadata/sorting
-                    // Use background=true to prevent UI flickering/skeletons
-                    fetchNotifications(1, 10, true, true);
-                    fetchUnreadCount(true);
-                }
-            )
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `user_id=eq.${user.id}`,
-                },
-                (payload) => {
-                   // Refresh everything on update in background
-                   fetchNotifications(1, 10, true, true);
-                   fetchUnreadCount(true);
-                }
-            )
-            .subscribe((status) => {
-               if (status === 'SUBSCRIBED') {
-                   console.log('Realtime notification subscription active');
-               }
-            });
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${user.id}`,
+                    },
+                    (payload) => {
+                       console.log('Realtime UPDATE received:', payload);
+                       fetchNotificationsRef.current(1, 10, false, true);
+                       fetchUnreadCountRef.current(true);
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'DELETE',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${user.id}`,
+                    },
+                    (payload) => {
+                       console.log('Realtime DELETE received:', payload);
+                       fetchNotificationsRef.current(1, 10, false, true);
+                       fetchUnreadCountRef.current(true);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log(`Notification subscription status for ${user.id}:`, status);
+                });
 
+            return () => {
+                console.log('Cleaning up notification subscription');
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [user?.id]);
+
+    useEffect(() => {
         // 2. Sync on Focus (Alternative to polling)
         // When user returns to tab, refresh counts/list in background
         const handleFocus = () => {
@@ -255,7 +274,6 @@ export const NotificationProvider = ({ children }) => {
         window.addEventListener('online', handleOnline);
 
         return () => {
-            channel.unsubscribe();
             window.removeEventListener('focus', handleFocus);
             window.removeEventListener('online', handleOnline);
         };

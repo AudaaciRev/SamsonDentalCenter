@@ -1,14 +1,13 @@
-import React from 'react';
-import { Search, Filter, Mail, Archive, Star, Clock, XCircle, Inbox } from 'lucide-react';
+import { Search, Mail, Star, Clock, Calendar, Bell } from 'lucide-react';
 import NotificationRow from './NotificationRow';
 import Pagination from '../../common/Pagination';
 
 const CATEGORIES = [
     { id: 'all', label: 'All', icon: Mail },
+    { id: 'unread', label: 'Unread', icon: Bell },
     { id: 'starred', label: 'Starred', icon: Star },
-    { id: 'general', label: 'General', icon: Inbox },
+    { id: 'appointments', label: 'Appointments', icon: Calendar },
     { id: 'waitlist', label: 'Waitlist', icon: Clock },
-    { id: 'cancellation', label: 'Cancellation', icon: XCircle },
 ];
 
 const NotificationInbox = ({

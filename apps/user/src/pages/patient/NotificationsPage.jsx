@@ -98,9 +98,10 @@ const NotificationsPage = () => {
         if (!matchesSearch) return false;
 
         if (activeFilter === 'all') return true;
+        if (activeFilter === 'unread') return !n.isRead;
         if (activeFilter === 'starred') return n.isStarred;
 
-        if (activeFilter === 'general') {
+        if (activeFilter === 'appointments') {
             return [
                 'GENERAL',
                 'CONFIRMATION',
@@ -111,13 +112,13 @@ const NotificationsPage = () => {
                 'FOLLOW_UP',
                 'RESCHEDULE',
                 'RESTRICTION',
+                'CANCELLATION',
+                'REJECTION',
+                'NO_SHOW'
             ].includes(n.category);
         }
         if (activeFilter === 'waitlist') {
             return n.category === 'WAITLIST';
-        }
-        if (activeFilter === 'cancellation') {
-            return ['CANCELLATION', 'REJECTION', 'NO_SHOW'].includes(n.category);
         }
 
         return n.category.toLowerCase().includes(activeFilter.toLowerCase());

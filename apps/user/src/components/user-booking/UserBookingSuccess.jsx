@@ -242,7 +242,7 @@ const UserBookingSuccess = ({ result, onReset }) => {
                 <button
                     onClick={() => {
                         onReset();
-                        navigate('/patient/dashboard');
+                        navigate('/patient');
                     }}
                     className='w-full sm:w-auto group bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black
                                px-10 py-4.5 rounded-2xl transition-all shadow-theme-lg

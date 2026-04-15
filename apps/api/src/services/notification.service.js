@@ -487,16 +487,19 @@ export const getNotificationStats = async (userId) => {
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('is_starred', true),
+            .eq('is_starred', true)
+            .eq('is_archived', false),
         supabaseAdmin
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('is_read', false),
+            .eq('is_read', false)
+            .eq('is_archived', false),
         supabaseAdmin
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
+            .eq('is_archived', false)
             .in('type', [
                 'GENERAL',
                 'CONFIRMATION',
@@ -512,11 +515,13 @@ export const getNotificationStats = async (userId) => {
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .eq('type', 'WAITLIST'),
+            .eq('type', 'WAITLIST')
+            .eq('is_archived', false),
         supabaseAdmin
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
+            .eq('is_archived', false)
             .in('type', ['CANCELLATION', 'REJECTION', 'NO_SHOW']),
     ]);
 

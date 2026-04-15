@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Inbox, Clock, XCircle } from 'lucide-react';
+import { Star, Bell, Clock, Calendar } from 'lucide-react';
 
 const StatCard = ({ title, count, icon: Icon, iconColor }) => (
     <div className="flex-shrink-0 w-[155px] sm:w-auto sm:flex-1 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:shadow-md">
@@ -18,15 +18,21 @@ const StatCard = ({ title, count, icon: Icon, iconColor }) => (
 const NotificationStatusSummary = ({ stats }) => {
     const items = [
         { 
+            title: 'Unread', 
+            count: stats?.unread || 0, 
+            icon: Bell, 
+            iconColor: 'text-red-500'
+        },
+        { 
             title: 'Starred', 
             count: stats?.starred || 0, 
             icon: Star, 
             iconColor: 'text-amber-500'
         },
         { 
-            title: 'General', 
-            count: stats?.general || 0, 
-            icon: Inbox, 
+            title: 'Appointments', 
+            count: (stats?.general || 0) + (stats?.cancellation || 0), 
+            icon: Calendar, 
             iconColor: 'text-blue-600 dark:text-blue-400'
         },
         { 
@@ -34,12 +40,6 @@ const NotificationStatusSummary = ({ stats }) => {
             count: stats?.waitlist || 0, 
             icon: Clock, 
             iconColor: 'text-indigo-600 dark:text-indigo-400'
-        },
-        { 
-            title: 'Canceled', 
-            count: stats?.cancellation || 0, 
-            icon: XCircle, 
-            iconColor: 'text-red-600 dark:text-red-400'
         }
     ];
 

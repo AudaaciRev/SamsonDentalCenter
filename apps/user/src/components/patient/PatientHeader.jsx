@@ -56,11 +56,18 @@ const PatientHeader = () => {
                             className='flex items-center text-gray-700 dropdown-toggle'
                         >
                             <span className='mr-3 overflow-hidden rounded-full h-11 w-11 bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-sm'>
-                                {user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user?.email?.[0]?.toUpperCase() || 'U')}
+                                {user?.avatar_url ? (
+                                    <img 
+                                        src={user.avatar_url} 
+                                        alt={user.first_name} 
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase() : (user?.email?.[0]?.toUpperCase() || 'U')
+                                )}
                             </span>
                             <div className='hidden sm:block mr-1 text-left'>
-                                <p className='text-xs text-gray-500'>Hello,</p>
-                                <p className='font-medium truncate max-w-[120px] text-theme-sm'>
+                                <p className='font-bold truncate max-w-[120px] text-gray-900'>
                                     {user?.first_name || 'Authorized'}
                                 </p>
                             </div>
