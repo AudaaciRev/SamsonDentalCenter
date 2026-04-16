@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useAppointmentState } from '../context/AppointmentContext';
+import { format, parseISO, isValid } from 'date-fns';
 
 export const STATUS_LABEL = {
     CONFIRMED: 'Approved',
@@ -56,37 +57,55 @@ export const getDisplayStatus = (status, approvalStatus) => {
     };
 };
 
+
 export const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-    });
+    try {
+        let date;
+        // Plain date string YYYY-MM-DD — parse as LOCAL midnight to avoid UTC offset issues
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) {
+            const [y, m, d] = dateStr.trim().split('-').map(Number);
+            date = new Date(y, m - 1, d);
+        } else {
+            // ISO timestamp or other format
+            date = new Date(dateStr.replace(' ', 'T'));
+        }
+        if (!isValid(date)) return dateStr;
+        return format(date, 'eee, MMM d, yyyy');
+    } catch (e) {
+        return dateStr;
+    }
 };
 
 export const formatTime = (timeStr) => {
     if (!timeStr) return '';
-    const [hours, minutes] = timeStr.split(':');
-    const h = parseInt(hours);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const displayH = h % 12 || 12;
-    return `${displayH}:${minutes} ${ampm}`;
+    try {
+        let date;
+        if (timeStr.includes('T') || timeStr.includes(' ')) {
+            date = new Date(timeStr.replace(' ', 'T'));
+        } else {
+            // Handle "HH:mm:ss" or "HH:mm"
+            const [h, m] = timeStr.split(':');
+            date = new Date();
+            date.setHours(parseInt(h, 10), parseInt(m, 10), 0);
+        }
+        
+        if (!isValid(date)) return timeStr;
+        return format(date, 'h:mm aa');
+    } catch (e) {
+        return timeStr;
+    }
 };
 
 export const formatFullDateTime = (dateStr) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    });
+    try {
+        const date = new Date(dateStr.replace(' ', 'T'));
+        if (!isValid(date)) return dateStr;
+        return format(date, 'MMM d, yyyy, h:mm aa');
+    } catch (e) {
+        return dateStr;
+    }
 };
 
 // Alias for convenience

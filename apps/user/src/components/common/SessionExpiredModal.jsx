@@ -1,37 +1,48 @@
 import React from 'react';
 import { LogOut, ShieldAlert } from 'lucide-react';
+import { Modal } from '../ui/Modal';
 
 const SessionExpiredModal = ({ onLogout }) => {
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="w-full max-w-md scale-in-center overflow-hidden rounded-3xl bg-white p-8 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div className="flex flex-col items-center text-center">
-                    <div className="mb-6 rounded-2xl bg-amber-50 p-4 text-amber-500 dark:bg-amber-950/30">
-                        <ShieldAlert size={48} strokeWidth={1.5} />
-                    </div>
-                    
-                    <h2 className="mb-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                        Session Expired
+        <Modal 
+            isOpen={true} 
+            onClose={onLogout} 
+            showCloseButton={false} 
+            className='max-w-[440px] mx-4 sm:mx-0 w-[calc(100%-32px)] sm:w-full'
+        >
+            <div className="p-7 sm:p-12 flex flex-col items-center text-center space-y-6 sm:space-y-8">
+                {/* Icon Container - Scaled for better mobile real estate */}
+                <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-[1.75rem] sm:rounded-[2rem] bg-amber-50 dark:bg-amber-500/10 text-amber-500 animate-in zoom-in duration-500">
+                    <ShieldAlert size={32} className="sm:hidden" strokeWidth={1.5} />
+                    <ShieldAlert size={42} className="hidden sm:block" strokeWidth={1.5} />
+                </div>
+                
+                {/* Friendly Messaging */}
+                <div className="space-y-2 sm:space-y-3">
+                    <h2 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white font-outfit uppercase tracking-tight">
+                        Session Timed Out
                     </h2>
-                    
-                    <p className="mb-8 text-lg text-slate-600 dark:text-slate-400">
-                        For your security, your session has ended. Please log in again to continue managing your appointments.
-                    </p>
-                    
-                    <button
-                        onClick={onLogout}
-                        className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-indigo-600 px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 active:scale-[0.98]"
-                    >
-                        <LogOut size={20} className="transition-transform group-hover:translate-x-1" />
-                        Log In Again
-                    </button>
-                    
-                    <p className="mt-6 text-sm text-slate-400 dark:text-slate-500">
-                        Redirecting will clear your local session data.
+                    <p className="text-[13px] sm:text-base text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-[280px] sm:max-w-[320px] mx-auto">
+                        For your security, we've signed you out since you've been inactive. No worries—just sign back in to continue!
                     </p>
                 </div>
+                
+                {/* High-Fidelity Action Button */}
+                <button
+                    onClick={onLogout}
+                    className="group relative flex w-full items-center justify-center gap-3 py-4 sm:py-5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white bg-brand-500 rounded-xl sm:rounded-2xl shadow-[0_15px_30px_-10px_rgba(59,130,246,0.4)] hover:bg-brand-600 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                    <LogOut size={16} strokeWidth={3} className="sm:hidden transition-transform group-hover:translate-x-1" />
+                    <LogOut size={18} strokeWidth={3} className="hidden sm:block transition-transform group-hover:translate-x-1" />
+                    Secure Sign In
+                </button>
+                
+                {/* Muted Hint */}
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 opacity-40">
+                    Your session data has been cleared
+                </p>
             </div>
-        </div>
+        </Modal>
     );
 };
 
