@@ -23,7 +23,7 @@ const MyAppointments = () => {
     const { isMobileOpen } = useSidebar();
     const [openDropdown, setOpenDropdown] = useState(null);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('upcoming');
 
     const { appointments, total, stats, counts, page, totalPages, loading, error, goToPage, prevPage, nextPage } =
         useAppointments({ status: statusFilter, sort: 'desc', limit: 10 });

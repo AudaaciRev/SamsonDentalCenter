@@ -105,86 +105,66 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
         setPage(1);
     }, [status]);
 
+    // Helpers for consistent filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isApproved = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        const as = (a.approval_status || '').toLowerCase();
+        return (as === 'approved' || s === 'CONFIRMED') && !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes(s);
+    }, []);
+
+    const isPending = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        const as = (a.approval_status || '').toLowerCase();
+        return s === 'PENDING' && as !== 'approved' && as !== 'rejected';
+    }, []);
+
+    const isRejected = useCallback((a) => (a.approval_status || '').toLowerCase() === 'rejected', []);
+
+    const isHistoryStatus = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        return ['COMPLETED', 'CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes(s);
+    }, []);
+
     const filtered = useMemo(() => {
         let result = allAppointments;
-
         if (status && status !== 'all') {
-            const now = new Date();
-            const today = now.toISOString().split('T')[0];
-
-            if (status === 'upcoming' || status === 'confirmed') {
-                result = result.filter(a => {
-                    const statusStr = (a.status || '').toUpperCase();
-                    const appStatusStr = (a.approval_status || '').toLowerCase();
-                    const isApproved = appStatusStr === 'approved' || statusStr === 'CONFIRMED';
-                    
-                    return isApproved && 
-                           statusStr !== 'CANCELLED' && 
-                           statusStr !== 'LATE_CANCEL' && 
-                           statusStr !== 'NO_SHOW' &&
-                           statusStr !== 'RESCHEDULED';
-                });
-            } else if (status === 'pending') {
-                result = result.filter(a => {
-                    const statusStr = (a.status || '').toUpperCase();
-                    const appStatusStr = (a.approval_status || '').toLowerCase();
-                    return statusStr === 'PENDING' && 
-                           appStatusStr !== 'approved' && 
-                           appStatusStr !== 'rejected';
-                });
-            } else if (status === 'missed') {
-                result = result.filter(a => (a.status || '').toUpperCase() === 'NO_SHOW');
-            } else if (status === 'cancel') {
-                result = result.filter(a => ['CANCELLED', 'LATE_CANCEL'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected');
-            } else if (status === 'decline') {
-                result = result.filter(a => (a.approval_status || '').toLowerCase() === 'rejected');
-            } else if (status === 'completed') {
-                result = result.filter(a => (a.status || '').toUpperCase() === 'COMPLETED');
-            } else if (status === 'rescheduled') {
-                result = result.filter(a => (a.status || '').toUpperCase() === 'RESCHEDULED');
-            }
+            if (status === 'upcoming') result = result.filter(isApproved);
+            else if (status === 'requests') result = result.filter(a => isApproved(a) || isPending(a) || isRejected(a));
+            else if (status === 'pending') result = result.filter(isPending);
+            else if (status === 'approved') result = result.filter(isApproved);
+            else if (status === 'decline') result = result.filter(isRejected);
+            else if (status === 'history') result = result.filter(isHistoryStatus);
+            else if (status === 'completed') result = result.filter(a => (a.status || '').toUpperCase() === 'COMPLETED');
+            else if (status === 'cancel') result = result.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()));
         }
-
-        // Client-side sort
         return [...result].sort((a, b) => {
             const dateA = new Date(`${a.appointment_date}T${a.start_time}`);
             const dateB = new Date(`${b.appointment_date}T${b.start_time}`);
             return sort === 'asc' ? dateA - dateB : dateB - dateA;
         });
-    }, [allAppointments, status, sort]);
-
-    // Client-side pagination
+    }, [allAppointments, status, sort, isApproved, isPending, isRejected, isHistoryStatus]);
     const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
     const paginated = useMemo(() => {
         const start = (page - 1) * limit;
         return filtered.slice(start, start + limit);
     }, [filtered, page, limit]);
 
-    // Live counts for all categories
     const counts = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
         return {
             all: allAppointments.filter(a => !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes((a.status || '').toUpperCase())).length,
-            upcoming: allAppointments.filter(a => {
-                const statusStr = (a.status || '').toUpperCase();
-                const appStatusStr = (a.approval_status || '').toLowerCase();
-                return (appStatusStr === 'approved' || statusStr === 'CONFIRMED') && 
-                       !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes(statusStr);
-            }).length,
-            pending: allAppointments.filter(a => {
-                const statusStr = (a.status || '').toUpperCase();
-                const appStatusStr = (a.approval_status || '').toLowerCase();
-                return statusStr === 'PENDING' && 
-                       appStatusStr !== 'approved' && 
-                       appStatusStr !== 'rejected';
-            }).length,
-            missed: allAppointments.filter(a => (a.status || '').toUpperCase() === 'NO_SHOW').length,
-            cancel: allAppointments.filter(a => ['CANCELLED', 'LATE_CANCEL'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected').length,
-            decline: allAppointments.filter(a => (a.approval_status || '').toLowerCase() === 'rejected').length,
+            upcoming: allAppointments.filter(isApproved).length,
+            requests: allAppointments.filter(a => isApproved(a) || isPending(a) || isRejected(a)).length,
+            approved: allAppointments.filter(isApproved).length,
+            pending: allAppointments.filter(isPending).length,
+            decline: allAppointments.filter(isRejected).length,
+            history: allAppointments.filter(isHistoryStatus).length,
             completed: allAppointments.filter(a => (a.status || '').toUpperCase() === 'COMPLETED').length,
-            rescheduled: allAppointments.filter(a => (a.status || '').toUpperCase() === 'RESCHEDULED').length,
+            cancel: allAppointments.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase())).length,
         };
-    }, [allAppointments]);
+    }, [allAppointments, isApproved, isPending, isRejected, isHistoryStatus]);
 
     const goToPage = useCallback((p) => setPage(p), []);
     const prevPage = useCallback(() => setPage((p) => Math.max(1, p - 1)), []);
