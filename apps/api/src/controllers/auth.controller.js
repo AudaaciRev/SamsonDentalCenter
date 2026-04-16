@@ -19,12 +19,12 @@ const COOKIE_OPTIONS = {
  */
 export const register = async (req, res, next) => {
     try {
-        const { email, password, full_name, phone } = req.body;
+        const { email, password, first_name, last_name, middle_name, suffix, phone } = req.body;
 
         // ── Validate input ──
-        if (!email || !password || !full_name) {
+        if (!email || !password || !first_name || !last_name) {
             return res.status(400).json({
-                error: 'Email, password, and full_name are required.',
+                error: 'Email, password, first name, and last name are required.',
             });
         }
 
@@ -34,12 +34,22 @@ export const register = async (req, res, next) => {
             });
         }
 
+        // Concat for legacy/metadata support
+        const full_name = `${last_name}, ${first_name} ${middle_name || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+
         // ── Create user via public client ──
         const { data, error } = await supabasePublic.auth.signUp({
             email,
             password,
             options: {
-                data: { full_name, role: 'patient' },
+                data: { 
+                    full_name, 
+                    first_name, 
+                    last_name, 
+                    middle_name, 
+                    suffix, 
+                    role: 'patient' 
+                },
             },
         });
 
@@ -63,6 +73,10 @@ export const register = async (req, res, next) => {
                 id: data.user.id,
                 email: data.user.email,
                 full_name,
+                first_name,
+                last_name,
+                middle_name,
+                suffix
             },
         });
     } catch (err) {
@@ -118,8 +132,13 @@ export const login = async (req, res, next) => {
                 id: data.user.id,
                 email: data.user.email,
                 full_name: profile?.full_name,
+                first_name: profile?.first_name,
+                last_name: profile?.last_name,
+                middle_name: profile?.middle_name,
+                suffix: profile?.suffix,
                 role: profile?.role,
                 phone: profile?.phone,
+                avatar_url: profile?.avatar_url,
             },
         });
     } catch (err) {
@@ -133,18 +152,23 @@ export const login = async (req, res, next) => {
  */
 export const getProfile = async (req, res, next) => {
     try {
-        res.json({
-            user: {
-                id: req.user.id,
-                email: req.user.email,
-                full_name: req.user.full_name,
-                phone: req.user.phone,
-                role: req.user.role,
-                date_of_birth: req.user.date_of_birth,
-            },
-        });
-    } catch (err) {
-        next(err);
+        const user = {
+            id: req.user.id,
+            email: req.user.email,
+            full_name: req.user.full_name,
+            first_name: req.user.first_name,
+            last_name: req.user.last_name,
+            middle_name: req.user.middle_name,
+            suffix: req.user.suffix,
+            phone: req.user.phone,
+            role: req.user.role,
+            avatar_url: req.user.avatar_url,
+            date_of_birth: req.user.date_of_birth,
+        };
+
+        return res.json({ user });
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -153,19 +177,36 @@ export const getProfile = async (req, res, next) => {
  */
 export const updateProfile = async (req, res, next) => {
     try {
-        const { full_name, phone, date_of_birth } = req.body;
+        const { full_name, first_name, last_name, middle_name, suffix, phone, avatar_url, date_of_birth } = req.body;
 
         const updates = {};
-        if (full_name) updates.full_name = full_name;
-        if (phone) updates.phone = phone;
-        if (date_of_birth) updates.date_of_birth = date_of_birth;
+        if (first_name !== undefined) updates.first_name = first_name;
+        if (last_name !== undefined) updates.last_name = last_name;
+        if (middle_name !== undefined) updates.middle_name = middle_name;
+        if (suffix !== undefined) updates.suffix = suffix;
+
+        // Auto-generate full_name if name parts changed
+        if (updates.first_name !== undefined || updates.last_name !== undefined || updates.middle_name !== undefined || updates.suffix !== undefined) {
+            const current = req.user;
+            const fn = updates.first_name !== undefined ? updates.first_name : current.first_name;
+            const ln = updates.last_name !== undefined ? updates.last_name : current.last_name;
+            const mn = updates.middle_name !== undefined ? updates.middle_name : current.middle_name;
+            const sx = updates.suffix !== undefined ? updates.suffix : current.suffix;
+            updates.full_name = `${ln || ''}, ${fn || ''} ${mn || ''} ${sx || ''}`.replace(/\s+/g, ' ').trim();
+        } else if (full_name !== undefined) {
+            updates.full_name = full_name;
+        }
+
+        if (phone !== undefined) updates.phone = phone;
+        if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+        if (date_of_birth !== undefined) updates.date_of_birth = date_of_birth;
         updates.updated_at = new Date().toISOString();
 
         if (Object.keys(updates).length <= 1) {
             return res.status(400).json({ error: 'No fields to update.' });
         }
 
-        const { data, error } = await supabasePublic
+        const { data, error } = await supabaseAdmin
             .from('profiles')
             .update(updates)
             .eq('id', req.user.id)

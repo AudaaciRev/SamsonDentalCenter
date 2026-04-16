@@ -34,7 +34,16 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(pinoHttp({ logger })); // Structured request logging
+app.use(pinoHttp({ 
+    logger,
+    autoLogging: true,
+    // Hide verbose headers/details to keep logs readable in development
+    quietReqLogger: true,
+    serializers: {
+        req: (req) => ({ method: req.method, url: req.url }),
+        res: (res) => ({ statusCode: res.statusCode })
+    }
+})); 
 
 // ── Timeout Middleware ──
 app.use((req, res, next) => {

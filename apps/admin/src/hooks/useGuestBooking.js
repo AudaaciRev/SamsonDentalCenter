@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import useSlotHold from './useSlotHold';
 
@@ -51,7 +51,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         last_name: '',
         middle_name: '',
         suffix_name: '',
-        full_name: '',
         email: '',
         phone: '',
     });
@@ -59,16 +58,16 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
 
-    // âœ… Initialize slot hold hook at the wizard level to survive step changes
+    // ✅ Initialize slot hold hook at the wizard level to survive step changes
     const slotHold = useSlotHold(sessionId);
 
-    // âœ… Generate session ID on component mount
+    // ✅ Generate session ID on component mount
     useEffect(() => {
         const id = getOrCreateSessionId();
         setSessionId(id);
     }, []);
 
-    // âœ… Auto-release hold if user goes back and changes the service
+    // ✅ Auto-release hold if user goes back and changes the service
     // This handles the case where a user already picked a time, then goes back to Step 1
     useEffect(() => {
         if (slotHold.activeHold && slotHold.activeHold.service_id !== formData.service_id) {
@@ -97,7 +96,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const prevStep = () => {
         if (step > 0) {
             const nextIdx = step - 1;
-            // âœ… Reset states when going back to Service step
+            // ✅ Reset states when going back to Service step
             if (nextIdx === 0) {
                 slotHold.releaseHold();
                 setFormData(prev => ({
@@ -108,7 +107,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
                     phone: ''
                 }));
@@ -120,7 +118,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     // Issue #3: Only allow going back to completed steps
     const goToStep = (index) => {
         if (index < step) {
-            // âœ… Reset states when navigating back to Service step via breadcrumbs
+            // ✅ Reset states when navigating back to Service step via breadcrumbs
             if (index === 0) {
                 slotHold.releaseHold();
                 setFormData(prev => ({
@@ -131,7 +129,6 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
                     phone: ''
                 }));
@@ -157,8 +154,13 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                 date: formData.date,
                 time: formData.time,
                 email: formData.email,
-                phone: formData.phone.replace(/\D/g, ''), // âœ… Sanitize: remove non-digits
-                full_name: formData.full_name,
+                phone: formData.phone.replace(/\D/g, ''), // ✅ Sanitize: remove non-digits
+                guestNameParts: {
+                    first: formData.first_name,
+                    last: formData.last_name,
+                    middle: formData.middle_name,
+                    suffix: formData.suffix_name,
+                },
                 user_session_id: sessionId,
             };
 
@@ -168,7 +170,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
 
             if (data.booked) {
                 setResult(data);
-                setSubmitting(false); // âœ… Clear submitting state on success
+                setSubmitting(false); // ✅ Clear submitting state on success
                 // Clean up the hold
                 slotHold.clearHold();
             } else {
@@ -219,18 +221,19 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
             service_id: '',
             service_name: '',
             service_duration: '',
-            date: '',
-            time: '',
+            email: '',
+            phone: '',
             first_name: '',
             last_name: '',
             middle_name: '',
             suffix_name: '',
-            full_name: '',
+            date: '',
             email: '',
             phone: '',
+            time: '',
         });
         setError(null);
-        setSubmitting(false); // âœ… Safety reset
+        setSubmitting(false); // ✅ Safety reset
         setResult(null);
 
         // âœ… Rotate session ID to ensure "Book Another" starts fresh

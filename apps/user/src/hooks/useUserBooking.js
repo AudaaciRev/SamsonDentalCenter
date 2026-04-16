@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { useAppointmentState } from '../context/AppointmentContext';
+import { useNotificationState } from '../context/NotificationContext';
 import useSlotHold from './useSlotHold';
 
 const STEPS = ['service', 'datetime', 'other_info', 'review', 'confirm'];
@@ -46,7 +48,9 @@ const getOrCreateSessionId = () => {
  * @returns {object} booking state and actions
  */
 const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const { refresh: refreshAppts } = useAppointmentState();
+    const { refresh: refreshNotifs } = useNotificationState();
     const [sessionId, setSessionId] = useState(null);
     const [book_for_others, setBookForOthers] = useState(false);
     const [step, setStep] = useState(0);
@@ -55,17 +59,25 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         service_name: initialServiceName || '', // ✅ Pre-populate from URL param
         date: '',
         time: '',
-        booked_for_name: '', // Empty string = booking for self
+        booked_for_first_name: '',
+        booked_for_last_name: '',
+        booked_for_middle_name: '',
+        booked_for_suffix_name: '',
         dentist_id: '', // ✅ NEW: Preferred dentist (null = any available)
         // ✅ NEW: Deferred Waitlist Fields
         waitlist_date: '', // Selected full slot date
         waitlist_time: '', // Selected full slot time
+        service_tier: '', // ✅ NEW: Track tier
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
     // ✅ Track submission timestamp to prevent rapid resubmissions
     const [lastSubmissionTime, setLastSubmissionTime] = useState(null);
+
+    // ✅ NEW: Active Waitlist State (to prevent duplicate UI entries)
+    const [userWaitlist, setUserWaitlist] = useState([]);
+    const [waitlistLoading, setWaitlistLoading] = useState(false);
 
     // ✅ Initialize slot hold hook at the wizard level to survive step changes
     const slotHold = useSlotHold(sessionId);
@@ -74,7 +86,34 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
     useEffect(() => {
         const id = getOrCreateSessionId();
         setSessionId(id);
-    }, []);
+        
+        // Fetch active waitlist entries to handle UI state
+        if (token) {
+            fetchUserWaitlist();
+        }
+    }, [token]);
+
+    const fetchUserWaitlist = async () => {
+        try {
+            setWaitlistLoading(true);
+            const response = await api.get('/waitlist/my', token);
+            
+            // ✅ FIX: The backend returns { waitlist: [...] }, not just the array
+            const entries = response?.waitlist || [];
+            
+            // Filter only active entries (WAITING or NOTIFIED)
+            const active = entries.filter(w => 
+                ['WAITING', 'NOTIFIED', 'OFFER_PENDING'].includes(w.status)
+            );
+            
+            console.log(`[useUserBooking] Found ${active.length} active waitlist entries out of ${entries.length} total.`);
+            setUserWaitlist(active);
+        } catch (err) {
+            console.error('[useUserBooking] Failed to fetch waitlist:', err);
+        } finally {
+            setWaitlistLoading(false);
+        }
+    };
 
     // ✅ Auto-release hold if user goes back and changes the service
     useEffect(() => {
@@ -100,9 +139,15 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
 
     const setBookForOthersMode = (enabled) => {
         setBookForOthers(enabled);
-        // ✅ IMPROVEMENT #3: Clear booked_for_name if switching to "book for self"
+        // ✅ IMPROVEMENT #3: Clear granular fields if switching to "book for self"
         if (!enabled) {
-            setFormData((prev) => ({ ...prev, booked_for_name: '' }));
+            setFormData((prev) => ({
+                ...prev,
+                booked_for_first_name: '',
+                booked_for_last_name: '',
+                booked_for_middle_name: '',
+                booked_for_suffix_name: '',
+            }));
         }
     };
 
@@ -111,12 +156,43 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
     };
 
     const prevStep = () => {
-        if (step > 0) setStep((s) => s - 1);
+        if (step > 0) {
+            const nextIdx = step - 1;
+            // ✅ Reset states when going back to Service step
+            if (nextIdx === 0) {
+                slotHold.releaseHold();
+                setFormData(prev => ({
+                    ...prev,
+                    date: '',
+                    time: '',
+                    dentist_id: '',
+                    waitlist_date: '',
+                    waitlist_time: '',
+                    service_tier: prev.service_tier, // Keep tier
+                }));
+            }
+            setStep(nextIdx);
+        }
     };
 
     // Only allow going back to completed steps
     const goToStep = (index) => {
-        if (index < step) setStep(index);
+        if (index < step) {
+            // ✅ Reset states when navigating back to Service step via breadcrumbs
+            if (index === 0) {
+                slotHold.releaseHold();
+                setFormData(prev => ({
+                    ...prev,
+                    date: '',
+                    time: '',
+                    dentist_id: '',
+                    waitlist_date: '',
+                    waitlist_time: '',
+                    service_tier: prev.service_tier, // Keep tier
+                }));
+            }
+            setStep(index);
+        }
     };
 
     // Submit booking to API with unified atomic endpoint
@@ -146,9 +222,12 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                     date: formData.date,
                     time: formData.time,
                     dentist_id: formData.dentist_id || null, // ✅ NEW: Preferred dentist
-                    booked_for_name: book_for_others && formData.booked_for_name.trim() 
-                        ? formData.booked_for_name.trim() 
-                        : null,
+                    booked_for_name_parts: book_for_others ? {
+                        first: formData.booked_for_first_name,
+                        last: formData.booked_for_last_name,
+                        middle: formData.booked_for_middle_name,
+                        suffix: formData.booked_for_suffix_name,
+                    } : null,
                     user_session_id: sessionId,
                 } : null,
                 waitlist: formData.waitlist_time ? {
@@ -156,9 +235,12 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                     time: formData.waitlist_time,
                     priority: 0,
                     dentist_id: formData.dentist_id || null,
-                    booked_for_name: book_for_others && formData.booked_for_name.trim() 
-                        ? formData.booked_for_name.trim() 
-                        : null,
+                    booked_for_name_parts: book_for_others ? {
+                        first: formData.booked_for_first_name,
+                        last: formData.booked_for_last_name,
+                        middle: formData.booked_for_middle_name,
+                        suffix: formData.booked_for_suffix_name,
+                    } : null,
                 } : null
             };
 
@@ -180,6 +262,10 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             const hasRequestedWaitlist = !!formData.waitlist_time;
 
             if (bookingSuccess || waitlistSuccess) {
+                // ✅ Proactively refresh application state to eliminate realtime latency
+                if (typeof refreshAppts === 'function') refreshAppts();
+                if (typeof refreshNotifs === 'function') refreshNotifs();
+
                 setResult({
                     success: true,
                     booked: bookingSuccess,
@@ -219,11 +305,15 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             service_name: '',
             date: '',
             time: '',
-            booked_for_name: '',
+            booked_for_first_name: '',
+            booked_for_last_name: '',
+            booked_for_middle_name: '',
+            booked_for_suffix_name: '',
             dentist_id: '',
             // ✅ Clear waitlist fields on reset
             waitlist_date: '',
             waitlist_time: '',
+            service_tier: '', // Reset
         });
         setError(null);
         setSubmitting(false); // ✅ Safety reset
@@ -259,6 +349,9 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         goToStep,
         submit,
         reset,
+        userWaitlist,
+        waitlistLoading,
+        fetchUserWaitlist, // Allow manual refresh if needed
     };
 };
 

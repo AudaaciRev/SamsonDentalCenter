@@ -7,6 +7,8 @@ import DateTimeStep from './DateTimeStep';
 import UserOtherInfoStep from './UserOtherInfoStep';
 import UserReviewStep from './UserReviewStep';
 import UserBookingSuccess from './UserBookingSuccess';
+import BookingExitModal from './BookingExitModal';
+import { useState } from 'react';
 
 const UserBookingWizard = ({ booking }) => {
     const navigate = useNavigate();
@@ -28,7 +30,10 @@ const UserBookingWizard = ({ booking }) => {
         joinWaitlist,
         reset,
         slotHold,
+        userWaitlist,
     } = booking;
+
+    const [isExitModalOpen, setIsExitModalOpen] = useState(false);
 
     // ✅ Auto-scroll to top when step changes
     useEffect(() => {
@@ -36,10 +41,12 @@ const UserBookingWizard = ({ booking }) => {
     }, [step]);
 
     const handleExit = () => {
-        if (window.confirm('Are you sure you want to exit? Your progress will be lost.')) {
-            reset();
-            navigate('/patient');
-        }
+        setIsExitModalOpen(true);
+    };
+
+    const confirmExit = () => {
+        reset();
+        navigate(-1);
     };
 
     const breadcrumbLabels = ['Service', 'Date & Time', 'Patient Info', 'Review'];
@@ -50,7 +57,7 @@ const UserBookingWizard = ({ booking }) => {
                 <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                     <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center relative">
                         <StepIndicator
-                            currentStep={4} // Success step indicator
+                            currentStep={5} // Success step indicator
                             labels={[...breadcrumbLabels, 'Done']}
                             onStepClick={() => {}}
                         />
@@ -70,13 +77,13 @@ const UserBookingWizard = ({ booking }) => {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
             {/* Sticky Navigation Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                 <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center relative">
                     {/* Exit Button - Absolute positioned on the left */}
                     <div className="absolute left-4 top-1/2 -translate-y-1/2">
                         <button
                             onClick={handleExit}
-                            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-bold text-base transition-colors px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white font-bold text-base transition-all px-4 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50"
                         >
                             <X size={20} />
                             <span className="hidden sm:inline">Exit</span>
@@ -85,7 +92,7 @@ const UserBookingWizard = ({ booking }) => {
 
                     {/* Step Indicator - Truly Centered */}
                     <StepIndicator
-                        currentStep={step}
+                        currentStep={step + 1}
                         labels={breadcrumbLabels}
                         onStepClick={goToStep}
                     />
@@ -113,6 +120,7 @@ const UserBookingWizard = ({ booking }) => {
                                 })
                             }
                             onNext={nextStep}
+                            allowSpecialized={true}
                         />
                     )}
 
@@ -131,6 +139,7 @@ const UserBookingWizard = ({ booking }) => {
                             onNext={nextStep}
                             onBack={prevStep}
                             joinWaitlist={joinWaitlist}
+                            userWaitlist={userWaitlist}
                         />
                     )}
 
@@ -160,6 +169,12 @@ const UserBookingWizard = ({ booking }) => {
                     )}
                 </div>
             </main>
+
+            <BookingExitModal
+                isOpen={isExitModalOpen}
+                onClose={() => setIsExitModalOpen(false)}
+                onConfirm={confirmExit}
+            />
         </div>
     );
 };

@@ -1,40 +1,66 @@
+import { useState } from 'react';
 import { useModal } from '../../../hooks/useModal';
 import { Modal } from '../../ui/Modal';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import Label from '../../ui/Label';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 
 export default function UserMetaCard() {
-    const { user } = useAuth();
+    const { user, updateProfile } = useAuth();
+    const { showToast } = useToast();
     const { isOpen, openModal, closeModal } = useModal();
+    const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = (e) => {
+    const AVATARS = [
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Mittens',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver'
+    ];
+
+    const handleSave = async (e) => {
         e.preventDefault();
-        // Handle save logic here
-        console.log('Saving changes...');
-        closeModal();
+        setIsSaving(true);
+        try {
+            await updateProfile({ avatar_url: selectedAvatar });
+            showToast('Profile avatar updated successfully!');
+            closeModal();
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            showToast(error.message || 'Failed to update avatar. Please try again.', 'error', 'Update Failed');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <>
-            <div className='p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6 bg-white dark:bg-white/[0.03]'>
+            <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
                 <div className='flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='flex flex-col items-center w-full gap-6 xl:flex-row'>
-                        <div className='w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-50 text-brand-600 font-bold text-2xl'>
-                            {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+                        <div className='w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-gradient-to-br from-brand-400 to-brand-600 text-white font-bold text-2xl shadow-inner shrink-0'>
+                            {user?.avatar_url ? (
+                                <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                getInitials()
+                            )}
                         </div>
                         <div className='order-3 xl:order-2'>
-                            <h4 className='mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left'>
-                                {user?.full_name || 'Patient Name'}
+                            <h4 className='mb-2 text-[clamp(18px,2vw,20px)] font-bold text-center text-gray-900 dark:text-white xl:text-left'>
+                                {user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'Patient Name')}
                             </h4>
                             <div className='flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left'>
-                                <p className='text-sm text-gray-500 dark:text-gray-400'>
+                                <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium'>
                                     Patient
                                 </p>
                                 <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
-                                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                                    Member since 2024
+                                <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium'>
+                                    Member since {user?.created_at ? new Date(user.created_at).getFullYear() : '2024'}
                                 </p>
                             </div>
                         </div>
@@ -42,7 +68,7 @@ export default function UserMetaCard() {
                     <Button
                         variant='outline'
                         onClick={openModal}
-                        className='flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium shadow-theme-xs lg:inline-flex lg:w-auto'
+                        className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
                     >
                         <svg
                             className='fill-current'
@@ -63,34 +89,75 @@ export default function UserMetaCard() {
                     </Button>
                 </div>
             </div>
-            <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[500px] m-4'>
-                <div className='no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 sm:p-8'>
-                    <div className='px-2 pr-14'>
-                        <h4 className='mb-2 text-[clamp(20px,2.5vw,24px)] font-semibold text-gray-800 dark:text-white/90'>
-                            Edit Profile
-                        </h4>
-                        <p className='mb-6 text-[clamp(13px,1vw,14px)] text-gray-500 dark:text-gray-400 lg:mb-7'>
-                            Update your basic profile information.
-                        </p>
-                    </div>
-                    <form className='flex flex-col h-full overflow-hidden' onSubmit={handleSave}>
-                        <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3'>
-                            <div>
-                                <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Full Name</Label>
-                                <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.full_name || ''} />
+            {isOpen && (
+                <div 
+                    className='fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md w-screen h-screen'
+                    onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+                >
+                    <div className='relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 animate-[fadeIn_0.2s_ease-out] overflow-hidden'>
+                        {/* Visual Header Bar */}
+                        <div className='h-1.5 w-full bg-brand-500' />
+                        
+                        <div className='p-6 sm:p-8 space-y-6'>
+                            {/* Icon & Title */}
+                            <div className='flex flex-col items-center text-center space-y-4'>
+                                <div className='w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'>
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <div className='space-y-1'>
+                                    <h3 className='text-xl sm:text-2xl font-black text-gray-900 dark:text-white font-outfit text-center uppercase tracking-tight'>
+                                        Edit Avatar
+                                    </h3>
+                                    <p className='text-[13px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed max-w-[280px] mx-auto'>
+                                        Choose a profile avatar.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className='grid grid-cols-3 gap-3'>
+                                {AVATARS.map((url, i) => (
+                                    <div 
+                                        key={i}
+                                        onClick={() => setSelectedAvatar(url)}
+                                        className={`relative cursor-pointer group rounded-2xl border-2 transition-all duration-300 aspect-square overflow-hidden flex items-center justify-center p-1
+                                            ${selectedAvatar === url ? 'border-brand-500 bg-brand-50 shadow-md shadow-brand-500/10' : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'}`}
+                                    >
+                                        <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform" />
+                                        {selectedAvatar === url && (
+                                            <div className="absolute top-1 right-1 bg-brand-500 text-white rounded-full p-0.5 shadow-sm scale-75">
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className='flex gap-3 pt-2'>
+                                <button
+                                    onClick={closeModal}
+                                    type="button"
+                                    disabled={isSaving}
+                                    className='flex-1 px-4 py-3.5 rounded-2xl border border-gray-100 dark:border-white/5 text-[14px] font-black text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95'
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    type='button'
+                                    disabled={isSaving}
+                                    className='flex-1 px-6 py-3.5 rounded-2xl bg-brand-500 text-[14px] font-black text-white hover:bg-brand-600 shadow-lg shadow-brand-500/20 transition-all active:scale-95 disabled:opacity-50'
+                                >
+                                    {isSaving ? 'Saving...' : 'Save'}
+                                </button>
                             </div>
                         </div>
-                        <div className='flex items-center gap-3 px-2 mt-6 lg:justify-end'>
-                            <Button variant='outline' onClick={closeModal}>
-                                Close
-                            </Button>
-                            <Button type='submit'>
-                                Save Changes
-                            </Button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </Modal>
+            )}
         </>
     );
 }

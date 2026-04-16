@@ -5,6 +5,7 @@ import {
     confirmWaitlistOffer,
     getWaitlistByToken,
     confirmWaitlistByToken,
+    getWaitlistStats,
 } from '../services/waitlist.service.js';
 import { bookAppointment } from '../services/appointment.service.js';
 
@@ -36,8 +37,11 @@ export const join = async (req, res, next) => {
  */
 export const getMine = async (req, res, next) => {
     try {
-        const entries = await getMyWaitlist(req.user.id);
-        res.json({ waitlist: entries, total: entries.length });
+        const [entries, stats] = await Promise.all([
+            getMyWaitlist(req.user.id),
+            getWaitlistStats(req.user.id)
+        ]);
+        res.json({ waitlist: entries, total: entries.length, stats });
     } catch (err) {
         next(err);
     }
@@ -45,10 +49,12 @@ export const getMine = async (req, res, next) => {
 
 /**
  * DELETE /api/waitlist/:id
+ * Body: { remove_backup? } — if true, also cancel the linked backup appointment
  */
 export const remove = async (req, res, next) => {
     try {
-        const result = await cancelWaitlistEntry(req.params.id, req.user.id);
+        const removeBackup = req.body?.remove_backup === true;
+        const result = await cancelWaitlistEntry(req.params.id, req.user.id, removeBackup);
         res.json(result);
     } catch (err) {
         next(err);

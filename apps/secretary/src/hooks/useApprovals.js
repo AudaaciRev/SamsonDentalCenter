@@ -40,9 +40,9 @@ const useApprovals = () => {
     const approveRequest = async (id, dentistId = null) => {
         setActionLoading(true);
         try {
-            await api.patch(`/admin/appointments/${id}/approve`, { dentist_id: dentistId }, token);
+            const response = await api.patch(`/admin/appointments/${id}/approve`, { dentist_id: dentistId }, token);
             await fetchApprovals(); // Refresh list
-            return { success: true };
+            return { success: true, ...response };
         } catch (err) {
             return { success: false, error: err.message };
         } finally {

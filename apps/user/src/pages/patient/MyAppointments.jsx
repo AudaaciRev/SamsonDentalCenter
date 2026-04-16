@@ -13,6 +13,7 @@ import { PlusIcon } from '../../components/patient/appointments/AppointmentIcons
 import AppointmentFilters from '../../components/patient/appointments/AppointmentFilters';
 import AppointmentTable from '../../components/patient/appointments/AppointmentTable';
 import AppointmentPagination from '../../components/patient/appointments/AppointmentPagination';
+import ErrorState from '../../components/common/ErrorState';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -23,9 +24,9 @@ const MyAppointments = () => {
     const { isMobileOpen } = useSidebar();
     const [openDropdown, setOpenDropdown] = useState(null);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('upcoming');
 
-    const { appointments, page, totalPages, loading, error, goToPage, prevPage, nextPage } =
+    const { appointments, total, stats, counts, page, totalPages, loading, error, goToPage, prevPage, nextPage } =
         useAppointments({ status: statusFilter, sort: 'desc', limit: 10 });
 
     // Client-side search against service / dentist / date
@@ -49,36 +50,47 @@ const MyAppointments = () => {
 
     return (
         <>
-            <PageBreadcrumb pageTitle='My Appointments' />
+            <PageBreadcrumb pageTitle='My Appointments' className='mb-4' />
+            
             <div className='flex-grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden'>
-                <AppointmentFilters 
-                    search={search}
-                    onSearchChange={setSearch}
-                    statusFilter={statusFilter}
-                    onStatusChange={(val) => {
-                        setStatusFilter(val);
-                        goToPage(1);
-                    }}
-                />
+                {error ? (
+                    <ErrorState 
+                        error={error} 
+                        onRetry={() => goToPage(1)} 
+                        title="Failed to load items"
+                        parentPath="/patient"
+                        parentName="Dashboard"
+                    />
+                ) : (
+                    <>
+                        <AppointmentFilters 
+                            search={search}
+                            onSearchChange={setSearch}
+                            statusFilter={statusFilter}
+                            onStatusChange={(val) => {
+                                setStatusFilter(val);
+                                goToPage(1);
+                            }}
+                            counts={counts}
+                        />
 
-                <AppointmentTable 
-                    appointments={filtered}
-                    loading={loading}
-                    error={error}
-                    user={user}
-                    openDropdown={openDropdown}
-                    onToggleDropdown={toggleDropdown}
-                    onViewDetails={handleViewDetails}
-                />
+                        <AppointmentTable 
+                            appointments={filtered}
+                            loading={loading}
+                            error={error}
+                            user={user}
+                            openDropdown={openDropdown}
+                            onToggleDropdown={toggleDropdown}
+                            onViewDetails={handleViewDetails}
+                        />
 
-                <AppointmentPagination 
-                    page={page}
-                    totalPages={totalPages}
-                    prevPage={prevPage}
-                    nextPage={nextPage}
-                    goToPage={goToPage}
-                    totalItems={filtered.length}
-                />
+                        <AppointmentPagination 
+                            page={page}
+                            totalPages={totalPages}
+                            goToPage={goToPage}
+                        />
+                    </>
+                )}
             </div>
 
             {/* Floating Action Button - Mobile Only (Hidden when sidebar is open) */}

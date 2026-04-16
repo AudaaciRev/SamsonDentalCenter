@@ -42,9 +42,13 @@ export const bookAppointmentGuest = async (
     time,
     guestEmail,
     guestPhone,
-    guestName,
+    guestNameParts, // { first, last, middle, suffix }
     userSessionId = null,
+    rescheduleCount = 0,
 ) => {
+    const { first, last, middle, suffix } = guestNameParts;
+    const guestName = `${last}, ${first} ${middle || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+
     // Normalize guest email
     const normalizedEmail = guestEmail?.trim().toLowerCase();
 
@@ -126,22 +130,25 @@ export const bookAppointmentGuest = async (
             guest_email: normalizedEmail,
             guest_phone: guestPhone,
             guest_name: guestName,
+            guest_first_name: first,
+            guest_last_name: last,
+            guest_middle_name: middle,
+            guest_suffix: suffix,
             dentist_id: finalDentistId,
             service_id: serviceId,
             appointment_date: date,
             start_time: time,
             end_time: endTime,
             status: APPOINTMENT_STATUS.PENDING,
-            approval_status: APPROVAL_STATUS.PENDING, // ✅ NEW: Match user booking
-            source: APPOINTMENT_SOURCE.GUEST_BOOKING, // ✅ NEW: Track source
+            approval_status: APPROVAL_STATUS.PENDING,
+            source: APPOINTMENT_SOURCE.GUEST_BOOKING,
+            reschedule_count: rescheduleCount,
         })
-        .select(
-            `
+        .select(`
             *,
             service:services(name, price),
-            dentist:dentists(profile:profiles(full_name))
-        `,
-        )
+            dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
+        `)
         .single();
 
     if (insertError) {
@@ -168,7 +175,7 @@ export const bookAppointmentGuest = async (
             start_time: appointment.start_time,
             end_time: appointment.end_time,
             service: appointment.service?.name,
-            dentist: appointment.dentist?.profile?.full_name || 'Assigned',
+            dentist: appointment.dentist?.profile?.first_name ? `${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             source: appointment.source, // ✅ NEW: Include source in response
         },
     };
@@ -195,16 +202,37 @@ export const bookAppointment = async (
     date,
     time,
     sendEmail = true,
-    bookedForName = null,
+    bookedForNameParts = null, // { first, last, middle, suffix } OR legacy string
     source = APPOINTMENT_SOURCE.USER_BOOKING,
     userSessionId = null,
     preferredDentistId = null,
+    rescheduleCount = 0,
+    isPreferred = null, // ✅ Can be explicitly passed or calculated
 ) => {
+    const finalIsPreferred = isPreferred !== null ? isPreferred : !!preferredDentistId;
+    let bookedForName = null;
+    let firstName = null;
+    let lastName = null;
+    let middleName = null;
+    let suffix = null;
+
+    if (bookedForNameParts) {
+        if (typeof bookedForNameParts === 'object') {
+            const { first, last, middle, suffix: sfx } = bookedForNameParts;
+            firstName = first;
+            lastName = last;
+            middleName = middle;
+            suffix = sfx;
+            bookedForName = `${last}, ${first} ${middle || ''} ${sfx || ''}`.replace(/\s+/g, ' ').trim();
+        } else {
+            bookedForName = bookedForNameParts;
+        }
+    }
     // ── 0. Check if patient is restricted (3+ no-shows or 3+ cancellations) ──
     const { data: patient } = await supabaseAdmin
         .from('profiles')
         .select(
-            'email, full_name, is_booking_restricted, max_advance_booking_days, deposit_required, no_show_count, cancellation_count',
+            'email, full_name, first_name, last_name, middle_name, suffix, is_booking_restricted, max_advance_booking_days, deposit_required, no_show_count, cancellation_count',
         )
         .eq('id', patientId)
         .single();
@@ -231,6 +259,15 @@ export const bookAppointment = async (
         }
     }
 
+    // ✅ NEW: Fallback for self-booking identity if parts weren't provided or are partial
+    if (!bookedForNameParts && patient) {
+        firstName = firstName || patient.first_name;
+        lastName = lastName || patient.last_name;
+        middleName = middleName || patient.middle_name;
+        suffix = suffix || patient.suffix;
+        bookedForName = bookedForName || patient.full_name;
+    }
+
     // ── 1. Get service info (including TIER) ──
     const { data: service } = await supabaseAdmin
         .from('services')
@@ -243,6 +280,24 @@ export const bookAppointment = async (
     }
 
     const endTime = addMinutesToTime(time, service.duration_minutes);
+
+    // ── 1.5. Check for Patient's Own Schedule Conflicts (LATER: Currently disabled for dev testing) ──
+    // Prevent the same patient from booking overlapping slots with different doctors.
+    /*
+    const { data: conflicts } = await supabaseAdmin
+        .from('appointments')
+        .select('id, start_time, end_time, service:services(name)')
+        .eq('patient_id', patientId)
+        .eq('appointment_date', date)
+        .not('status', 'in', '("CANCELLED","LATE_CANCEL","RESCHEDULED")')
+        .lt('start_time', endTime)
+        .gt('end_time', time)
+        .limit(1);
+
+    if (conflicts && conflicts.length > 0) {
+        throw new AppError(`You already have a "${conflicts[0].service?.name}" appointment during this time range (${conflicts[0].start_time.slice(0,5)} - ${conflicts[0].end_time.slice(0,5)}). Please choose a different time.`, 409);
+    }
+    */
 
     const isSpecialized = service.tier === SERVICE_TIER.SPECIALIZED;
 
@@ -293,6 +348,12 @@ export const bookAppointment = async (
                 approval_status: APPROVAL_STATUS.PENDING,
                 source: source, // ✅ NEW: Track source
                 booked_for_name: bookedForName || null,
+                reschedule_count: rescheduleCount,
+                is_dentist_preferred: finalIsPreferred,
+                first_name: firstName,
+                last_name: lastName,
+                middle_name: middleName,
+                suffix: suffix,
                 // ✅ User is booking from their own account, auto-confirm their intent
                 patient_confirmed: true,
                 confirmed_at: new Date().toISOString(),
@@ -314,7 +375,8 @@ export const bookAppointment = async (
 
         // ── 5. Send booking request receipt email to authenticated patient ──
         if (patient?.email && sendEmail) {
-            await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
+            const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+            await sendBookingRequestReceivedEmail(patient.email, patientDisplayName, {
                 date: appointment.appointment_date,
                 start_time: appointment.start_time,
                 service: appointment.service?.name,
@@ -417,6 +479,12 @@ export const bookAppointment = async (
             source: source, // ✅ NEW: Track source
             // NULL = booked for self, a name = booked for someone else
             booked_for_name: bookedForName || null,
+            reschedule_count: rescheduleCount,
+            is_dentist_preferred: finalIsPreferred,
+            first_name: firstName,
+            last_name: lastName,
+            middle_name: middleName,
+            suffix: suffix,
             // ✅ User is booking from their own account, auto-confirm their intent
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
@@ -427,7 +495,7 @@ export const bookAppointment = async (
       service:services(name, duration_minutes, price),
       dentist:dentists(
         id,
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
         )
@@ -441,22 +509,24 @@ export const bookAppointment = async (
         throw new AppError(error.message, 500);
     }
 
-    // ── 5. Send booking request receipt email to authenticated patient ──
     if (patient?.email && sendEmail) {
-        await sendBookingRequestReceivedEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        // 🚀 Non-critical: Don't block the response for email sending
+        sendBookingRequestReceivedEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: appointment.service?.name,
-        });
+        }).catch(err => console.error('[Email] Failed to send booking receipt:', err.message));
     }
 
     // ── 6. In-app notification ──
+    // 🚀 Non-critical: Don't block the response
     await sendRequestReceived(patientId, {
         date: appointment.appointment_date,
         start_time: appointment.start_time,
         end_time: appointment.end_time,
         service: appointment.service?.name,
-    });
+    }).catch(err => console.error('[Notification] Failed to send request receipt:', err.message));
 
     return {
         booked: true,
@@ -475,7 +545,7 @@ export const bookAppointment = async (
             service_tier: 'general',
             duration: appointment.service?.duration_minutes,
             price: appointment.service?.price,
-            dentist: appointment.dentist?.profile?.full_name || 'Assigned',
+            dentist: appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             booked_for_name: appointment.booked_for_name || null,
             source: appointment.source,
         },
@@ -518,7 +588,7 @@ export const getPatientAppointments = async (
       *,
       service:services(name, duration_minutes, price),
       dentist:dentists(
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
             { count: 'exact' },
@@ -530,11 +600,19 @@ export const getPatientAppointments = async (
 
     // 🎯 FILTER LOGIC
     if (status === 'upcoming') {
-        query = query.eq('status', APPOINTMENT_STATUS.CONFIRMED).gte('appointment_date', today);
+        // Upcoming = confirmed/approved future appointments, explicitly excluding any cancelled or rescheduled status
+        query = query
+            .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.RESCHEDULED})`)
+            .gte('appointment_date', today);
     } else if (status === 'confirmed') {
-        query = query.eq('status', APPOINTMENT_STATUS.CONFIRMED).gte('appointment_date', today);
+        query = query
+            .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.RESCHEDULED})`)
+            .gte('appointment_date', today);
     } else if (status === 'pending') {
-        query = query.eq('status', APPOINTMENT_STATUS.PENDING).gte('appointment_date', today);
+        // Pending = status is PENDING AND it hasn't been approved yet
+        query = query.eq('status', APPOINTMENT_STATUS.PENDING).not('approval_status', 'eq', 'approved').gte('appointment_date', today);
     } else if (status === 'missed') {
         query = query.eq('status', APPOINTMENT_STATUS.NO_SHOW);
     } else if (status === 'cancel') {
@@ -573,7 +651,7 @@ export const getPatientAppointments = async (
         approval_status: appt.approval_status,
         service: appt.service?.name,
         price: appt.service?.price,
-        dentist: appt.dentist?.profile?.full_name || 'TBD',
+        dentist: appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'TBD'),
         booked_for_name: appt.booked_for_name,
         is_walk_in: appt.is_walk_in,
         notes: appt.notes,
@@ -583,6 +661,54 @@ export const getPatientAppointments = async (
     return {
         appointments,
         total: count || 0,
+    };
+};
+
+/**
+ * Get summary counts of appointments for a patient.
+ */
+export const getPatientAppointmentStats = async (patientId) => {
+    const today = getTodayPH();
+
+    // Run summary counts in parallel for performance
+    const [upcoming, pending, rejected, completed] = await Promise.all([
+        // Upcoming: Confirmed or explicitly approved and future
+        supabaseAdmin
+            .from('appointments')
+            .select('id', { count: 'exact', head: true })
+            .eq('patient_id', patientId)
+            .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED})`)
+            .gte('appointment_date', today),
+        
+        // Pending: Pending and future
+        supabaseAdmin
+            .from('appointments')
+            .select('id', { count: 'exact', head: true })
+            .eq('patient_id', patientId)
+            .eq('status', APPOINTMENT_STATUS.PENDING)
+            .gte('appointment_date', today),
+            
+        // Rejected: approval_status is rejected
+        supabaseAdmin
+            .from('appointments')
+            .select('id', { count: 'exact', head: true })
+            .eq('patient_id', patientId)
+            .eq('approval_status', APPROVAL_STATUS.REJECTED),
+            
+        // Completed: status is completed
+        supabaseAdmin
+            .from('appointments')
+            .select('id', { count: 'exact', head: true })
+            .eq('patient_id', patientId)
+            .eq('status', APPOINTMENT_STATUS.COMPLETED)
+    ]);
+
+    return {
+        upcoming: upcoming.count || 0,
+        pending: pending.count || 0,
+        rejected: rejected.count || 0,
+        completed: completed.count || 0
     };
 };
 
@@ -597,7 +723,7 @@ export const getAppointmentById = async (appointmentId, patientId) => {
       *,
       service:services(name, duration_minutes, price),
       dentist:dentists(
-        profile:profiles(full_name)
+        profile:profiles(full_name, first_name, last_name, middle_name, suffix)
       )
     `,
         )
@@ -625,6 +751,7 @@ export const cancelAppointment = async (
     patientId,
     reason = '',
     sendEmail = true,
+    removeWaitlist = false,
 ) => {
     // ── 1. Get the appointment ──
     const { data: appointment, error: fetchError } = await supabaseAdmin
@@ -693,7 +820,8 @@ export const cancelAppointment = async (
         .single();
 
     if (patient?.email && sendEmail) {
-        await sendCancellationEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendCancellationEmail(patient.email, patientDisplayName, {
             date: appointment.appointment_date,
             start_time: appointment.start_time,
             service: service?.name || 'Dental appointment',
@@ -716,6 +844,28 @@ export const cancelAppointment = async (
         console.log(
             `⚠️ Late cancellation by patient ${patientId} — ${hoursUntil.toFixed(1)}h before appointment`,
         );
+    }
+
+    // ── 7. CASCADE: Cancel linked waitlist entry if requested ──
+    if (removeWaitlist) {
+        try {
+            const { cancelWaitlistEntry } = await import('./waitlist.service.js');
+            // Find waitlist entry where this appointment is the Primary Appointment
+            const { data: linkedWaitlist } = await supabaseAdmin
+                .from('waitlist')
+                .select('id')
+                .eq('backup_appointment_id', appointmentId)
+                .eq('patient_id', patientId)
+                .in('status', ['WAITING', 'NOTIFIED'])
+                .maybeSingle();
+
+            if (linkedWaitlist) {
+                await cancelWaitlistEntry(linkedWaitlist.id, patientId, false);
+                console.log(`🔗 [APPOINTMENT] Cascade-cancelled linked waitlist entry ${linkedWaitlist.id}`);
+            }
+        } catch (err) {
+            console.warn(`⚠️ [APPOINTMENT] Could not cascade-cancel waitlist: ${err.message}`);
+        }
     }
 
     return {
@@ -751,11 +901,11 @@ export const cancelAppointment = async (
  * @param {string} newDate - New date 'YYYY-MM-DD'
  * @param {string} newTime - New time 'HH:MM'
  */
-export const rescheduleAppointment = async (appointmentId, patientId, newDate, newTime) => {
+export const rescheduleAppointment = async (appointmentId, patientId, newDate, newTime, userSessionId = null, preferredDentistId = null) => {
     // ── 1. Get the original appointment ──
     const { data: original, error } = await supabaseAdmin
         .from('appointments')
-        .select('*')
+        .select('*, service:services(name)')
         .eq('id', appointmentId)
         .eq('patient_id', patientId)
         .single();
@@ -768,6 +918,17 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         throw new AppError(`Cannot reschedule appointment with status: ${original.status}`, 400);
     }
 
+    // ── 1b. Prevent "Zombie" Reschedule (Past appointments) ──
+    const today = getTodayPH();
+    if (original.appointment_date < today) {
+        throw new AppError('Cannot reschedule an appointment that has already passed.', 400);
+    }
+
+    // ── 1c. Enforcement: Limit to 1 reschedule per booking ──
+    if (original.reschedule_count >= 1) {
+        throw new AppError('This appointment has already been rescheduled once. For further changes, please contact the clinic directly.', 403);
+    }
+
     // ── 2. Try to book the new slot first (sendEmail = false — reschedule email sent instead) ──
     const newBooking = await bookAppointment(
         patientId,
@@ -775,6 +936,12 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         newDate,
         newTime,
         false,
+        null,
+        undefined,
+        userSessionId,
+        preferredDentistId,
+        original.reschedule_count + 1,
+        !!preferredDentistId // ✅ If they chose a doctor during reschedule, it's preferred
     );
 
     if (!newBooking.booked) {
@@ -791,8 +958,55 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         };
     }
 
-    // ── 3. New slot booked! Now cancel the original (sendEmail = false — reschedule email sent instead) ──
-    const cancelResult = await cancelAppointment(appointmentId, patientId, 'Rescheduled to new time', false);
+    // ── 3. New slot booked! Mark the original as RESCHEDULED (distinct from CANCELLED) ──
+    try {
+        const { error: updateError } = await supabaseAdmin
+            .from('appointments')
+            .update({
+                status: APPOINTMENT_STATUS.RESCHEDULED,
+                cancellation_reason: 'Rescheduled to new time',
+                cancelled_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', appointmentId);
+
+        if (updateError) throw updateError;
+
+        // ── 4. Trigger Real-time Notification ──
+        // This record in the 'notifications' table triggers the frontend realtime listener
+        try {
+            const { sendRescheduleNotice } = await import('./notification.service.js');
+            const oldDetails = {
+                date: original.appointment_date,
+                start_time: original.start_time,
+                end_time: original.end_time,
+                service: original.service?.name || 'Dental'
+            };
+            const newDetails = {
+                date: newBooking.appointment.appointment_date,
+                start_time: newBooking.appointment.start_time,
+                end_time: newBooking.appointment.end_time
+            };
+            await sendRescheduleNotice(patientId, oldDetails, newDetails);
+        } catch (notifError) {
+            console.warn('[Realtime] Warning: Failed to send reschedule notification:', notifError.message);
+        }
+    } catch (err) {
+        // ROLLBACK: If marking the old one as rescheduled fails, we must cancel the new booking!
+        console.error('❌ Reschedule failed at update stage, rolling back new booking:', err);
+        if (newBooking.appointment?.id) {
+            await cancelAppointment(newBooking.appointment.id, patientId, 'Rollback: Reschedule internal update failure.', false);
+        }
+        throw new AppError('Failed to complete rescheduling. Please try again.', 500);
+    }
+
+    const freedSlot = {
+        date: original.appointment_date,
+        start_time: original.start_time,
+        end_time: original.end_time,
+        service_id: original.service_id,
+        dentist_id: original.dentist_id,
+    };
 
     // ── 4. Send reschedule email ──
     const { data: patient } = await supabaseAdmin
@@ -809,7 +1023,8 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         .single();
 
     if (patient?.email) {
-        await sendRescheduleEmail(patient.email, patient.full_name, {
+        const patientDisplayName = patient.first_name ? `${patient.first_name} ${patient.last_name}`.trim() : patient.full_name;
+        await sendRescheduleEmail(patient.email, patientDisplayName, {
             oldDate: original.appointment_date,
             oldTime: original.start_time,
             newDate: newBooking.appointment.date,
@@ -825,10 +1040,10 @@ export const rescheduleAppointment = async (appointmentId, patientId, newDate, n
         old_appointment: {
             date: original.appointment_date,
             time: original.start_time,
-            status: 'CANCELLED',
+            status: 'RESCHEDULED',
         },
         new_appointment: newBooking.appointment,
-        freed_slot: cancelResult.freed_slot,
+        freed_slot: freedSlot,
     };
 };
 
@@ -892,7 +1107,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             `
       *,
       service:services(name, price),
-      dentist:dentists(profile:profiles(full_name))
+      dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .single();
@@ -913,7 +1128,7 @@ export const bookWalkIn = async (patientId, serviceId, time = null, notes = null
             end_time: appointment.end_time,
             status: 'CONFIRMED',
             service: appointment.service?.name,
-            dentist: appointment.dentist?.profile?.full_name,
+            dentist: appointment.dentist?.profile?.first_name ? `Dr. ${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name}` : (appointment.dentist?.profile?.full_name || 'Assigned'),
             is_walk_in: true,
             source: appointment.source, // ✅ NEW: Include source in response
         },
@@ -939,7 +1154,7 @@ export const cancelGuestAppointmentAction = async (appointmentId, reason) => {
     return updated;
 };
 
-export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, time, endTime) => {
+export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, time, endTime, userSessionId = null, rescheduleCount = 0) => {
     const { data: newAppointment, error: insertError } = await supabaseAdmin
         .from('appointments')
         .insert({
@@ -947,6 +1162,10 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
             guest_email: oldAppt.guest_email,
             guest_phone: oldAppt.guest_phone,
             guest_name: oldAppt.guest_name,
+            guest_first_name: oldAppt.guest_first_name,
+            guest_last_name: oldAppt.guest_last_name,
+            guest_middle_name: oldAppt.guest_middle_name,
+            guest_suffix: oldAppt.guest_suffix,
             dentist_id: dentistId,
             service_id: oldAppt.service?.id,
             appointment_date: date,
@@ -955,15 +1174,133 @@ export const insertConfirmedGuestAppointment = async (oldAppt, dentistId, date, 
             status: APPOINTMENT_STATUS.PENDING,
             approval_status: APPROVAL_STATUS.PENDING,
             source: APPOINTMENT_SOURCE.GUEST_BOOKING,
+            reschedule_count: rescheduleCount,
             // ✅ Now confirmed via email link
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
         })
-        .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name))`)
+        .select(`*, service:services(name, duration_minutes, price), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))`)
         .single();
 
-    if (insertError) throw new AppError(insertError.message, 500);
+    if (insertError) {
+        if (insertError.code === '23505') {
+            throw new AppError('This slot was just taken. Please try another time.', 409);
+        }
+        throw new AppError(insertError.message, 500);
+    }
+
+    // ✅ NEW: Release hold if it exists
+    if (userSessionId) {
+        try {
+            const { releaseHoldBySession } = await import('./slot-hold.service.js');
+            await releaseHoldBySession(userSessionId);
+        } catch (err) {
+            console.warn(`[RE-HOLD] Warning: Failed to release hold for session ${userSessionId}: ${err.message}`);
+        }
+    }
+
     return newAppointment;
+};
+
+/**
+ * Reschedule a guest appointment.
+ * Atomically: Book new -> Cancel old.
+ */
+export const rescheduleGuestAppointment = async (oldAppt, date, time, userSessionId = null) => {
+    // 0. Prevent "Zombie" Reschedule (Past appointments)
+    const today = getTodayPH();
+    if (oldAppt.appointment_date < today) {
+        throw new AppError('Cannot reschedule an appointment that has already passed.', 400);
+    }
+
+    if (oldAppt.status !== APPOINTMENT_STATUS.CONFIRMED && oldAppt.status !== APPOINTMENT_STATUS.PENDING) {
+        throw new AppError('Only active or pending appointments can be rescheduled.', 400);
+    }
+
+    // 0b. Enforcement: Limit to 1 reschedule
+    if (oldAppt.reschedule_count >= 1) {
+        throw new AppError('This appointment has already been rescheduled once. Further changes must be handled by clinic staff.', 403);
+    }
+
+    // 1. Check availability for new slot (recognizing the guest's hold)
+    const availability = await getAvailableSlots(date, oldAppt.service?.id, userSessionId);
+    const slotData = availability.all_slots.find((s) => s.time === time);
+    
+    if (!slotData || slotData.available === 0) {
+        const suggestions = await getSuggestedSlots(date, oldAppt.service?.id, time);
+        return {
+            rescheduled: false,
+            message: 'Selected slot is no longer available.',
+            ...suggestions
+        };
+    }
+
+    // 2. Assign dentist for new slot
+    const endTime = addMinutesToTime(time, oldAppt.service?.duration_minutes || 30);
+    
+    // Check for held dentist first
+    let finalDentistId = null;
+    if (userSessionId) {
+        const { data: hold } = await supabaseAdmin
+            .from('slot_holds')
+            .select('dentist_id')
+            .eq('user_session_id', userSessionId)
+            .eq('appointment_date', date)
+            .eq('start_time', time)
+            .eq('status', 'active')
+            .gt('expires_at', new Date().toISOString())
+            .single();
+        
+        if (hold?.dentist_id) {
+            finalDentistId = hold.dentist_id;
+        }
+    }
+
+    if (!finalDentistId) {
+        finalDentistId = await assignDentist(date, time, endTime, SERVICE_TIER.GENERAL, userSessionId, oldAppt.service?.id);
+    }
+
+    if (!finalDentistId) {
+        throw new AppError('No dentist available for the new slot.', 409);
+    }
+
+    // 3. Create NEW appointment
+    const newAppointment = await insertConfirmedGuestAppointment(
+        oldAppt, 
+        finalDentistId, 
+        date, 
+        time, 
+        endTime, 
+        userSessionId,
+        (oldAppt.reschedule_count || 0) + 1
+    );
+
+    // 4. Mark OLD appointment as RESCHEDULED
+    try {
+        const { error: updateError } = await supabaseAdmin
+            .from('appointments')
+            .update({
+                status: APPOINTMENT_STATUS.RESCHEDULED,
+                cancellation_reason: 'Rescheduled by guest via link.',
+                cancelled_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', oldAppt.id);
+
+        if (updateError) throw updateError;
+    } catch (err) {
+        // ROLLBACK: If marking old one as rescheduled fails, cancel the new one
+        console.error('❌ Guest Reschedule update failed, rolling back:', err);
+        if (newAppointment?.id) {
+            await cancelGuestAppointmentAction(newAppointment.id, 'Rollback: Parent update failure.');
+        }
+        throw new AppError('Failed to complete rescheduling.', 500);
+    }
+
+    return {
+        rescheduled: true,
+        newAppointment
+    };
 };
 
 // ── End of Service ──

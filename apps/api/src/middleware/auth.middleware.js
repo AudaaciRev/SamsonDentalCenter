@@ -28,7 +28,7 @@ export const requireAuth = async (req, res, next) => {
         // 4. Get the user's profile from our profiles table
         const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
-            .select('id, email, full_name, phone, role')
+            .select('id, email, full_name, first_name, last_name, middle_name, suffix, phone, role, avatar_url, date_of_birth')
             .eq('id', user.id)
             .single();
 
@@ -41,8 +41,14 @@ export const requireAuth = async (req, res, next) => {
             id: user.id,
             email: user.email,
             full_name: profile.full_name,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            middle_name: profile.middle_name,
+            suffix: profile.suffix,
             phone: profile.phone,
             role: profile.role,
+            avatar_url: profile.avatar_url,
+            date_of_birth: profile.date_of_birth,
         };
 
         // 6. Continue to the next middleware/controller
@@ -84,7 +90,7 @@ export const optionalAuth = async (req, res, next) => {
 
         const { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('id, email, full_name, phone, role')
+            .select('id, email, full_name, first_name, last_name, middle_name, suffix, phone, role, avatar_url, date_of_birth')
             .eq('id', user.id)
             .single();
 
@@ -94,8 +100,14 @@ export const optionalAuth = async (req, res, next) => {
                   id: user.id,
                   email: user.email,
                   full_name: profile.full_name,
+                  first_name: profile.first_name,
+                  last_name: profile.last_name,
+                  middle_name: profile.middle_name,
+                  suffix: profile.suffix,
                   phone: profile.phone,
                   role: profile.role,
+                  avatar_url: profile.avatar_url,
+                  date_of_birth: profile.date_of_birth,
               }
             : null;
 

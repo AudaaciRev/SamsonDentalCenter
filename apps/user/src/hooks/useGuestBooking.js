@@ -51,9 +51,10 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         last_name: '',
         middle_name: '',
         suffix_name: '',
-        full_name: '',
         email: '',
         phone: '',
+        dentist_id: '',
+        service_tier: '',
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -108,9 +109,10 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
-                    phone: ''
+                    phone: '',
+                    dentist_id: '',
+                    service_tier: prev.service_tier, // Keep tier for DateTimeStep usage
                 }));
             }
             setStep(nextIdx);
@@ -131,9 +133,10 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     last_name: '',
                     middle_name: '',
                     suffix_name: '',
-                    full_name: '',
                     email: '',
-                    phone: ''
+                    phone: '',
+                    dentist_id: '',
+                    service_tier: prev.service_tier, // Keep tier
                 }));
             }
             setStep(index);
@@ -158,7 +161,12 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                 time: formData.time,
                 email: formData.email,
                 phone: formData.phone.replace(/\D/g, ''), // ✅ Sanitize: remove non-digits
-                full_name: formData.full_name,
+                guestNameParts: {
+                    first: formData.first_name,
+                    last: formData.last_name,
+                    middle: formData.middle_name,
+                    suffix: formData.suffix_name,
+                },
                 user_session_id: sessionId,
             };
 
@@ -225,9 +233,9 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
             last_name: '',
             middle_name: '',
             suffix_name: '',
-            full_name: '',
             email: '',
             phone: '',
+            service_tier: '', // Total reset
         });
         setError(null);
         setSubmitting(false); // ✅ Safety reset

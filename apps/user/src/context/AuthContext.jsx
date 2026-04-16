@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import SessionExpiredModal from '../components/common/SessionExpiredModal';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +8,21 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [isSessionExpired, setIsSessionExpired] = useState(false);
+
+    // ✅ Listen for global session-expired events from api.js
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            if (token && !isSessionExpired) {
+                console.warn('Session expired event received');
+                setIsSessionExpired(true);
+            }
+        };
+
+        window.addEventListener('session-expired', handleSessionExpired);
+        return () => window.removeEventListener('session-expired', handleSessionExpired);
+    }, [token, isSessionExpired]);
 
     // On mount: check if we have a saved token and validate it
     useEffect(() => {
@@ -19,12 +35,17 @@ export const AuthProvider = ({ children }) => {
             try {
                 const data = await api.get('/auth/me', token);
                 setUser(data.user);
+                setError(null);
             } catch (error) {
                 // Token expired or invalid
                 console.error('Auth check failed:', error.message);
-                localStorage.removeItem('token');
-                setToken(null);
-                setUser(null);
+                if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+                    setError(error.message);
+                } else {
+                    localStorage.removeItem('token');
+                    setToken(null);
+                    setUser(null);
+                }
             }
             setLoading(false);
         };
@@ -39,16 +60,25 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const register = async (email, password, full_name, phone) => {
+    const register = async (email, password, { first_name, last_name, middle_name, suffix }, phone) => {
         const data = await api.post('/auth/register', {
             email,
             password,
-            full_name,
+            first_name,
+            last_name,
+            middle_name,
+            suffix,
             phone,
         });
 
         localStorage.setItem('token', data.token);
         setToken(data.token);
+        setUser(data.user);
+        return data;
+    };
+
+    const updateProfile = async (updates) => {
+        const data = await api.patch('/auth/me', updates, token);
         setUser(data.user);
         return data;
     };
@@ -60,8 +90,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, token, loading, error, login, register, logout, updateProfile }}>
             {children}
+            {isSessionExpired && <SessionExpiredModal onLogout={() => {
+                logout();
+                setIsSessionExpired(false);
+                window.location.href = '/login';
+            }} />}
         </AuthContext.Provider>
     );
 };

@@ -60,7 +60,7 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
     );
 
     return (
-        <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10 sm:pb-6">
             {/* Header Section */}
             <div className='mb-8 sm:mb-10'>
                 <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
@@ -133,7 +133,7 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
                                 Full Name
                             </p>
                             <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate">
-                                {formData.full_name}
+                                {formData.first_name ? `${formData.last_name}, ${formData.first_name} ${formData.middle_name || ''} ${formData.suffix_name || ''}`.replace(/\s+/g, ' ').trim() : (formData.full_name || '—')}
                             </p>
                         </div>
                         <div className="min-w-0">
@@ -192,33 +192,23 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
             </div>
 
             {/* Final Navigation Controls */}
-            <div className='flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 sm:gap-0 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-100 dark:border-gray-800'>
-                <button
-                    onClick={onBack}
-                    disabled={submitting}
-                    className='w-full sm:w-auto text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[13px] sm:text-sm px-6 py-3 sm:px-8 sm:py-3 transition-colors disabled:opacity-30 uppercase tracking-widest'
-                >
-                    Back
-                </button>
-                <button
-                    onClick={onSubmit}
-                    disabled={submitting}
-                    className='w-full sm:w-auto group bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black
-                               px-6 py-3.5 sm:px-12 sm:py-4.5 rounded-2xl transition-all shadow-theme-lg
-                               disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-[14px] sm:text-base uppercase tracking-widest'
-                >
-                    {submitting ? (
-                        <>
-                            <div className='w-4 h-4 sm:w-5 sm:h-5 border-[3px] border-white border-t-transparent rounded-full animate-spin' />
-                            Finalizing...
-                        </>
-                    ) : (
-                        <>
-                            Confirm Booking
-                            <ShieldCheck size={20} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform" />
-                        </>
-                    )}
-                </button>
+            <div className='fixed bottom-0 left-0 right-0 sm:relative z-40 px-6 py-4 sm:px-0 sm:py-0 sm:mt-6 sm:pt-2 bg-white/95 dark:bg-gray-900/95 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border-t border-gray-100 dark:border-gray-800 sm:border-t-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] sm:shadow-none transition-all'>
+                <div className='flex items-center gap-3 w-full sm:justify-between'>
+                    <button onClick={onBack} disabled={submitting} className='flex-1 sm:flex-none sm:min-w-[120px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[11px] sm:text-sm px-6 py-3.5 sm:px-8 transition-colors disabled:opacity-30 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 sm:bg-transparent rounded-2xl sm:rounded-2xl border border-transparent shadow-theme-xs'>Back</button>
+                    <button onClick={onSubmit} disabled={submitting} className='flex-[2] sm:flex-none sm:min-w-[240px] group bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-12 sm:py-4.5 rounded-2xl transition-all shadow-theme-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-base uppercase tracking-widest'>
+                        {submitting ? (
+                            <>
+                                <div className='w-4 h-4 sm:w-5 sm:h-5 border-[3px] border-white border-t-transparent rounded-full animate-spin' />
+                                Finalizing...
+                            </>
+                        ) : (
+                            <>
+                                Confirm Booking
+                                <ShieldCheck size={20} className="sm:w-[22px] sm:h-[22px] group-hover:scale-110 transition-transform" />
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );

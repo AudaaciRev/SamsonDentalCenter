@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../utils/api';
 
-const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, dentistId = null) => {
+const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, dentistId = null, excludeAppointmentId = null) => {
     const [slots, setSlots] = useState([]);
     const [nextAvailableDate, setNextAvailableDate] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState(null);
 
     // ✅ Ref for coordinating requests and debouncing
@@ -25,6 +26,7 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
         if (!date || !serviceId) {
             setSlots([]);
             setNextAvailableDate(null);
+            setIsPending(false);
             return;
         }
 
@@ -32,6 +34,7 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
         if (isFetchingRef.current) return;
 
         setLoading(true);
+        setIsPending(false); // ✅ Transition from pending (debounce) to active loading
         setError(null);
         isFetchingRef.current = true;
 
@@ -43,6 +46,9 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
             }
             if (dentistId) {
                 url += `&dentist_id=${dentistId}`;
+            }
+            if (excludeAppointmentId) {
+                url += `&exclude_appointment_id=${excludeAppointmentId}`;
             }
 
             const data = await api.get(url);
@@ -66,7 +72,7 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
             setLoading(false);
             isFetchingRef.current = false;
         }
-    }, [date, serviceId, includeFullSlots, sessionId, dentistId]);
+    }, [date, serviceId, includeFullSlots, sessionId, dentistId, excludeAppointmentId]);
 
     // Manual immediate refetch (e.g. for "Refresh" button)
     const refetch = useCallback(() => {
@@ -79,10 +85,19 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
 
     // Auto-fetch with DEBOUNCE when date/service changes
     useEffect(() => {
+        // ✅ Exit early if no date/service, but ensure pending is false
+        if (!date || !serviceId) {
+            setIsPending(false);
+            return;
+        }
+
         // Clear previous timeout
         if (fetchTimeoutRef.current) {
             clearTimeout(fetchTimeoutRef.current);
         }
+
+        // ✅ Immediate pending state for debounce period
+        setIsPending(true);
 
         // Set new timeout (300ms)
         fetchTimeoutRef.current = setTimeout(() => {
@@ -94,10 +109,11 @@ const useSlots = (date, serviceId, includeFullSlots = false, sessionId = null, d
             if (fetchTimeoutRef.current) {
                 clearTimeout(fetchTimeoutRef.current);
             }
+            setIsPending(false); // ✅ Clear on cleanup
         };
-    }, [performFetch]);
+    }, [performFetch, date, serviceId]);
 
-    return { slots, nextAvailableDate, loading, error, refetch };
+    return { slots, nextAvailableDate, loading, isPending, error, refetch };
 };
 
 export default useSlots;

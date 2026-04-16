@@ -5,24 +5,32 @@ import NotificationInbox from '../../components/patient/notification/Notificatio
 import NotificationDetailView from '../../components/patient/notification/NotificationDetailView';
 import useNotifications from '../../hooks/useNotifications';
 import { formatFullDateTime } from '../../hooks/useAppointments';
-import { Clock } from 'lucide-react';
+import { Clock, Inbox, Star, XCircle, Search } from 'lucide-react';
 import { renderNotification } from '../../utils/notificationRenderer';
+import NotificationSkeleton from '../../components/patient/notification/NotificationSkeleton';
+import ErrorState from '../../components/common/ErrorState';
 
 const NotificationsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { 
-        notifications, 
-        loading, 
-        error, 
-        markRead, 
-        markAllRead 
+    const {
+        notifications,
+        totalNotifications,
+        loading,
+        error,
+        markRead,
+        markAllRead,
+        toggleStar,
+        stats,
+        fetchNotifications,
     } = useNotifications();
 
     const [activeFilter, setActiveFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedId, setSelectedId] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
-    // Sync selectedId with URL 'id' param
+    // Sync selectedId with URL 'id' param - Auto mark-as-read ONLY on initial open
     useEffect(() => {
         const id = searchParams.get('id');
         if (id) {
@@ -32,51 +40,94 @@ const NotificationsPage = () => {
         }
     }, [searchParams]);
 
-    const handleToggleRead = async (id) => {
-        await markRead(id);
+    // Fetch data from backend when page or filters change
+    useEffect(() => {
+        // Fetch with current page and limit
+        fetchNotifications(currentPage, ITEMS_PER_PAGE);
+    }, [currentPage, ITEMS_PER_PAGE, fetchNotifications]);
+
+    // Reset to page 1 when filter or search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeFilter, searchQuery]);
+
+    // Separate effect for auto-mark-as-read to avoid loops
+    useEffect(() => {
+        if (selectedId) {
+            const n = notifications.find((notif) => notif.id === selectedId);
+            if (n && !n.is_read) {
+                // We ONLY auto-mark as read if it hasn't been handled yet for this specific open session
+                markRead(selectedId);
+            }
+        }
+    }, [selectedId]); // ONLY depend on selectedId changing
+
+    const handleToggleRead = async (id, isRead) => {
+        await markRead(id, isRead);
     };
 
-    const handleToggleStar = (id) => {
-        // Star not yet implemented in backend
-    };
-
-    const handleDelete = (id) => {
-        // Delete not yet implemented in backend
+    const handleToggleStar = (id, isStarred) => {
+        toggleStar(id, isStarred);
     };
 
     const handleNotificationClick = async (id) => {
-        await markRead(id);
-        setSelectedId(id);
+        setSearchParams({ id });
     };
 
     // Map Backend structure to Frontend needs
-    const mappedNotifications = notifications.map(n => {
+    const mappedNotifications = notifications.map((n) => {
         const rendered = renderNotification(n);
+        const rich = renderNotification(n, { isRich: true });
         return {
             id: n.id,
             title: rendered.title,
             message: rendered.message,
-            fullMessage: rendered.message,
+            richMessage: rich.message,
             category: n.type,
             time: n.sent_at ? formatFullDateTime(n.sent_at) : '',
             isRead: n.is_read,
-            isStarred: false
+            isStarred: n.is_starred,
         };
     });
 
-    // Filter Logic
-    const filtered = mappedNotifications.filter(n => {
-        const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             n.message.toLowerCase().includes(searchQuery.toLowerCase());
-        
+    // Client-side filtering of the ALREADY fetched paged results
+    const filtered = mappedNotifications.filter((n) => {
+        const matchesSearch =
+            n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            n.message.toLowerCase().includes(searchQuery.toLowerCase());
+
         if (!matchesSearch) return false;
-        
+
         if (activeFilter === 'all') return true;
+        if (activeFilter === 'unread') return !n.isRead;
         if (activeFilter === 'starred') return n.isStarred;
+
+        if (activeFilter === 'appointments') {
+            return [
+                'GENERAL',
+                'CONFIRMATION',
+                'REMINDER',
+                'REMINDER_48H',
+                'APPROVAL',
+                'DELAY',
+                'FOLLOW_UP',
+                'RESCHEDULE',
+                'RESTRICTION',
+                'CANCELLATION',
+                'REJECTION',
+                'NO_SHOW'
+            ].includes(n.category);
+        }
+        if (activeFilter === 'waitlist') {
+            return n.category === 'WAITLIST';
+        }
+
         return n.category.toLowerCase().includes(activeFilter.toLowerCase());
     });
 
-    const selectedNotification = mappedNotifications.find(n => n.id === selectedId);
+    const totalPages = Math.ceil(totalNotifications / ITEMS_PER_PAGE);
+
+    const selectedNotification = mappedNotifications.find((n) => n.id === selectedId);
 
     // Dynamic breadcrumbs based on selection
     const breadcrumbTitle = selectedId ? 'Notification Detail' : 'Notifications';
@@ -85,15 +136,19 @@ const NotificationsPage = () => {
 
     if (loading && notifications.length === 0) {
         return (
-            <>
+            <div className='flex flex-col h-full'>
                 <PageBreadcrumb pageTitle={breadcrumbTitle} />
-                <div className='flex items-center justify-center grow py-20'>
-                    <div className='animate-pulse flex flex-col items-center gap-4'>
-                        <Clock size={40} className='text-gray-200 dark:text-gray-800' />
-                        <div className='h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded-full' />
+                
+                <div className='flex flex-col grow'>
+                    {/* Inbox Skeleton */}
+                    <div className='mx-4 sm:mx-6 flex flex-col grow bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
+                        <div className='p-6 border-b border-gray-100 dark:border-gray-800'>
+                            <div className='h-10 w-full bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse' />
+                        </div>
+                        <NotificationSkeleton rows={6} />
                     </div>
                 </div>
-            </>
+            </div>
         );
     }
 
@@ -101,46 +156,56 @@ const NotificationsPage = () => {
         return (
             <>
                 <PageBreadcrumb pageTitle={breadcrumbTitle} />
-                <div className='flex items-center justify-center grow py-20 text-error-500'>
-                    {error}
-                </div>
+                <ErrorState 
+                    error={error} 
+                    onRetry={() => fetchNotifications(1, ITEMS_PER_PAGE)} 
+                    title="Failed to load notifications"
+                    parentPath="/patient"
+                    parentName="Dashboard"
+                />
             </>
         );
     }
 
     return (
-        <>
-            <PageBreadcrumb 
-                pageTitle={breadcrumbTitle} 
-                parentName={parentName} 
+        <div className='flex flex-col h-full'>
+            <PageBreadcrumb
+                pageTitle={breadcrumbTitle}
+                parentName={parentName}
                 parentPath={parentPath}
+                className='mb-4'
             />
-            
+
             {selectedId ? (
-                <div className='flex-grow min-h-0 relative sm:mx-0'>
-                    <NotificationDetailView 
+                <div className='grow min-h-0 relative sm:mx-0'>
+                    <NotificationDetailView
                         notification={selectedNotification}
                         onBack={() => setSelectedId(null)}
                         onToggleRead={handleToggleRead}
                         onToggleStar={handleToggleStar}
-                        onDelete={handleDelete}
                     />
                 </div>
             ) : (
-                <NotificationInbox 
-                    notifications={filtered}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    onToggleRead={handleToggleRead}
-                    onToggleStar={handleToggleStar}
-                    onDelete={handleDelete}
-                    onNotificationClick={handleNotificationClick}
-                    onMarkAllRead={markAllRead}
-                />
+                <div className='flex flex-col grow'>
+                    <NotificationInbox
+                        notifications={filtered}
+                        totalCount={totalNotifications}
+                        stats={stats}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        onToggleRead={handleToggleRead}
+                        onToggleStar={handleToggleStar}
+                        onNotificationClick={handleNotificationClick}
+                        onMarkAllRead={markAllRead}
+                    />
+                </div>
             )}
-        </>
+        </div>
     );
 };
 

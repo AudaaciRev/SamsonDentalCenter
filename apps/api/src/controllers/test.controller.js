@@ -120,7 +120,7 @@ export const testGenerateGuestTokens = async (req, res, next) => {
         const { data: appointment, error } = await supabaseAdmin
             .from('appointments')
             .select(
-                '*, service:services(id, name, duration_minutes), dentist:dentists(profile:profiles(full_name))',
+                '*, service:services(id, name, duration_minutes), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
             )
             .eq('id', appointmentId)
             .single();

@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageLoader from '../components/common/PageLoader';
 
 /**
  * GuestOnlyRoute — inverse of ProtectedRoute.
@@ -11,11 +11,7 @@ const GuestOnlyRoute = ({ children, redirectTo = '/patient/book' }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
-        return (
-            <div className='min-h-screen flex items-center justify-center'>
-                <LoadingSpinner message='Checking authentication...' />
-            </div>
-        );
+        return <PageLoader message='One moment please...' />;
     }
 
     if (user) {

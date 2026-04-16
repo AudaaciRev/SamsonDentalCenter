@@ -2,6 +2,7 @@ import { AppError } from '../utils/errors.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { assignDentist } from './dentist-assignment.service.js';
 import { APPOINTMENT_STATUS, APPROVAL_STATUS, SERVICE_TIER } from '../utils/constants.js';
+import { voidWaitlistForApprovedAppointment, notifyWaitlist } from './waitlist.service.js';
 
 // ═══════════════════════════════════════════════
 // APPROVAL WORKFLOW (Two-Tier System)
@@ -22,7 +23,7 @@ export const getPendingRequests = async () => {
       *,
       patient:profiles!appointments_patient_id_fkey(id, full_name, email, phone, no_show_count, cancellation_count, is_booking_restricted),
       service:services(name, duration_minutes, price, tier),
-      dentist:dentists(id, profile:profiles(full_name))
+      dentist:dentists(id, profile:profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         // Show everything that is PENDING approval and has been confirmed by the patient (either logged in or via email)
@@ -95,7 +96,7 @@ export const recordPayment = async (paymentData, supervisorId) => {
 export const getPaymentDetails = async (appointmentId) => {
     const { data, error } = await supabaseAdmin
         .from('payment_records')
-        .select('*, received_by:profiles(full_name)')
+        .select('*, received_by:profiles(full_name, first_name, last_name, middle_name, suffix)')
         .eq('appointment_id', appointmentId)
         .maybeSingle();
 
@@ -258,7 +259,7 @@ export const getFeedback = async (dentistId = null) => {
     let query = supabaseAdmin
         .from('patient_feedback')
         .select(
-            '*, appointment:appointments(appointment_date, service:services(name)), patient:profiles(full_name), dentist:dentists(profile:profiles(full_name))',
+            '*, appointment:appointments(appointment_date, service:services(name)), patient:profiles(full_name, first_name, last_name, middle_name, suffix), dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))',
         )
         .order('created_at', { ascending: false });
 
@@ -570,6 +571,8 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
             appointment.start_time,
             appointment.end_time,
             appointment.service?.tier || SERVICE_TIER.GENERAL,
+            null, // filterSessionId
+            appointment.service_id
         );
 
         if (!assignedDentistId) {
@@ -628,13 +631,27 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
         .eq('id', appointmentId)
         .select(`
             *,
-            patient:profiles!appointments_patient_id_fkey(full_name, email),
+            patient:profiles!appointments_patient_id_fkey(full_name, email, phone),
             service:services(name, price),
-            dentist:dentists(id, profile:profiles(full_name))
+            dentist:dentists(id, profile:profiles(full_name, first_name, last_name, middle_name, suffix))
         `)
         .single();
 
     if (updateErr) throw { status: 500, message: updateErr.message };
+
+    // ── 4. VOID linked waitlist entries ──
+    // If this appointment was a "Primary" for a waitlist entry, void those entries now.
+    try {
+        await voidWaitlistForApprovedAppointment(appointmentId, {
+            date: updated.appointment_date,
+            start_time: updated.start_time,
+            service: updated.service?.name,
+            patient_id: updated.patient_id,
+        });
+    } catch (err) {
+        // Non-critical — don't fail the approval
+        console.warn(`⚠️ [ADMIN] Failed to void linked waitlist entries: ${err.message}`);
+    }
 
     return updated;
 };
@@ -691,6 +708,18 @@ export const rejectRequest = async (appointmentId, supervisorId, reason, suggest
         .single();
 
     if (error) throw new AppError(error.message, 500);
+
+    // ── Trigger waitlist notification ──
+    try {
+        await notifyWaitlist({
+            date: updated.appointment_date,
+            start_time: updated.start_time,
+            end_time: updated.end_time,
+            service_id: updated.service_id,
+        });
+    } catch (e) {
+        console.warn('⚠️ [ADMIN] Failed to trigger waitlist on rejection:', e.message);
+    }
 
     return { appointment: updated, suggested_date: suggestedDate };
 };
@@ -874,7 +903,7 @@ export const getBlocks = async (dentistId = null, fromDate = null) => {
         .select(
             `
                 *,
-                dentist: dentists(profile: profiles(full_name))
+                dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
                     `,
         )
         .order('block_date', { ascending: true });
@@ -972,7 +1001,7 @@ export const getPatientAppointmentHistory = async (patientId) => {
             `
                     *,
                     service: services(name, price, tier),
-                        dentist: dentists(profile: profiles(full_name))
+                        dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .eq('patient_id', patientId)
@@ -1190,7 +1219,7 @@ export const getAllAppointmentsFiltered = async (filters = {}, page = 1, limit =
         *,
         patient: profiles!appointments_patient_id_fkey(full_name, email, phone),
             service: services(name, duration_minutes, price, tier),
-                dentist: dentists(profile: profiles(full_name))
+                dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
                     `,
             { count: 'exact' },
         )
@@ -1199,7 +1228,15 @@ export const getAllAppointmentsFiltered = async (filters = {}, page = 1, limit =
 
     // Apply filters
     if (filters.date) query = query.eq('appointment_date', filters.date);
-    if (filters.status) query = query.eq('status', filters.status);
+    
+    // If a specific status is requested, use it; otherwise, exclude 'zombie' statuses by default
+    // to prevent rescheduled/cancelled/missed appointments from cluttering active lists.
+    if (filters.status) {
+        query = query.eq('status', filters.status);
+    } else {
+        query = query.not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED})`);
+    }
+
     if (filters.dentist_id) query = query.eq('dentist_id', filters.dentist_id);
     if (filters.patient_id) query = query.eq('patient_id', filters.patient_id);
     if (filters.tier) query = query.eq('service_tier', filters.tier);
@@ -1237,11 +1274,11 @@ export const getTodayAppointmentsFiltered = async () => {
                     *,
                     patient: profiles!appointments_patient_id_fkey(full_name, phone),
                         service: services(name, tier),
-                            dentist: dentists(profile: profiles(full_name))
+                            dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
     `,
         )
         .eq('appointment_date', today)
-        .not('status', 'eq', 'CANCELLED')
+        .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED})`)
         .order('start_time');
 
     if (error) throw new AppError(error.message, 500);
@@ -1499,7 +1536,7 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
         *,
         patient: profiles!appointments_patient_id_fkey(full_name, email),
         service: services(name, price),
-        dentist: dentists(profile: profiles(full_name))
+        dentist: dentists(profile: profiles(full_name, first_name, last_name, middle_name, suffix))
             `,
         )
         .single();

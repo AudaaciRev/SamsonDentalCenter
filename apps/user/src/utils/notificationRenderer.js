@@ -29,8 +29,13 @@ const formatDateTimeRange = (date, startTime, endTime) => {
 
 /**
  * Reconstructs a notification's content based on its type and metadata.
+ * @param {Object} notification - The notification object from DB
+ * @param {Object} options - Rendering options
+ * @param {boolean} options.isRich - Whether to return rich HTML for the message
  */
-export const renderNotification = (notification) => {
+export const renderNotification = (notification, options = {}) => {
+    const { isRich = false } = options;
+
     let data = null;
     try {
         if (typeof notification.message === 'string' && notification.message.startsWith('{')) {
@@ -49,7 +54,16 @@ export const renderNotification = (notification) => {
 
     const { type } = notification;
     const { service, date, start_time, end_time, reason, action } = data;
+    
+    // Rich styling helper
+    const highlight = (text) => {
+        if (!isRich || !text) return text;
+        return `<span class="font-bold text-gray-950 dark:text-white">${text}</span>`;
+    };
+
     const formattedRange = formatDateTimeRange(date, start_time, end_time);
+    const richService = highlight(service);
+    const richRange = highlight(formattedRange);
 
     let title = data._title || notification.title;
     let message = data._fallback || notification.message;
@@ -58,39 +72,39 @@ export const renderNotification = (notification) => {
         case 'CONFIRMATION':
             if (action === 'approved') {
                 title = 'Appointment Approved!';
-                message = `Good news! Your ${service} appointment on ${formattedRange} has been approved. See you at the clinic!`;
+                message = `Good news! Your ${richService} appointment on ${richRange} has been approved. See you at the clinic!`;
             } else {
                 title = 'Appointment Confirmed';
-                message = `Your ${service} appointment is confirmed for ${formattedRange}.`;
+                message = `Your ${richService} appointment is confirmed for ${richRange}.`;
             }
             break;
             
         case 'CANCELLATION':
             if (action === 'rejected') {
                 title = 'Appointment Request Declined';
-                message = `Your request for ${service} on ${formattedRange} was declined. ${reason ? 'Reason: ' + reason : 'Please contact the clinic for more details.'}`;
+                message = `Your request for ${richService} on ${richRange} was declined. ${reason ? 'Reason: ' + highlight(reason) : 'Please contact the clinic for more details.'}`;
             } else {
                 title = 'Appointment Cancelled';
-                message = `Your ${service} appointment on ${formattedRange} has been cancelled.`;
+                message = `Your ${richService} appointment on ${richRange} has been cancelled.`;
             }
             break;
 
         case 'GENERAL':
             if (data.status === 'review') {
                 title = 'Request Received & Under Review';
-                message = `Your request for ${service} on ${formattedRange} has been received. Our team is currently reviewing your schedule to ensure a dentist is available. We will notify you once it is officially confirmed.`;
+                message = `Your request for ${richService} on ${richRange} has been received. Our team is currently reviewing your schedule to ensure a dentist is available. We will notify you once it is officially confirmed.`;
             }
             break;
 
         case 'REMINDER':
         case 'REMINDER_48H':
             title = data._title || title;
-            message = `Don't forget! Your ${service} appointment is on ${formattedRange}.`;
+            message = `Don't forget! Your ${richService} appointment is on ${richRange}.`;
             break;
 
         case 'DELAY':
             title = data._title || title;
-            message = `Dr. ${data.dentist_name} is running approximately ${data.estimated_delay_minutes} minutes behind schedule. Your appointment at ${data.original_time} may start late.`;
+            message = `Dr. ${highlight(data.dentist_name)} is running approximately ${highlight(data.estimated_delay_minutes)} minutes behind schedule. Your appointment at ${highlight(data.original_time)} may start late.`;
             break;
 
         default:

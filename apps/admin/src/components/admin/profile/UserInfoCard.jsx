@@ -1,4 +1,4 @@
-﻿import { useModal } from '../../../hooks/useModal';
+import { useModal } from '../../../hooks/useModal';
 import { Modal } from '../../ui/Modal';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
@@ -8,11 +8,29 @@ import { useAuth } from '../../../context/AuthContext';
 export default function UserInfoCard() {
     const { user } = useAuth();
     const { isOpen, openModal, closeModal } = useModal();
+    const { updatePatientProfile } = useAuth();
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        console.log('Saving changes...');
-        closeModal();
+        try {
+            const formData = new FormData(e.target);
+            const first_name = formData.get('first_name').trim();
+            const last_name = formData.get('last_name').trim();
+            const middle_name = formData.get('middle_name').trim();
+            const suffix = formData.get('suffix').trim();
+            const phone = formData.get('phone');
+            
+            await updatePatientProfile(user.id, { 
+                first_name, 
+                last_name, 
+                middle_name, 
+                suffix, 
+                phone 
+            });
+            closeModal();
+        } catch (error) {
+            console.error('Failed to update patient info:', error);
+        }
     };
 
     return (
@@ -29,7 +47,7 @@ export default function UserInfoCard() {
                                 Full Name
                             </p>
                             <p className='text-sm font-medium text-gray-800 dark:text-white/90'>
-                                {user?.full_name || 'N/A'}
+                                {user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'N/A')}
                             </p>
                         </div>
 
@@ -98,14 +116,32 @@ export default function UserInfoCard() {
                     </div>
                     <form className='flex flex-col h-full overflow-hidden' onSubmit={handleSave}>
                         <div className='custom-scrollbar max-h-[400px] overflow-y-auto px-2 pb-3'>
+                            <div className='grid grid-cols-2 gap-4 mb-5'>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">First Name</Label>
+                                    <Input name="first_name" className="text-[clamp(14px,1vw,15px)]" defaultValue={user?.first_name || ''} required />
+                                </div>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Last Name</Label>
+                                    <Input name="last_name" className="text-[clamp(14px,1vw,15px)]" defaultValue={user?.last_name || ''} required />
+                                </div>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Middle</Label>
+                                    <Input name="middle_name" className="text-[clamp(14px,1vw,15px)]" defaultValue={user?.middle_name || ''} />
+                                </div>
+                                <div>
+                                    <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Suffix</Label>
+                                    <Input name="suffix" className="text-[clamp(14px,1vw,15px)]" defaultValue={user?.suffix || ''} />
+                                </div>
+                            </div>
                             <div className='grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2'>
                                 <div>
                                     <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Email</Label>
-                                    <Input className="text-[clamp(14px,1vw,15px)]" type='email' defaultValue={user?.email || ''} />
+                                    <Input className="text-[clamp(14px,1vw,15px)] bg-gray-50 opacity-60" type='email' defaultValue={user?.email || ''} readOnly />
                                 </div>
                                 <div>
                                     <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Phone</Label>
-                                    <Input className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.phone || ''} />
+                                    <Input name="phone" className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.phone || ''} />
                                 </div>
                             </div>
                         </div>

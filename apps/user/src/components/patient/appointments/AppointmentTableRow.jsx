@@ -11,19 +11,24 @@ const getInitial = (name = '') => name.replace(/^Dr\.\s*/i, '').charAt(0).toUppe
 
 const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown, onViewDetails }) => {
     const { label: displayStatus, color: badgeColor } = getDisplayStatus(appointment.status, appointment.approval_status);
-    const dentistName = appointment.dentist || 'TBD';
-    const patientName = appointment.booked_for_name || user?.full_name || '—';
+    const dentistName = (typeof appointment.dentist === 'object' && appointment.dentist?.profile)
+        ? `${appointment.dentist.profile.last_name}, ${appointment.dentist.profile.first_name} ${appointment.dentist.profile.middle_name || ''} ${appointment.dentist.profile.suffix || ''}`.replace(/\s+/g, ' ').trim()
+        : (appointment.dentist || 'TBD');
+
+    const patientName = (appointment.last_name || appointment.first_name)
+        ? `${appointment.last_name || ''}, ${appointment.first_name || ''} ${appointment.middle_name || ''} ${appointment.suffix || ''}`.replace(/\s+/g, ' ').trim()
+        : (appointment.booked_for_name || '—');
 
     return (
         <div 
             onClick={() => onViewDetails(appointment.id)}
-            className='group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'
+            className='group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'
         >
             {/* Desktop View (sm and up) */}
             <div className='hidden sm:flex items-center gap-4 w-full'>
                 <div className='shrink-0 pl-1 text-gray-300 dark:text-gray-600 transition-colors group-hover:text-amber-400'>
                     <div className='w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-sm shadow-sm'>
-                        {getInitial(dentistName)}
+                        {getInitial(appointment.service)}
                     </div>
                 </div>
 
@@ -42,9 +47,6 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
                     </span>
                 </div>
 
-                <div className='w-32 shrink-0 truncate text-xs sm:text-sm text-gray-400 dark:text-gray-500 font-medium text-right'>
-                    <span title={patientName}>{truncateText(patientName, 15)}</span>
-                </div>
 
                 <div className='flex items-center gap-4 shrink-0 min-w-[100px] justify-end' onClick={(e) => e.stopPropagation()}>
                     <Badge size='sm' color={badgeColor}>
@@ -75,7 +77,7 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
             <div className='flex sm:hidden gap-4 w-full'>
                 <div className='shrink-0'>
                     <div className='w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-lg shadow-sm'>
-                        {getInitial(dentistName)}
+                        {getInitial(appointment.service)}
                     </div>
                 </div>
                 <div className='flex-grow min-w-0 flex flex-col gap-0.5'>

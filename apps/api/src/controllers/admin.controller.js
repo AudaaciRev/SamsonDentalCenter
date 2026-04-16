@@ -170,7 +170,20 @@ export const adminCancel = async (req, res, next) => {
 
         const result = await adminCancelAppointment(req.params.id, reason);
 
-        // Notify waitlist (if Module 09 is built)
+        // 1. In-app notification for the patient
+        if (result.appointment.patient_id) {
+            try {
+                await sendCancellationNotice(result.appointment.patient_id, {
+                    date: result.appointment.appointment_date,
+                    start_time: result.appointment.start_time,
+                    service: result.appointment.service?.name || 'Dental appointment',
+                });
+            } catch (err) {
+                console.warn('[Realtime] Failed to notify patient of admin cancellation:', err.message);
+            }
+        }
+
+        // 2. Notify waitlist (if Module 09 is built)
         try {
             await notifyWaitlist({
                 date: result.appointment.appointment_date,
@@ -227,9 +240,10 @@ export const approve = async (req, res, next) => {
         const { dentist_id } = req.body;
         const appointment = await approveRequest(req.params.id, req.user.id, dentist_id || null);
 
-        // Notify patient/guest
+        // 1. Email Notification
+        let emailResult = null;
         try {
-            await sendBookingSuccessEmail(appointment.patient?.email || appointment.guest_email, appointment.patient?.full_name || appointment.guest_name, {
+            emailResult = await sendBookingSuccessEmail(appointment.patient?.email || appointment.guest_email, appointment.patient?.full_name || appointment.guest_name, {
                 date: appointment.appointment_date,
                 start_time: appointment.start_time,
                 end_time: appointment.end_time,
@@ -238,19 +252,32 @@ export const approve = async (req, res, next) => {
             });
         } catch (e) {
             console.error('Failed to send approval email:', e);
+            emailResult = { success: false, error: e.message };
         }
 
-        // In-app notification
-        if (appointment.patient_id) {
-            await sendApprovalNotice(appointment.patient_id, {
-                date: appointment.appointment_date,
-                start_time: appointment.start_time,
-                end_time: appointment.end_time,
-                service: appointment.service?.name,
-            });
-        }
+        // 2. In-app & SMS notification
+        let inAppSmsResult = null;
+        const recipientPhone = appointment.patient?.phone || appointment.guest_phone;
+        
+        // Always try to send approval notice — the service will handle the patient vs guest distinction
+        // (Skipping in-app for guests, but sending SMS if phone is available)
+        inAppSmsResult = await sendApprovalNotice(appointment.patient_id, {
+            date: appointment.appointment_date,
+            start_time: appointment.start_time,
+            end_time: appointment.end_time,
+            service: appointment.service?.name,
+        }, recipientPhone);
 
-        res.json({ message: 'Appointment approved.', appointment });
+        res.json({ 
+            message: 'Appointment approved.', 
+            appointment,
+            notifications: {
+                email: emailResult,
+                inApp: inAppSmsResult?.inAppResult,
+                sms: inAppSmsResult?.smsResult
+            }
+        });
+
     } catch (err) {
         next(err);
     }
@@ -715,6 +742,28 @@ export const reassignAppointment = async (req, res, next) => {
         }
 
         const updated = await reassignAppointmentToDentist(req.params.id, dentist_id);
+
+        // Notify patient of dentist change
+        if (updated.patient_id) {
+            try {
+                const { sendNotification } = await import('../services/notification.service.js');
+                await sendNotification(
+                    updated.patient_id,
+                    'CONFIRMATION',
+                    'Dentist Reassigned',
+                    `Your appointment for ${updated.service?.name || 'Dental service'} on ${updated.appointment_date} has been reassigned to Dr. ${updated.dentist?.profile?.full_name}.`,
+                    'in_app',
+                    { 
+                        appointment_id: updated.id, 
+                        dentist_name: updated.dentist?.profile?.full_name,
+                        action: 'dentist_reassigned'
+                    }
+                );
+            } catch (err) {
+                console.warn('[Realtime] Failed to notify patient of reassignment:', err.message);
+            }
+        }
+
         res.json({
             message: `Appointment reassigned to Dr. ${updated.dentist.profile.full_name}`,
             appointment: updated,

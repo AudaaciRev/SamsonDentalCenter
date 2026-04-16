@@ -99,12 +99,12 @@ export const confirmAppointmentByToken = async (token) => {
         .single();
 
     if (tokenError || !tokenRecord) {
-        throw new AppError('Invalid confirmation link. It may have already been used.', 404);
+        throw new AppError('This link is invalid or has already been used to verify your request.', 404);
     }
 
     // ── 2. Check if token is expired ──
     if (new Date(tokenRecord.expires_at) < new Date()) {
-        throw new AppError('This confirmation link has expired. Please book a new appointment.', 410);
+        throw new AppError('This verification link has expired for your security. Please request a new one or try booking again.', 410);
     }
 
     // ── 3. Check appointment status ──
@@ -232,16 +232,18 @@ export const sendBookingSuccessEmail = async (email, name, details) => {
             dentist,
         });
 
-        await resend.emails.send({
+        const result = await resend.emails.send({
             from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
             to: email,
             subject: '✅ Appointment Confirmed — Samson Dental',
             html,
         });
-        console.log(`📧 Booking success email sent to ${email}`);
+
+        console.log(`✅ [Email] SUCCESS: Booking confirmation sent to ${email}`, result);
+        return { success: true, result };
     } catch (err) {
-        console.error('Failed to send booking success email:', err.message);
-        // Don't throw — booking was successful, email failure shouldn't break it
+        console.error('❌ [Email] FAILED to send booking success email:', err.message);
+        return { success: false, error: err.message };
     }
 };
 
@@ -500,8 +502,9 @@ export const validateGuestActionToken = async (token, expectedAction) => {
             appointment:appointments(
                 id, appointment_date, start_time, end_time, status,
                 guest_email, guest_name, guest_phone,
+                guest_first_name, guest_last_name, guest_middle_name, guest_suffix,
                 service:services(id, name, duration_minutes),
-                dentist:dentists(profile:profiles(full_name))
+                dentist:dentists(profile:profiles(full_name, first_name, last_name, middle_name, suffix))
             )
         `,
         )
@@ -545,4 +548,38 @@ export const markGuestTokenUsed = async (tokenId) => {
         .from('guest_action_tokens')
         .update({ used_at: new Date().toISOString() })
         .eq('id', tokenId);
+};
+
+/**
+ * Send a waitlist offer email with a claim token.
+ *
+ * @param {string} email - Patient email
+ * @param {string} name - Patient name
+ * @param {object} details - { token, date, start_time, service, timeout_minutes }
+ */
+export const sendWaitlistOfferEmail = async (email, name, details) => {
+    const { token, date, start_time, service, timeout_minutes } = details;
+
+    const claimUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/email/waitlist-claim?token=${token}`;
+
+    try {
+        const html = getTemplate('waitlist-offer.html', {
+            name,
+            service: service || 'Dental Service',
+            date,
+            start_time,
+            timeout_minutes,
+            claimUrl,
+        });
+
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: '⚡ Slot Available! (Priority Offer) — Samson Dental',
+            html,
+        });
+        console.log(`📧 Waitlist offer email sent to ${email}`);
+    } catch (err) {
+        console.error('Failed to send waitlist offer email:', err.message);
+    }
 };

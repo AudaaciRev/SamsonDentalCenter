@@ -1,159 +1,211 @@
-import { useState, useEffect, useCallback } from 'react';
-import { api } from '../utils/api';
-import { useAuth } from '../context/AuthContext';
-
-/**
- * Fetches the current patient's appointments from the backend.
- *
- * Backend endpoint: GET /api/v1/appointments/my
- * Query params: status, page, limit, sort
- *
- * Status map (backend → display):
- *   CONFIRMED     → Approved
- *   PENDING       → Pending
- *   CANCELLED     → Cancelled
- *   LATE_CANCEL   → Cancelled
- *   COMPLETED     → Completed
- *   NO_SHOW       → Missed
- */
-
-// --- Utility helpers ---
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useAppointmentState } from '../context/AppointmentContext';
+import { format, parseISO, isValid } from 'date-fns';
 
 export const STATUS_LABEL = {
     CONFIRMED: 'Approved',
     PENDING: 'Pending',
-    CANCELLED: 'Cancelled',
-    LATE_CANCEL: 'Cancelled',
+    IN_PROGRESS: 'Seated',
     COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
+    LATE_CANCEL: 'Late Cancel',
     NO_SHOW: 'Missed',
-    IN_PROGRESS: 'In Progress',
     WAITLISTED: 'Waitlisted',
+    RESCHEDULED: 'Rescheduled',
 };
 
+// Semantic keys for Badge component and general consistency
 export const STATUS_COLOR = {
     Approved: 'success',
     Pending: 'warning',
+    Seated: 'info',
+    Completed: 'light',
     Cancelled: 'error',
-    Rejected: 'error',
-    Completed: 'info',
+    'Late Cancel': 'error',
     Missed: 'error',
-    'In Progress': 'primary',
-    Waitlisted: 'warning',
+    Waitlisted: 'primary',
+    Rejected: 'error',
+    Rescheduled: 'light',  // neutral — it's a clean handoff, not a problem
 };
 
-/**
- * Helper to resolve the correct display label and color 
- * for an appointment based on its status and approval_status.
- */
 export const getDisplayStatus = (status, approvalStatus) => {
-    // If it was rejected by a secretary, show 'Rejected' instead of generic 'Cancelled'
-    if (status === 'CANCELLED' && approvalStatus === 'rejected') {
+    // 1. Rejection is a specific case of "Terminal" in the requests context
+    // If it's rejected, we want to see "Rejected" even if status is technically cancelled
+    const appStatus = (approvalStatus || '').toLowerCase();
+    if (appStatus === 'rejected') {
         return { label: 'Rejected', color: STATUS_COLOR.Rejected };
     }
-    
+
+    // 2. Terminal statuses always win — a cancelled appointment is cancelled
+    // regardless of what approval_status says (e.g. approved then cancelled)
+    const TERMINAL = ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'COMPLETED', 'IN_PROGRESS', 'RESCHEDULED'];
+    if (TERMINAL.includes((status || '').toUpperCase())) {
+        const label = STATUS_LABEL[status] || status;
+        return { label, color: STATUS_COLOR[label] || 'light' };
+    }
+
+    // 3. For non-terminal appointments, approval_status drives the badge
+    if (appStatus === 'approved') {
+        return { label: 'Approved', color: STATUS_COLOR.Approved };
+    }
+
+    // Fallback to primary status
     const label = STATUS_LABEL[status] || status;
-    const color = STATUS_COLOR[label] || 'primary';
-    return { label, color };
+    return {
+        label,
+        color: STATUS_COLOR[label] || 'light'
+    };
 };
 
-/**
- * Format a date string 'YYYY-MM-DD' → 'Oct 24, 2024'
- */
+
 export const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    // Parse as local date to avoid UTC offset shifting the day
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    try {
+        let date;
+        // Plain date string YYYY-MM-DD — parse as LOCAL midnight to avoid UTC offset issues
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) {
+            const [y, m, d] = dateStr.trim().split('-').map(Number);
+            date = new Date(y, m - 1, d);
+        } else {
+            // ISO timestamp or other format
+            date = new Date(dateStr.replace(' ', 'T'));
+        }
+        if (!isValid(date)) return dateStr;
+        return format(date, 'eee, MMM d, yyyy');
+    } catch (e) {
+        return dateStr;
+    }
 };
 
-/**
- * Format a time string 'HH:MM:SS' or 'HH:MM' → '10:00 AM'
- */
 export const formatTime = (timeStr) => {
     if (!timeStr) return '';
-    const [hourStr, minuteStr] = timeStr.split(':');
-    const hour = parseInt(hourStr, 10);
-    const minute = minuteStr;
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const display = hour % 12 || 12;
-    return `${display}:${minute} ${period}`;
+    try {
+        let date;
+        if (timeStr.includes('T') || timeStr.includes(' ')) {
+            date = new Date(timeStr.replace(' ', 'T'));
+        } else {
+            // Handle "HH:mm:ss" or "HH:mm"
+            const [h, m] = timeStr.split(':');
+            date = new Date();
+            date.setHours(parseInt(h, 10), parseInt(m, 10), 0);
+        }
+        
+        if (!isValid(date)) return timeStr;
+        return format(date, 'h:mm aa');
+    } catch (e) {
+        return timeStr;
+    }
 };
 
-/**
- * Format an ISO timestamp string → 'Oct 24, 2024, 10:00 AM'
- */
-export const formatFullDateTime = (isoStr) => {
-    if (!isoStr) return '';
-    return new Date(isoStr).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true,
-    });
+export const formatFullDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr.replace(' ', 'T'));
+        if (!isValid(date)) return dateStr;
+        return format(date, 'MMM d, yyyy, h:mm aa');
+    } catch (e) {
+        return dateStr;
+    }
 };
 
-// --- Hook ---
+// Alias for convenience
+export const formatDateTime = formatFullDateTime;
 
-const DEFAULT_LIMIT = 5;
+export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = {}) => {
+    const { 
+        appointments: allAppointments = [], 
+        loading, 
+        error, 
+        stats, 
+        refresh 
+    } = useAppointmentState();
 
-const useAppointments = ({ status = '', sort = 'desc', limit = DEFAULT_LIMIT } = {}) => {
-    const { token } = useAuth();
-    const [appointments, setAppointments] = useState([]);
-    const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-
-    const fetch = useCallback(async () => {
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams({ page, limit, sort });
-            if (status) params.set('status', status);
-
-            const data = await api.get(`/appointments/my?${params}`, token);
-
-            setAppointments(data.appointments || []);
-            setTotal(data.total || 0);
-        } catch (err) {
-            setError(err.message || 'Failed to load appointments.');
-        } finally {
-            setLoading(false);
-        }
-    }, [token, status, sort, page, limit]);
-
+    // Reset page when status changes
     useEffect(() => {
-        fetch();
-    }, [fetch]);
+        setPage(1);
+    }, [status]);
+
+    // Helpers for consistent filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isApproved = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        const as = (a.approval_status || '').toLowerCase();
+        return (as === 'approved' || s === 'CONFIRMED') && !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes(s);
+    }, []);
+
+    const isPending = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        const as = (a.approval_status || '').toLowerCase();
+        return s === 'PENDING' && as !== 'approved' && as !== 'rejected';
+    }, []);
+
+    const isRejected = useCallback((a) => (a.approval_status || '').toLowerCase() === 'rejected', []);
+
+    const isHistoryStatus = useCallback((a) => {
+        const s = (a.status || '').toUpperCase();
+        const as = (a.approval_status || '').toLowerCase();
+        return ['COMPLETED', 'CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes(s) && as !== 'rejected';
+    }, []);
+
+    const filtered = useMemo(() => {
+        let result = allAppointments;
+        if (status && status !== 'all') {
+            if (status === 'upcoming') result = result.filter(isApproved);
+            else if (status === 'requests') result = result.filter(a => isApproved(a) || isPending(a) || isRejected(a));
+            else if (status === 'pending') result = result.filter(isPending);
+            else if (status === 'approved') result = result.filter(isApproved);
+            else if (status === 'decline') result = result.filter(isRejected);
+            else if (status === 'history') result = result.filter(isHistoryStatus);
+            else if (status === 'completed') result = result.filter(a => (a.status || '').toUpperCase() === 'COMPLETED');
+            else if (status === 'cancel') result = result.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected');
+        }
+        return [...result].sort((a, b) => {
+            const dateA = new Date(`${a.appointment_date}T${a.start_time}`);
+            const dateB = new Date(`${b.appointment_date}T${b.start_time}`);
+            return sort === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+    }, [allAppointments, status, sort, isApproved, isPending, isRejected, isHistoryStatus]);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+    const paginated = useMemo(() => {
+        const start = (page - 1) * limit;
+        return filtered.slice(start, start + limit);
+    }, [filtered, page, limit]);
+
+    const counts = useMemo(() => {
+        return {
+            all: allAppointments.filter(a => !['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'RESCHEDULED'].includes((a.status || '').toUpperCase())).length,
+            upcoming: allAppointments.filter(isApproved).length,
+            requests: allAppointments.filter(a => isApproved(a) || isPending(a) || isRejected(a)).length,
+            approved: allAppointments.filter(isApproved).length,
+            pending: allAppointments.filter(isPending).length,
+            decline: allAppointments.filter(isRejected).length,
+            history: allAppointments.filter(isHistoryStatus).length,
+            completed: allAppointments.filter(a => (a.status || '').toUpperCase() === 'COMPLETED').length,
+            cancel: allAppointments.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected').length,
+        };
+    }, [allAppointments, isApproved, isPending, isRejected, isHistoryStatus]);
 
     const goToPage = useCallback((p) => setPage(p), []);
     const prevPage = useCallback(() => setPage((p) => Math.max(1, p - 1)), []);
-    const nextPage = useCallback(() => setPage((p) => Math.min(totalPages, p + 1)), [totalPages]);
-    const refresh = useCallback(() => fetch(), [fetch]);
+    const nextPage = useCallback((p) => setPage((p) => Math.min(totalPages, p + 1)), [totalPages]);
 
     return {
-        appointments,
-        total,
-        page,
-        totalPages,
+        appointments: paginated,
+        total: filtered.length,
+        stats,
+        counts,
         loading,
         error,
+        page,
+        totalPages,
         goToPage,
         prevPage,
         nextPage,
-        refresh,
+        refresh
     };
 };
 

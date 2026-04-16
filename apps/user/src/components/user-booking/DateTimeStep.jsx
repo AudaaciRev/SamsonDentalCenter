@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Lock, X, AlertCircle, RefreshCw, Clock, Plus, ArrowRight, Hourglass, Calendar, MousePointer2, Loader2, CheckCircle2, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronRight, Lock, X, AlertCircle, RefreshCw, Clock, Plus, ArrowRight, Hourglass, Calendar, MousePointer2, Loader2, CheckCircle2, CalendarDays, Check, Users, CalendarX } from 'lucide-react';
 import { api } from '../../utils/api';
 import useSlots from '../../hooks/useSlots';
+import ErrorState from '../common/ErrorState';
 import JoinWaitlistModal from './JoinWaitlistModal';
 import WaitlistOnlyWarningModal from './WaitlistOnlyWarningModal';
 
@@ -18,15 +19,20 @@ const DateTimeStep = ({
     serviceTier, // ✅ NEW: Tier to decide whether to show specialist selection
     sessionId,
     slotHold,
+    userWaitlist = [], // ✅ NEW: Prop from parent
+    disableWaitlist = false, // ✅ NEW: Disable waitlist functionality for reschedules
 }) => {
     const [specialists, setSpecialists] = useState([]);
-    const [specialistsLoading, setSpecialistsLoading] = useState(false);
+    const [specialistsLoading, setSpecialistsLoading] = useState(true);
+    const [specialistsError, setSpecialistsError] = useState(null);
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
     const [waitlistSlot, setWaitlistSlot] = useState(null);
     // ✅ NEW: Add validation error state
     const [validationError, setValidationError] = useState(null);
     const [pendingSlot, setPendingSlot] = useState(null);
     const [showWaitlistOnlyWarning, setShowWaitlistOnlyWarning] = useState(false);
+    const [isDoctorDropdownOpen, setIsDoctorDropdownOpen] = useState(false);
+    const [pendingDate, setPendingDate] = useState(null);
 
     // ✅ Slot holding for user booking (passed from parent)
     const { activeHold, holdSlot, releaseHold, formattedTime, holdLoading, holdError, timeRemaining } = slotHold;
@@ -82,16 +88,19 @@ const DateTimeStep = ({
         return days;
     }, [viewDate]);
 
-    // ✅ Fetch specialists if service is specialized
+    // ✅ Fetch qualified specialists for this service
     useEffect(() => {
-        if (serviceTier === 'specialized' && serviceId) {
+        if (serviceId) {
             const fetchSpecialists = async () => {
+                setSpecialists([]); // 🎯 Clear old data to trigger skeleton
                 setSpecialistsLoading(true);
+                setSpecialistsError(null);
                 try {
                     const response = await api.get(`/services/${serviceId}/specialists`);
                     setSpecialists(response.specialists || []);
                 } catch (err) {
                     console.error('Failed to fetch specialists:', err);
+                    setSpecialistsError(err.message);
                 } finally {
                     setSpecialistsLoading(false);
                 }
@@ -100,7 +109,7 @@ const DateTimeStep = ({
         } else {
             setSpecialists([]);
         }
-    }, [serviceId, serviceTier]);
+    }, [serviceId]);
 
     // ✅ FIX: Use local date parts to avoid timezone shifting (e.g. UTC-8 or UTC+8 issues)
     const formatDateKey = (d) => {
@@ -117,6 +126,7 @@ const DateTimeStep = ({
         slots,
         nextAvailableDate,
         loading: slotsLoading,
+        isPending,
         refetch: refetchSlots,
     } = useSlots(
         selectedDate || null,
@@ -126,12 +136,31 @@ const DateTimeStep = ({
         formData?.dentist_id || null, // 🎯 Pass selected dentist to filter slots
     );
 
-    const handleDateClick = (date) => {
+    const isLoading = slotsLoading || isPending;
+    const isProcessing = isLoading || !!pendingSlot || !!pendingDate || holdLoading;
+
+    // ✅ Clear pendingDate when slots finish loading
+    useEffect(() => {
+        if (!isLoading) {
+            setPendingDate(null);
+        }
+    }, [isLoading]);
+
+    const handleDateClick = async (date) => {
+        if (isLoading) return; // ✅ Block while loading
         const key = formatDateKey(date);
+        
+        // If clicking a NEW date while a slot is already held (primary booking), release that hold first
+        if (selectedTime && selectedDate !== key) {
+            await releaseHold();
+        }
+
+        setPendingDate(key);
         // Toggle Logic: If clicking the SAME date that's already selected, clear it
         if (selectedDate === key) {
-            releaseHold();
+            await releaseHold();
             handleTimeUpdate({ date: '', time: '' });
+            setPendingDate(null);
         } else {
             handleTimeUpdate({ date: key, time: '' });
         }
@@ -155,7 +184,7 @@ const DateTimeStep = ({
                     handleTimeUpdate({ time: '' });
                 } else {
                     if (!serviceId || !selectedDate) return;
-                    const holdResult = await holdSlot(serviceId, selectedDate, slotData.rawTime, formData?.dentist_id);
+                    const holdResult = await holdSlot(serviceId, selectedDate, slotData.rawTime, formData?.dentist_id || null);
                     if (holdResult?.success) {
                         handleTimeUpdate({ time: slotData.rawTime });
                     } else if (holdResult?.error === 'SLOT_TAKEN') {
@@ -164,8 +193,16 @@ const DateTimeStep = ({
                     }
                 }
             } else {
+                if (disableWaitlist) return; // Do not process waitlist logic if disabled
+
                 // Full slot — toggle or show waitlist modal
                 const isSelectedForWaitlist = formData?.waitlist_time === slotData.rawTime;
+                const isAlreadyInDB = isSlotWaitlisted(slotData.rawTime);
+
+                if (isAlreadyInDB) {
+                    // DO NOTHING - User is already on the waitlist for this slot
+                    return;
+                }
 
                 if (isSelectedForWaitlist) {
                     // ✅ Toggle OFF: If already on waitlist for this slot, remove it
@@ -201,6 +238,18 @@ const DateTimeStep = ({
             waitlist_date: '',
             waitlist_time: '',
         });
+    };
+
+    // ✅ NEW: Check if user is already waitlisted for this specific slot
+    const isSlotWaitlisted = (time) => {
+        if (!time || !selectedDate || !serviceId) return false;
+        
+        return (userWaitlist || []).some(
+            (w) =>
+                w.preferred_date === selectedDate &&
+                String(w.service_id) === String(serviceId) &&
+                w.preferred_time?.substring(0, 5) === time.substring(0, 5)
+        );
     };
 
     // ✅ NEW: Clear booking selection (user can clear independently)
@@ -283,22 +332,29 @@ const DateTimeStep = ({
         return `${dayName}, ${monthNames[date.getMonth()]} ${date.getDate()} at ${activeHold.time}`;
     };
 
-    // Filtered Slots for "Load More"
     const visibleSlots = useMemo(() => {
         if (!slots) return [];
         return slots
             .filter(slot => {
-                const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
+                // Hide fully booked slots if waitlisting is disabled
+                if (disableWaitlist && slot.available <= 0 && !(activeHold?.time === slot.rawTime && selectedDate === activeHold.date)) {
+                    return false;
+                }
+                // Hide slots that the user is already waitlisted for
+                const isWaitlisted = isSlotWaitlisted(slot.rawTime);
+                if (isWaitlisted) return false;
+                
                 // For user booking, we show ALL slots (including full ones) because they can join waitlist
                 return true; 
             })
             .slice(0, visibleCount);
-    }, [slots, visibleCount, activeHold, selectedDate]);
+    }, [slots, visibleCount, activeHold, selectedDate, disableWaitlist]);
 
     const hasMoreSlots = slots && slots.length > visibleCount;
 
     // ✅ NEW: Handle specialist change (reset time and release hold)
     const handleSpecialistChange = async (dentistId) => {
+        if (isLoading) return; // ✅ Block while loading
         setValidationError(null);
         if (formData.time) {
             await releaseHold();
@@ -310,115 +366,283 @@ const DateTimeStep = ({
         });
     };
 
-    // Specialist list Component
-    const SpecialistSidebar = () => (
-        <div className='flex flex-col gap-3 min-w-[200px]'>
-            <h3 className='text-sm font-semibold text-slate-700 mb-1'>Select Specialist</h3>
-            <button
-                onClick={() => handleSpecialistChange('')}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                    !formData?.dentist_id
-                        ? 'border-brand-500 bg-brand-50 shadow-sm'
-                        : 'border-slate-100 bg-white hover:border-brand-200'
-                }`}
-            >
-                <div className='w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400'>
-                    ✨
-                </div>
-                <div>
-                    <p className='text-sm font-bold text-slate-900'>Any Specialist</p>
-                    <p className='text-xs text-slate-500'>Pick for best availability</p>
-                </div>
-            </button>
+    // Custom Premium Doctor Dropdown Component
+    const DoctorDropdown = () => {
+        const getDoctorName = (s) => {
+            if (!s?.profile) return 'Any available dentist';
+            const { first_name, last_name, suffix, full_name } = s.profile;
+            if (first_name || last_name) {
+                return `Dr. ${first_name} ${last_name}`.trim();
+            }
+            return full_name;
+        };
 
-            {specialistsLoading ? (
-                <div className='p-4 text-center text-xs text-slate-400'>Loading dentists...</div>
-            ) : (
-                specialists.map((s) => (
-                    <button
-                        key={s.id}
-                        onClick={() => handleSpecialistChange(s.id)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                            formData?.dentist_id === s.id
-                                ? 'border-brand-500 bg-brand-50 shadow-sm'
-                                : 'border-slate-100 bg-white hover:border-brand-200'
-                        }`}
-                    >
-                        {s.photo_url ? (
-                            <img
-                                src={s.photo_url}
-                                alt={s.profile?.full_name}
-                                className='w-10 h-10 rounded-full object-cover border border-slate-200'
-                            />
-                        ) : (
-                            <div className='w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold'>
-                                {s.profile?.full_name?.charAt(0)}
-                            </div>
-                        )}
-                        <div>
-                            <p className='text-sm font-bold text-slate-900'>Dr. {s.profile?.full_name}</p>
-                            <p className='text-xs text-slate-500 capitalize'>{s.tier} Specialist</p>
+        const selectedDoctor = specialists.find(s => s.id === formData?.dentist_id);
+        const initials = selectedDoctor 
+            ? ((selectedDoctor.profile?.first_name?.[0] || '') + (selectedDoctor.profile?.last_name?.[0] || '')).toUpperCase() || 'D'
+            : '✨';
+
+        return (
+            <div className='relative w-full mb-10'>
+                <h3 className='text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2'>
+                    <div className='w-1.5 h-1.5 rounded-full bg-brand-500' />
+                    Select Dentist
+                </h3>
+                
+                {/* Main Trigger Button */}
+                <button
+                    type="button"
+                    onClick={() => !isProcessing && setIsDoctorDropdownOpen(!isDoctorDropdownOpen)}
+                    disabled={isProcessing}
+                    className={`w-full flex items-center justify-between p-4 bg-white dark:bg-white/[0.02] border-2 rounded-2xl transition-all shadow-theme-sm group ${
+                        isDoctorDropdownOpen ? 'border-brand-500 ring-4 ring-brand-500/10' : 'border-gray-100 dark:border-gray-800 hover:border-brand-200'
+                    } ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}
+                >
+                    <div className='flex items-center gap-4'>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 transition-all ${
+                            !formData?.dentist_id ? 'bg-brand-50 text-brand-500' : 'bg-slate-50 dark:bg-white/5'
+                        }`}>
+                            {selectedDoctor?.photo_url ? (
+                                <img src={selectedDoctor.photo_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                            ) : !formData?.dentist_id ? <Users size={24} /> : initials}
                         </div>
-                    </button>
-                ))
-            )}
-        </div>
-    );
+                        <div className="flex flex-col text-left">
+                            <span className="text-[15px] font-black text-slate-900 dark:text-white leading-tight">
+                                {selectedDoctor ? getDoctorName(selectedDoctor) : 'Any available dentist'}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-400">
+                                {selectedDoctor 
+                                    ? (serviceTier === 'specialized' ? 'Specialist' : 'Dentist') 
+                                    : "We'll match you with available dentist"}
+                            </span>
+                        </div>
+                    </div>
+                    <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${isDoctorDropdownOpen ? 'rotate-180 text-brand-500' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu Overlay */}
+                {isDoctorDropdownOpen && (
+                    <>
+                        <div className='fixed inset-0 z-40' onClick={() => setIsDoctorDropdownOpen(false)} />
+                        <div className='absolute top-[calc(100%+8px)] left-0 w-full bg-white dark:bg-[#0f172a] border-2 border-slate-100 dark:border-gray-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200'>
+                            <div className='max-h-[300px] overflow-y-auto p-2 scrollbar-hide'>
+                                {/* Any Dentist Option */}
+                                <button
+                                    onClick={() => { handleSpecialistChange(''); setIsDoctorDropdownOpen(false); }}
+                                    className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left mb-1 ${
+                                        !formData?.dentist_id ? 'bg-brand-50 text-brand-600' : 'hover:bg-slate-50 dark:hover:bg-white/5'
+                                    }`}
+                                >
+                                    <div className='w-10 h-10 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg'>
+                                        <Users size={20} />
+                                    </div>
+                                    <div className='flex flex-col'>
+                                        <span className='text-sm font-black'>Any available dentist</span>
+                                        <span className='text-[10px] font-bold opacity-70'>We'll match you with available dentist</span>
+                                    </div>
+                                    {!formData?.dentist_id && <Check size={18} className='ml-auto text-brand-500' />}
+                                </button>
+
+                                {/* Doctor Options */}
+                                {specialists.map(s => {
+                                    const isSelected = formData?.dentist_id === s.id;
+                                    const doctorInitials = ((s.profile?.first_name?.[0] || '') + (s.profile?.last_name?.[0] || '')).toUpperCase() || 'D';
+                                    return (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => { handleSpecialistChange(s.id); setIsDoctorDropdownOpen(false); }}
+                                            className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left mb-1 ${
+                                                isSelected ? 'bg-brand-50 text-brand-600' : 'hover:bg-slate-50 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div className='w-10 h-10 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden'>
+                                                {s.photo_url ? <img src={s.photo_url} alt="" className="w-full h-full object-cover" /> : <span className='text-xs font-black text-slate-400'>{doctorInitials}</span>}
+                                            </div>
+                                            <div className='flex flex-col'>
+                                                <span className='text-sm font-black'>{getDoctorName(s)}</span>
+                                                <span className='text-[10px] font-bold opacity-70'>
+                                                    {serviceTier === 'specialized' ? 'Specialist' : 'Dentist'}
+                                                </span>
+                                            </div>
+                                            {isSelected && <Check size={18} className='ml-auto text-brand-500' />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        );
+    };
+
+    const hasNoSpecialists = !specialistsLoading && specialists.length === 0;
+
+    // ✅ Initial Loading State: Prevent flicker by showing a high-fidelity pulse skeleton
+    if (specialistsLoading && specialists.length === 0) {
+        return (
+            <div className="flex flex-col gap-10 animate-pulse py-2">
+                {/* Header Skeleton */}
+                <div className='mb-8 sm:mb-10'>
+                    <div className='h-7 sm:h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-sm mb-4' />
+                    <div className='h-4 bg-slate-50 dark:bg-gray-800/50 rounded-xl w-full max-w-2xl' />
+                </div>
+                
+                {/* Doctor Select Skeleton */}
+                <div className="h-20 bg-slate-50 dark:bg-white/[0.02] border-2 border-slate-100 dark:border-slate-800 rounded-3xl w-full flex items-center px-4 gap-4">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                    <div className="flex flex-col gap-2 flex-grow">
+                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-lg w-1/3" />
+                        <div className="h-3 bg-slate-50 dark:bg-gray-800/50 rounded-lg w-1/4" />
+                    </div>
+                    <div className="w-5 h-5 bg-slate-100 dark:bg-slate-800 rounded-md" />
+                </div>
+                
+                <div className='grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-x-8 gap-y-10 mb-10'>
+                    {/* Column 1: Calendar Skeleton */}
+                    <div className="flex flex-col gap-5">
+                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-lg w-32 ml-1" />
+                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-slate-800 rounded-[32px] sm:rounded-[40px] p-6 h-[440px]">
+                            <div className="flex justify-between items-center mb-8">
+                                <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-xl w-32" />
+                                <div className="flex gap-2">
+                                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-7 gap-4">
+                                {[...Array(35)].map((_, i) => (
+                                    <div key={i} className="aspect-square bg-slate-100 dark:bg-slate-800/50 rounded-xl" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Column 2: Slots Skeleton */}
+                    <div className="flex flex-col gap-5">
+                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-lg w-40 ml-1" />
+                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-slate-800 rounded-[32px] sm:rounded-[40px] p-6 h-[440px]">
+                            <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-xl w-32 mb-10" />
+                            <div className="grid grid-cols-2 xsm:grid-cols-3 gap-3">
+                                {[...Array(12)].map((_, i) => (
+                                    <div key={i} className="h-12 bg-slate-100 dark:bg-slate-800/50 rounded-xl" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Footer Skeleton */}
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4 pt-4 mt-6">
+                    <div className="h-6 bg-slate-100 dark:bg-slate-800 rounded-lg w-20" />
+                    <div className="h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl w-48" />
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* Header Section */}
-            <div className='mb-8 sm:mb-10'>
-                <h2 className='text-3xl font-bold text-slate-900 dark:text-white mb-3 font-display tracking-tight uppercase'>
-                    Pick Date & Time
-                </h2>
-                <p className='text-slate-500 dark:text-slate-400 text-sm md:text-base max-w-2xl leading-relaxed'>
-                    Choose your preferred appointment date and available time slot. {serviceTier === 'specialized' && 'Select a specific dentist or "Any Specialist" to see availability.'}
-                </p>
-            </div>
-
-            {/* ERROR / INFO Banners */}
-            {(holdError || validationError) && (
-                <div className='mb-6 space-y-3'>
-                    {holdError && (
-                        <div className='p-3.5 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-2xl flex gap-3'>
-                            <AlertCircle size={16} className='text-red-500 shrink-0' />
-                            <p className='text-xs text-red-700 dark:text-red-400 font-bold'>{holdError}</p>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 relative pb-10 sm:pb-6">
+            {/* FLOATING TOAST LOGIC (SweetAlert style) - Positioned under header */}
+            {(holdError || (validationError && !validationError.includes('fetch'))) && (
+                <div className="fixed top-[4.5rem] sm:top-24 right-4 sm:right-6 z-[9999] flex flex-col gap-3 max-w-[calc(100vw-2rem)] sm:max-w-sm pointer-events-none animate-in slide-in-from-right-10 fade-in duration-500">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-3 sm:p-5 flex gap-3 sm:gap-4 items-center ring-1 ring-black/5 pointer-events-auto">
+                        <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${holdError ? 'bg-red-500 shadow-red-500/20' : 'bg-amber-500 shadow-amber-500/20'} text-white flex items-center justify-center shrink-0 shadow-lg`}>
+                            <AlertCircle size={18} className="sm:w-6 sm:h-6" />
                         </div>
-                    )}
-                    {validationError && (
-                        <div className='p-3.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-2xl flex gap-3'>
-                            <AlertCircle size={16} className='text-amber-500 shrink-0' />
-                            <p className='text-xs text-amber-700 dark:text-amber-400 font-bold'>{validationError}</p>
+                        <div className="flex-grow min-w-0">
+                            <h4 className="text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">Attention Required</h4>
+                            <p className="text-[12px] sm:text-[14px] font-bold text-gray-900 dark:text-white leading-tight break-words">
+                                {holdError || validationError}
+                            </p>
                         </div>
-                    )}
+                        <button 
+                            onClick={() => {
+                                if (holdError) slotHold.setHoldError?.(null);
+                                setValidationError(null);
+                            }} 
+                            className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        >
+                            <X size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* Specialist Selection (If specialized) */}
-            {serviceTier === 'specialized' && (
-                <div className="mb-10">
-                    <SpecialistSidebar />
+            {specialistsError?.toLowerCase().includes('fetch') ? (
+                <div className='grow flex flex-col py-10'>
+                     <ErrorState 
+                        error={specialistsError} 
+                        onRetry={() => window.location.reload()} 
+                        title="Connection Issues"
+                    />
+                </div>
+            ) : (
+                <>
+                    {/* Header Section */}
+                    {!hasNoSpecialists && (
+                        <div className='mb-8 sm:mb-10'>
+                            <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3 font-display tracking-tight uppercase'>
+                                Pick Date & Time
+                            </h2>
+                            <p className='text-slate-500 dark:text-slate-400 text-sm md:text-base max-w-2xl leading-relaxed'>
+                                Choose your preferred appointment date and available time slot. {serviceTier === 'specialized' ? 'Select a specific dentist or "Any Specialist" to see availability.' : 'Select a specific dentist or stay with "Any Dentist" for more options.'}
+                            </p>
+                        </div>
+                    )}
+
+            {/* FALLBACK: No Specialists Available for this Service */}
+            {hasNoSpecialists && (
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-[40px] shadow-theme-sm my-10">
+                    <div className="w-24 h-24 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mb-8">
+                        <CalendarX size={44} className="text-brand-500" />
+                    </div>
+                    
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-tight font-display">
+                        No Available Appointments
+                    </h3>
+                    
+                    <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed mb-10 text-sm md:text-base font-medium">
+                        There are no available appointments for this service right now. Please try selecting another service or contact us for assistance.
+                    </p>
+                    
+                    <button 
+                        onClick={onBack}
+                        className="flex items-center justify-center gap-3 px-10 py-5 bg-brand-500 hover:bg-brand-600 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 active:scale-95 text-xs uppercase tracking-widest"
+                    >
+                        <ChevronLeft size={18} />
+                        Choose Another Service
+                    </button>
                 </div>
             )}
 
-            {/* SIDE-BY-SIDE Layout */}
-            <div className='grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] gap-8 mb-10'>
+            {!hasNoSpecialists && (
+                <>
+                    {/* FULL WIDTH DENTIST SELECTION */}
+                    <DoctorDropdown />
+
+            {/* 2-COLUMN LAYOUT */}
+            <div className='grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-x-8 gap-y-10 mb-10'>
                 
-                {/* Left Column: Calendar Grid */}
-                <div className='bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-3xl p-5 shadow-theme-sm h-fit'>
+                {/* Column 1: Select Date (Calendar) */}
+                <div className={`flex flex-col transition-all duration-300 ${isProcessing ? 'opacity-40 pointer-events-none cursor-wait' : ''}`}>
+                    <h3 className='text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2'>
+                        <div className='w-1.5 h-1.5 rounded-full bg-brand-500' />
+                        Select Date
+                    </h3>
+                    <div className='bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-3xl p-5 shadow-theme-sm h-full'>
                     <div className='flex items-center justify-between mb-5'>
                         <h3 className='text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight uppercase'>
                             <div className='p-1.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg'><Calendar size={14} className='text-brand-500' /></div>
                             {viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </h3>
                         <div className='flex gap-1.5'>
-                            <button onClick={() => navigateMonth('prev')} disabled={!canGoPrev} className='p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-white dark:hover:bg-gray-700 transition-all disabled:opacity-30 hover:shadow-theme-xs'><ChevronLeft size={18} className='text-gray-600 dark:text-gray-400' /></button>
-                            <button onClick={() => navigateMonth('next')} disabled={!canGoNext} className='p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-white dark:hover:bg-gray-700 transition-all disabled:opacity-30 hover:shadow-theme-xs'><ChevronRight size={18} className='text-gray-600 dark:text-gray-400' /></button>
+                            <button onClick={() => navigateMonth('prev')} disabled={!canGoPrev || isProcessing} className='p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-white dark:hover:bg-gray-700 transition-all disabled:opacity-30 hover:shadow-theme-xs'><ChevronLeft size={18} className='text-gray-600 dark:text-gray-400' /></button>
+                            <button onClick={() => navigateMonth('next')} disabled={!canGoNext || isProcessing} className='p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-white dark:hover:bg-gray-700 transition-all disabled:opacity-30 hover:shadow-theme-xs'><ChevronRight size={18} className='text-gray-600 dark:text-gray-400' /></button>
                         </div>
                     </div>
                     <div className='grid grid-cols-7 gap-1 mb-2'>
-                        {dayNames.map(day => (<div key={day} className='text-[10px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center py-2'>{day}</div>))}
+                        {dayNames.map(day => (<div key={day} className='text-[10px] sm:text-[11px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest text-center py-2'>{day}</div>))}
                     </div>
                     <div className='grid grid-cols-7 gap-1.5'>
                         {calendarDays.map((date, idx) => {
@@ -427,20 +651,31 @@ const DateTimeStep = ({
                             const isPast = date < today;
                             const isToday = date.getTime() === today.getTime();
                             const isSelected = key === selectedDate;
-                            const isDisabled = isPast || isToday || date.getDay() === 0 || date > maxDate;
+                            const isDisabled = isPast || isToday || date.getDay() === 0 || date > maxDate || isProcessing;
                             if (!isCurrentMonth) return <div key={idx} className="aspect-square" />;
                             return (
                                 <button key={idx} onClick={() => !isDisabled && handleDateClick(date)} disabled={isDisabled} className={`relative flex flex-col items-center justify-center aspect-square rounded-xl transition-all duration-300 ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-105 z-10' : isDisabled ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-30 shadow-none bg-transparent border-2 border-slate-100/50 dark:border-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 text-gray-700 dark:text-gray-300 shadow-theme-xs'}`}>
-                                    <span className={`text-[13px] sm:text-sm font-bold ${isSelected ? 'text-white' : ''}`}>{date.getDate()}</span>
+                                    <span className={`text-[13px] sm:text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
+                                        {pendingDate === key ? (
+                                            <Loader2 size={16} className={`animate-spin ${isSelected ? 'text-white' : 'text-brand-500'}`} />
+                                        ) : (
+                                            date.getDate()
+                                        )}
+                                    </span>
                                     {isToday && !isSelected && <div className="absolute bottom-1 sm:bottom-1.5 w-1 h-1 rounded-full bg-brand-500" />}
                                 </button>
                             );
                         })}
                     </div>
                 </div>
+            </div>
 
-                {/* Right Column: Time Selection / Empty State */}
-                <div className='flex flex-col min-h-[400px]'>
+            {/* Column 2: Select Time (Slots) */}
+            <div className='flex flex-col h-full'>
+                    <h3 className='text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2'>
+                        <div className='w-1.5 h-1.5 rounded-full bg-brand-500' />
+                        Select Time
+                    </h3>
                     {!selectedDate ? (
                         <div className='flex-grow bg-gray-50 dark:bg-white/[0.02] border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500'>
                             <div className='bg-white dark:bg-gray-800 w-14 h-14 rounded-2xl flex items-center justify-center shadow-theme-sm mb-5'><MousePointer2 size={28} className='text-brand-500' /></div>
@@ -449,71 +684,74 @@ const DateTimeStep = ({
                         </div>
                     ) : (
                         <div className='animate-in fade-in slide-in-from-right-4 duration-500 h-full flex flex-col bg-gray-50/30 dark:bg-white/[0.01] border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl p-6'>
-                            <div className='flex items-center justify-between mb-5'>
-                                <h3 className='text-[15px] font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight uppercase'>
-                                    <div className='p-1.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg'><Clock size={16} className='text-brand-500' /></div>
-                                    Available Times
-                                </h3>
-                                <button onClick={refetchSlots} disabled={slotsLoading} className='flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-100 dark:border-gray-700 shadow-theme-xs transition-all disabled:opacity-50'><RefreshCw size={14} className={slotsLoading ? 'animate-spin' : ''} />Refresh</button>
-                            </div>
+                            <div className={`flex flex-col h-full ${isProcessing ? 'opacity-40 pointer-events-none cursor-wait' : ''}`}>
+                                <div className='flex items-center justify-between mb-5'>
+                                    <h3 className='text-[15px] font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight uppercase'>
+                                        <div className='p-1.5 bg-brand-50 dark:bg-brand-500/10 rounded-lg'><Clock size={16} className='text-brand-500' /></div>
+                                        Available Times
+                                    </h3>
+                                    <button onClick={refetchSlots} disabled={isProcessing} className='flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-100 dark:border-gray-700 shadow-theme-xs transition-all disabled:opacity-50'><RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />Refresh</button>
+                                </div>
 
-                            {slotsLoading ? (
-                                <div className='grid grid-cols-2 xsm:grid-cols-3 gap-3'>{[1, 2, 3, 4, 5, 6].map(i => <div key={i} className='h-12 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-xl' />)}</div>
-                            ) : visibleSlots && visibleSlots.length > 0 ? (
-                                <>
-                                    <div className='grid grid-cols-2 xsm:grid-cols-3 gap-3 mb-6'>
-                                        {visibleSlots.map((slot) => {
-                                            const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
-                                            const isSelectedForBooking = selectedTime === slot.rawTime && !pendingSlot;
-                                            const isSelectedForWaitlist = formData?.waitlist_time === slot.rawTime;
-                                            const isAvailable = slot.available > 0 || isHeldByMe;
-
-                                            return (
-                                                <button 
-                                                    key={slot.rawTime} 
-                                                    onClick={() => handleTimeClick(slot)} 
-                                                    disabled={holdLoading && !isSelectedForBooking}
-                                                    title={slot.available > 0 ? `${slot.available} slots available` : 'Fully booked - Join waitlist'}
-                                                    className={`py-3 rounded-xl text-[12px] font-bold transition-all relative flex items-center justify-center ${
-                                                        isSelectedForBooking && isAvailable
-                                                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10' 
-                                                        : isSelectedForWaitlist && !isAvailable
-                                                        ? 'bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 text-amber-900 dark:text-amber-100 shadow-lg shadow-amber-400/10 ring-4 ring-amber-400/10 opacity-100 scale-105 z-10'
-                                                        : isHeldByMe 
-                                                        ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400' 
-                                                        : isAvailable
-                                                        ? 'bg-white dark:bg-white/[0.03] border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-theme-sm'
-                                                        : 'bg-transparent dark:bg-transparent border-2 border-slate-100 dark:border-gray-800 text-slate-400 dark:text-slate-600 opacity-60'
-                                                    }`}
-                                                >
-                                                    {pendingSlot === slot.rawTime && (isAvailable || isSelectedForBooking) ? (
-                                                        <Loader2 size={16} className={`animate-spin ${isSelectedForBooking ? 'text-white' : 'text-brand-500'}`} />
-                                                    ) : (
-                                                        <>
-                                                            {slot.displayTime}
-                                                            {!isAvailable && <Lock size={10} className={`absolute top-2 right-2 ${isSelectedForWaitlist ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />}
-                                                            {isHeldByMe && !isSelectedForBooking && <Lock size={10} className='absolute top-2 right-2 text-brand-500' />}
-                                                        </>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
+                                {isLoading ? (
+                                    <div className='grid grid-cols-2 xsm:grid-cols-3 gap-3 cursor-wait'>
+                                        {[...Array(12)].map((_, i) => <div key={i} className='h-12 bg-gray-100 dark:bg-gray-800 animate-pulse rounded-xl' />)}
                                     </div>
-                                    
-                                    {hasMoreSlots && (
-                                        <button 
-                                            onClick={() => setVisibleCount(prev => prev + 18)}
-                                            className='mb-8 w-full py-3 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-[11px] font-black text-gray-500 hover:text-brand-500 hover:border-brand-200 dark:hover:border-brand-500/50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest bg-gray-50/50 dark:bg-gray-800/30'
-                                        >
-                                            <Plus size={14} />
-                                            Show More Times
-                                        </button>
-                                    )}
-                                </>
-                            ) : (
-                                <div className='p-8 bg-gray-50 dark:bg-white/[0.02] rounded-2xl text-center border-2 border-dashed border-gray-200 dark:border-gray-800 flex-grow flex flex-col items-center justify-center leading-relaxed'><p className='text-gray-500 text-[14px] font-bold mb-2'>No available slots.</p>{nextAvailableDate && <button onClick={() => {const d = new Date(nextAvailableDate);setViewDate(new Date(d.getFullYear(), d.getMonth(), 1));handleDateClick(d);}} className='text-brand-500 text-[13px] font-black hover:underline underline-offset-4'>Try {new Date(nextAvailableDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}</button>}</div>
-                            )}
+                                ) : visibleSlots && visibleSlots.length > 0 ? (
+                                    <>
+                                        <div className='grid grid-cols-2 xsm:grid-cols-3 gap-3 mb-6'>
+                                            {visibleSlots.map((slot) => {
+                                                const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
+                                                const isSelectedForBooking = selectedTime === slot.rawTime && !pendingSlot;
+                                                const isSelectedForWaitlist = formData?.waitlist_time === slot.rawTime;
+                                                const isAvailable = slot.available > 0 || isHeldByMe;
 
+                                                return (
+                                                    <button 
+                                                        key={slot.rawTime} 
+                                                        onClick={() => handleTimeClick(slot)} 
+                                                        disabled={holdLoading && !isSelectedForBooking}
+                                                        title={slot.available > 0 ? `${slot.available} slots available` : 'Fully booked - Join waitlist'}
+                                                        className={`py-3 rounded-xl text-[12px] font-bold transition-all relative flex items-center justify-center ${
+                                                            isSelectedForBooking && isAvailable
+                                                            ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10' 
+                                                            : isSelectedForWaitlist && !isAvailable
+                                                            ? 'bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 text-amber-900 dark:text-amber-100 shadow-lg shadow-amber-400/10 ring-4 ring-amber-400/10 opacity-100 scale-105 z-10'
+                                                            : isHeldByMe 
+                                                            ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400' 
+                                                            : isAvailable
+                                                            ? 'bg-white dark:bg-white/[0.03] border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-theme-sm'
+                                                            : 'bg-transparent dark:bg-transparent border-2 border-slate-100 dark:border-gray-800 text-slate-400 dark:text-slate-600 opacity-60'
+                                                        }`}
+                                                    >
+                                                        {pendingSlot === slot.rawTime && (isAvailable || isSelectedForBooking) ? (
+                                                            <Loader2 size={16} className={`animate-spin ${isSelectedForBooking ? 'text-white' : 'text-brand-500'}`} />
+                                                        ) : (
+                                                            <>
+                                                                {slot.displayTime}
+                                                                {!isAvailable && <Lock size={10} className={`absolute top-2 right-2 ${isSelectedForWaitlist ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />}
+                                                                {isHeldByMe && !isSelectedForBooking && <Lock size={10} className='absolute top-2 right-2 text-brand-500' />}
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        {hasMoreSlots && (
+                                            <button 
+                                                onClick={() => setVisibleCount(prev => prev + 18)}
+                                                className='mb-8 w-full py-3 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-[11px] font-black text-gray-500 hover:text-brand-500 hover:border-brand-200 dark:hover:border-brand-500/50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest bg-gray-50/50 dark:bg-gray-800/30'
+                                            >
+                                                <Plus size={14} />
+                                                Show More Times
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className='p-8 bg-gray-50 dark:bg-white/[0.02] rounded-2xl text-center border-2 border-dashed border-gray-200 dark:border-gray-800 flex-grow flex flex-col items-center justify-center leading-relaxed'><p className='text-gray-500 text-[14px] font-bold mb-2'>No available slots.</p>{nextAvailableDate && <button onClick={() => {const d = new Date(nextAvailableDate);setViewDate(new Date(d.getFullYear(), d.getMonth(), 1));handleDateClick(d);}} className='text-brand-500 text-[13px] font-black hover:underline underline-offset-4'>Try {new Date(nextAvailableDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}</button>}</div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -598,16 +836,11 @@ const DateTimeStep = ({
             )}
 
             {/* Navigation Footer */}
-            <div className='flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 sm:gap-0 pt-6 sm:pt-8 border-t border-gray-100 dark:border-gray-700'>
-                <button onClick={onBack} className='w-full sm:w-auto text-gray-400 hover:text-slate-900 dark:text-gray-500 dark:hover:text-white font-black text-[11px] px-8 py-4 transition-colors uppercase tracking-[0.2em]'>Back</button>
-                <button 
-                    onClick={handleNext} 
-                    disabled={!isValidSelection()} 
-                    className='w-full sm:w-auto bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-10 py-4.5 rounded-2xl transition-all shadow-xl shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm uppercase tracking-[0.1em]'
-                >
-                    Continue to Info
-                    <ArrowRight size={18} />
-                </button>
+            <div className='fixed bottom-0 left-0 right-0 sm:relative z-40 px-6 py-4 sm:px-0 sm:py-0 sm:mt-6 sm:pt-2 bg-white/95 dark:bg-gray-900/95 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border-t border-gray-100 dark:border-gray-800 sm:border-t-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] sm:shadow-none transition-all'>
+                <div className='flex items-center gap-3 w-full sm:justify-between'>
+                    <button onClick={onBack} disabled={isProcessing} className='flex-1 sm:flex-none sm:min-w-[120px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[11px] sm:text-sm px-6 py-3.5 sm:px-8 transition-colors uppercase tracking-widest bg-gray-50 dark:bg-gray-800 sm:bg-transparent rounded-2xl sm:rounded-2xl border border-transparent shadow-theme-xs disabled:opacity-30'>Back</button>
+                    <button onClick={handleNext} disabled={!isValidSelection() || isProcessing} className='flex-[2] sm:flex-none sm:min-w-[240px] bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-10 sm:py-4 rounded-2xl transition-all shadow-theme-md disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-2.5 text-[12px] sm:text-base uppercase tracking-widest'>Continue to Info<ArrowRight size={20} className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                </div>
             </div>
 
             {/* Waitlist Modal */}
@@ -635,7 +868,11 @@ const DateTimeStep = ({
                     onCancel={() => setShowWaitlistOnlyWarning(false)}
                 />
             )}
-        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
     );
 };
 

@@ -1,17 +1,13 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageLoader from '../components/common/PageLoader';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
     if (loading) {
-        return (
-            <div className='min-h-screen flex items-center justify-center'>
-                <LoadingSpinner message='Checking authorization...' />
-            </div>
-        );
+        return <PageLoader message='Verifying your identity...' />;
     }
 
     if (!user) {

@@ -3,10 +3,12 @@ import {
     getPatientAppointments,
     getAppointmentById,
     bookAppointmentGuest,
+    getPatientAppointmentStats,
     cancelAppointment,
     rescheduleAppointment,
     cancelGuestAppointmentAction,
     insertConfirmedGuestAppointment,
+    rescheduleGuestAppointment,
 } from '../services/appointment.service.js';
 import {
     confirmAppointmentByToken,
@@ -37,9 +39,9 @@ import { APPOINTMENT_SOURCE } from '../utils/constants.js';
  * @param {string} phone - Guest phone number
  * @param {string} full_name - Guest full name
  */
-export const bookGuest = async (req, res) => {
+export const bookGuest = async (req, res, next) => {
     try {
-        const { service_id, date, time, email, phone, full_name, user_session_id } = req.body;
+        const { service_id, date, time, email, phone, guestNameParts, user_session_id } = req.body;
 
         const result = await bookAppointmentGuest(
             service_id,
@@ -47,7 +49,7 @@ export const bookGuest = async (req, res) => {
             time,
             email,
             phone,
-            full_name,
+            guestNameParts,
             user_session_id,
         );
         return res.status(result.booked ? 201 : 409).json(result);
@@ -64,7 +66,7 @@ export const bookGuest = async (req, res) => {
  * Option A: Return JSON (if frontend handles the redirect)
  * Option B: Redirect to frontend success/error page
  */
-export const confirmEmail = async (req, res) => {
+export const confirmEmail = async (req, res, next) => {
     try {
         const { token } = req.query;
 
@@ -103,7 +105,7 @@ export const resendConfirmation = async (req, res) => {
  */
 export const bookUser = async (req, res, next) => {
     try {
-        const { service_id, date, time, booked_for_name, user_session_id, dentist_id } = req.body;
+        const { service_id, date, time, booked_for_name_parts, user_session_id, dentist_id } = req.body;
 
         // Check date is in the future (using Philippine Time)
         const todayPH = getTodayPH();
@@ -118,7 +120,7 @@ export const bookUser = async (req, res, next) => {
             date,
             time,
             true, // sendEmail
-            booked_for_name?.trim() || null, // null = for self, name = for someone else
+            booked_for_name_parts || null, // null = for self, parts = for someone else
             APPOINTMENT_SOURCE.USER_BOOKING, // source
             user_session_id,                 // user_session_id
             dentist_id,                      // preferredDentistId
@@ -161,7 +163,7 @@ export const submitWizard = async (req, res, next) => {
                     booking.date,
                     booking.time,
                     true, // sendEmail
-                    booking.booked_for_name?.trim() || null,
+                    booking.booked_for_name_parts || null,
                     APPOINTMENT_SOURCE.USER_BOOKING, // source
                     booking.user_session_id,         // user_session_id
                     booking.dentist_id,              // preferredDentistId
@@ -183,7 +185,7 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.date || waitlist.preferred_date,
                     waitlist.time || waitlist.preferred_time || null,
                     waitlist.priority || 0,
-                    waitlist.booked_for_name || booking?.booked_for_name || null,
+                    waitlist.booked_for_name_parts || booking?.booked_for_name_parts || null,
                     waitlist.dentist_id || null,
                     results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
                 );
@@ -203,8 +205,8 @@ export const submitWizard = async (req, res, next) => {
                     }
                 }
 
-                return res.status(err.status || 500).json({
-                    error: `Waitlist failed: ${err.message}. Your backup booking was rolled back for atomicity.`,
+                return res.status(err.status || 400).json({
+                    error: `Waitlist registration failed: ${err.message}. We couldn't complete your request as a bundle. Please check your existing waitlist or try again with a different slot.`,
                     stage: 'waitlist',
                 });
             }
@@ -227,17 +229,16 @@ export const submitWizard = async (req, res, next) => {
 export const getMyAppointments = async (req, res, next) => {
     try {
         const { status, sort, page = 1, limit = 10 } = req.query;
-        const result = await getPatientAppointments(
-            req.user.id,
-            status,
-            sort,
-            page,
-            limit,
-        );
+        
+        const [result, stats] = await Promise.all([
+            getPatientAppointments(req.user.id, status, sort, page, limit),
+            getPatientAppointmentStats(req.user.id)
+        ]);
 
         res.json({
             appointments: result.appointments,
             total: result.total,
+            stats,
             page: Number(page),
             limit: Number(limit),
         });
@@ -289,9 +290,9 @@ export const cancel = async (req, res, next) => {
 export const reschedule = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { date, time } = req.body;
+        const { date, time, user_session_id, dentist_id } = req.body;
 
-        const result = await rescheduleAppointment(id, req.user.id, date, time);
+        const result = await rescheduleAppointment(id, req.user.id, date, time, user_session_id, dentist_id);
 
         if (result.rescheduled) {
             // ── Trigger waitlist notification for the FREED old slot ──
@@ -406,6 +407,7 @@ export const guestRescheduleInfo = async (req, res, next) => {
                 date: result.appointment.appointment_date,
                 time: result.appointment.start_time,
                 service: result.appointment.service?.name,
+                service_id: result.appointment.service?.id,
                 dentist: result.appointment.dentist?.profile?.full_name || 'Assigned',
                 guest_name: result.appointment.guest_name,
             },
@@ -431,58 +433,40 @@ export const guestRescheduleInfo = async (req, res, next) => {
 export const guestRescheduleConfirm = async (req, res, next) => {
     try {
         const { token } = req.query;
-        const { date, time } = req.body;
+        const { date, time, user_session_id } = req.body;
 
         const result = await validateGuestActionToken(token, 'reschedule');
         const oldAppt = result.appointment;
 
-        // 1. Check new slot availability
-        const availability = await getAvailableSlots(date, oldAppt.service?.id);
+        // Atomic Reschedule: Book new -> Cancel old
+        const outcome = await rescheduleGuestAppointment(oldAppt, date, time, user_session_id);
 
-        const slotData = availability.all_slots.find((s) => s.time === time);
-        if (!slotData || slotData.available === 0) {
-            return res.status(409).json({
-                error: 'Selected time is not available. Please choose another.',
-                available_slots: availability.all_slots
-                    .filter((s) => s.available > 0)
-                    .map((s) => s.time),
-            });
+        if (!outcome.rescheduled) {
+            return res.status(outcome.message ? 409 : 200).json(outcome);
         }
 
-        // 2. Assign dentist for new slot
-        const endTime = addMinutesToTime(time, oldAppt.service?.duration_minutes || 30);
-        const dentistId = await assignDentist(date, time, endTime);
+        const { newAppointment } = outcome;
 
-        if (!dentistId) {
-            throw { status: 409, message: 'No dentist available for the new slot.' };
-        }
-
-        // 3. Create new appointment (CONFIRMED — guest already verified via original booking)
-        const newAppointment = await insertConfirmedGuestAppointment(oldAppt, dentistId, date, time, endTime);
-
-        // 4. Cancel old appointment
-        await cancelGuestAppointmentAction(oldAppt.id, 'Rescheduled by guest via reminder email link.');
-
-        // 5. Trigger waitlist for the freed old slot
-        await notifyWaitlist({
+        // 5. Trigger waitlist for the freed old slot (Backgrounded)
+        notifyWaitlist({
             date: oldAppt.appointment_date,
             start_time: oldAppt.start_time,
             end_time: oldAppt.end_time,
             service_id: oldAppt.service?.id,
-        });
+        }).catch(err => console.error('[Waitlist] Failed to notify:', err.message));
 
         // 6. Mark token as used
         await markGuestTokenUsed(result.token_id);
 
-        // 7. Send reschedule email
-        await sendRescheduleEmail(oldAppt.guest_email, oldAppt.guest_name, {
+        // 7. Send reschedule email (Backgrounded)
+        sendRescheduleEmail(oldAppt.guest_email, oldAppt.guest_name, {
             oldDate: oldAppt.appointment_date,
             oldTime: oldAppt.start_time,
             newDate: newAppointment.appointment_date,
             newTime: newAppointment.start_time,
             service: newAppointment.service?.name || 'Dental appointment',
             dentist: newAppointment.dentist?.profile?.full_name || 'Assigned',
-        });
+        }).catch(err => console.error('[Email] Failed to send guest reschedule email:', err.message));
 
         res.json({
             message: 'Appointment rescheduled successfully!',
@@ -516,7 +500,7 @@ export const guestRescheduleConfirm = async (req, res, next) => {
  * If user already has a hold on a different time for the same date,
  * the old hold is automatically released (auto-switch behavior).
  */
-export const holdSlotHandler = async (req, res) => {
+export const holdSlotHandler = async (req, res, next) => {
     try {
         const { service_id, date, time, user_session_id, dentist_id } = req.body;
 
