@@ -47,29 +47,63 @@ export const joinWaitlist = async (
             bookedForName = bookedForNameParts;
         }
     }
-    // ── 1. Check if already on waitlist for this date + service + time ──
-    // FIX: Include preferred_time in the duplicate check.
-    // Without this, a patient waiting for 09:00 would be blocked from also waiting for 10:00.
-    let query = supabaseAdmin
+
+    // ── 0. Check if patient is restricted (Sync with booking policy) ──
+    const { data: patient } = await supabaseAdmin
+        .from('profiles')
+        .select(
+            'is_booking_restricted, restriction_until, max_advance_booking_days',
+        )
+        .eq('id', patientId)
+        .single();
+
+    if (patient?.is_booking_restricted) {
+        // Check if restriction has expired
+        if (patient.restriction_until && new Date(patient.restriction_until) < new Date()) {
+            // Auto-unlock
+            await supabaseAdmin
+                .from('profiles')
+                .update({ is_booking_restricted: false, restriction_reason: null })
+                .eq('id', patientId);
+        } else {
+            // Check max advance booking days
+            const maxDays = Math.max(patient.max_advance_booking_days || 0, CLINIC_CONFIG.NO_SHOW_RESTRICT_ADVANCE_DAYS);
+            
+            if (maxDays > 0) {
+                const maxDate = new Date();
+                maxDate.setDate(maxDate.getDate() + maxDays);
+                if (new Date(date) > maxDate) {
+                    throw new AppError(`Due to missed appointments, you can only join the waitlist up to ${maxDays} days in advance.`, 403);
+                }
+            }
+        }
+    }
+
+    // ── 0.5. Check Global Active Limit (Anti-Hoarding) ──
+    const { count: globalActiveCount } = await supabaseAdmin
+        .from('waitlist')
+        .select('id', { count: 'exact', head: true })
+        .eq('patient_id', patientId)
+        .in('status', [WAITLIST_STATUS.WAITING, WAITLIST_STATUS.NOTIFIED]);
+
+    if ((globalActiveCount || 0) >= CLINIC_CONFIG.WAITLIST_GLOBAL_LIMIT) {
+        throw new AppError(`You've reached the maximum limit of ${CLINIC_CONFIG.WAITLIST_GLOBAL_LIMIT} active waitlist requests. Please manage your existing entries in 'My Appointments'.`, 403);
+    }
+
+    // ── 1. Check Daily Service Cap (One entry per Service per Day) ──
+    // FIX: Simplified to check only service_id and preferred_date.
+    // This prevents a patient from joining multiple times for different hours on the same day.
+    const { data: existing } = await supabaseAdmin
         .from('waitlist')
         .select('id')
         .eq('patient_id', patientId)
         .eq('service_id', serviceId)
         .eq('preferred_date', date)
-        .eq('status', WAITLIST_STATUS.WAITING);
-
-    // If a specific time was provided, check for that exact time.
-    // If no time (null), check for other null-time entries (any-time waitlist).
-    if (time) {
-        query = query.eq('preferred_time', time);
-    } else {
-        query = query.is('preferred_time', null);
-    }
-
-    const { data: existing } = await query.maybeSingle();
+        .eq('status', WAITLIST_STATUS.WAITING)
+        .maybeSingle();
 
     if (existing) {
-        throw new AppError("You've already requested a waitlist slot for this specific date and time. Please check your active entries in 'My Appointments'.", 400);
+        throw new AppError(`You're already on the waitlist for this service on ${date}. To ensure fairness, we only allow one waitlist request per service per day.`, 400);
     }
 
     // ── 2. Add to waitlist ──
@@ -85,10 +119,10 @@ export const joinWaitlist = async (
             priority,
             status: WAITLIST_STATUS.WAITING,
             booked_for_name: bookedForName || null,
-            booked_for_first_name: firstName,
-            booked_for_last_name: lastName,
-            booked_for_middle_name: middleName,
-            booked_for_suffix: suffix,
+            first_name: firstName,
+            last_name: lastName,
+            middle_name: middleName,
+            suffix: suffix,
         })
         .select(
             `

@@ -63,7 +63,8 @@ export const CLINIC_CONFIG = {
     CLOSING_HOUR: 17, // 5:00 PM
     SLOT_DURATION_MINUTES: 30, // Each appointment slot is 30 minutes
     WAITLIST_TIMEOUT_MINUTES: 25, // 25 min to confirm waitlist offer
-    WAITLIST_MIN_NOTICE_MINUTES: 0, // 🔴 0 = Immediate offers for testing (any cancellation triggers offer)
+    WAITLIST_MIN_NOTICE_MINUTES: 180, // 3-hour minimum notice before slot
+    WAITLIST_GLOBAL_LIMIT: 3, // Max 3 active waitlist entries at a time
     CANCEL_NOTICE_HOURS: 24, // <24h = LATE_CANCEL
     NO_SHOW_GRACE_MINUTES: 15, // Wait 15 min past appointment time before marking no-show
     NO_SHOW_RESTRICT_THRESHOLD: 3, // 3+ no-shows → restrict patient booking

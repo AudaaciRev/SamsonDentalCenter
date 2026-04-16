@@ -227,12 +227,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                         last: formData.booked_for_last_name,
                         middle: formData.booked_for_middle_name,
                         suffix: formData.booked_for_suffix_name,
-                    } : {
-                        first: user?.first_name,
-                        last: user?.last_name,
-                        middle: user?.middle_name,
-                        suffix: user?.suffix,
-                    },
+                    } : null,
                     user_session_id: sessionId,
                 } : null,
                 waitlist: formData.waitlist_time ? {
@@ -245,12 +240,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                         last: formData.booked_for_last_name,
                         middle: formData.booked_for_middle_name,
                         suffix: formData.booked_for_suffix_name,
-                    } : {
-                        first: user?.first_name,
-                        last: user?.last_name,
-                        middle: user?.middle_name,
-                        suffix: user?.suffix,
-                    },
+                    } : null,
                 } : null
             };
 
