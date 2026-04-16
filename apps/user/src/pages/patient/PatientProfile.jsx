@@ -1,6 +1,7 @@
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import UserMetaCard from '../../components/patient/profile/UserMetaCard';
 import UserInfoCard from '../../components/patient/profile/UserInfoCard';
+import UserContactCard from '../../components/patient/profile/UserContactCard';
 import UserAddressCard from '../../components/patient/profile/UserAddressCard';
 
 export default function PatientProfile() {
@@ -17,6 +18,7 @@ export default function PatientProfile() {
                 <div className='sm:mx-0 mx-4 mb-10 space-y-6'>
                     <UserMetaCard />
                     <UserInfoCard />
+                    <UserContactCard />
                 </div>
             </div>
         </>

@@ -26,6 +26,11 @@ const request = async (method, path, { body = null, token = null, keepalive = fa
     const data = await res.json();
 
     if (!res.ok) {
+        // ✅ NEW: Detect session expiry (401) and notify the app globally
+        if (res.status === 401) {
+            window.dispatchEvent(new CustomEvent('session-expired'));
+        }
+
         // Throw a structured error that components can catch
         const error = new Error(data.error || 'Something went wrong');
         error.status = res.status;

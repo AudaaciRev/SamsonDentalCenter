@@ -281,6 +281,24 @@ export const bookAppointment = async (
 
     const endTime = addMinutesToTime(time, service.duration_minutes);
 
+    // ── 1.5. Check for Patient's Own Schedule Conflicts (LATER: Currently disabled for dev testing) ──
+    // Prevent the same patient from booking overlapping slots with different doctors.
+    /*
+    const { data: conflicts } = await supabaseAdmin
+        .from('appointments')
+        .select('id, start_time, end_time, service:services(name)')
+        .eq('patient_id', patientId)
+        .eq('appointment_date', date)
+        .not('status', 'in', '("CANCELLED","LATE_CANCEL","RESCHEDULED")')
+        .lt('start_time', endTime)
+        .gt('end_time', time)
+        .limit(1);
+
+    if (conflicts && conflicts.length > 0) {
+        throw new AppError(`You already have a "${conflicts[0].service?.name}" appointment during this time range (${conflicts[0].start_time.slice(0,5)} - ${conflicts[0].end_time.slice(0,5)}). Please choose a different time.`, 409);
+    }
+    */
+
     const isSpecialized = service.tier === SERVICE_TIER.SPECIALIZED;
 
     // ═══════════════════════════════════════════════

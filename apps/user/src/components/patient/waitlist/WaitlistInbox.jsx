@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Mail, Clock, CheckCircle2, AlertCircle, Inbox } from 'lucide-react';
 import WaitlistRow from './WaitlistRow';
 
@@ -19,6 +19,16 @@ const WaitlistInbox = ({
     selectedId,
     loading
 }) => {
+    const [localQuery, setLocalQuery] = useState(searchQuery);
+
+    // Debounce effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearchChange(localQuery);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [localQuery, onSearchChange]);
     return (
         <div className='flex-grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden'>
             {/* Header / Search Area */}
@@ -31,8 +41,8 @@ const WaitlistInbox = ({
                         type='text' 
                         placeholder='Search waitlist...'
                         className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none'
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        value={localQuery}
+                        onChange={(e) => setLocalQuery(e.target.value)}
                     />
                 </div>
 

@@ -1,4 +1,5 @@
 import { Search, Mail, Star, Clock, Calendar, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import NotificationRow from './NotificationRow';
 import Pagination from '../../common/Pagination';
 
@@ -27,6 +28,16 @@ const NotificationInbox = ({
     onMarkAllRead,
     onNotificationClick,
 }) => {
+    const [localSearch, setLocalSearch] = useState(searchQuery);
+
+    // Debounce effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearchChange(localSearch);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [localSearch, onSearchChange]);
     // Helper to get count for category
     const getCount = (key) => {
         if (key === 'all') return totalCount || 0;
@@ -64,8 +75,8 @@ const NotificationInbox = ({
                             type='text'
                             placeholder='Search notifications...'
                             className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/3 border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none'
-                            value={searchQuery}
-                            onChange={(e) => onSearchChange(e.target.value)}
+                            value={localSearch}
+                            onChange={(e) => setLocalSearch(e.target.value)}
                         />
                     </div>
                     {stats.unread > 0 && (

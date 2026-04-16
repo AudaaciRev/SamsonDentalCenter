@@ -20,14 +20,12 @@ export default function UserInfoCard() {
             const last_name = formData.get('last_name').trim();
             const middle_name = formData.get('middle_name').trim();
             const suffix = formData.get('suffix').trim();
-            const phone = formData.get('phone');
             
             await updateProfile({ 
                 first_name, 
                 last_name, 
                 middle_name, 
-                suffix, 
-                phone 
+                suffix
             });
             closeModal();
         } catch (error) {
@@ -61,18 +59,6 @@ export default function UserInfoCard() {
                         <div>
                             <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Suffix</p>
                             <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.suffix || '—'}</p>
-                        </div>
-                        <div className="sm:col-span-2">
-                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Email Address</p>
-                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.email || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Phone</p>
-                            <p className='text-sm font-semibold text-gray-800 dark:text-white/90'>{user?.phone || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className='mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400'>Role</p>
-                            <p className='text-sm font-medium text-gray-800 dark:text-white/90 uppercase tracking-tighter'>PATIENT</p>
                         </div>
                     </div>
                 </div>
@@ -152,29 +138,6 @@ export default function UserInfoCard() {
                                         placeholder="Jr/Sr/etc"
                                     />
                                 </div>
-                            </div>
-                            
-                            <div>
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Phone Number</Label>
-                                <Input 
-                                    name="phone"
-                                    className="text-sm font-medium h-12 rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500/10" 
-                                    type='text' 
-                                    defaultValue={user?.phone || ''} 
-                                    placeholder="Enter your phone number"
-                                />
-                            </div>
-
-                            <div>
-                                <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Email Address</Label>
-                                <Input 
-                                    className="text-sm font-medium h-12 rounded-xl bg-gray-50/50 opacity-70 cursor-not-allowed border-gray-200" 
-                                    type='email' 
-                                    defaultValue={user?.email || ''} 
-                                    readOnly 
-                                    disabled
-                                />
-                                <p className="text-[10px] text-gray-400 mt-2 italic pl-1">Email cannot be changed.</p>
                             </div>
                         </div>
 

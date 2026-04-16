@@ -1,6 +1,7 @@
 import { Search, Clock, RotateCcw, History } from 'lucide-react';
 import { PlusIcon } from './AppointmentIcons';
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const MAIN_TABS = [
     { id: 'upcoming', label: 'Upcoming', key: 'upcoming' },
@@ -21,6 +22,17 @@ const SUB_FILTERS = {
 };
 
 const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChange, counts = {} }) => {
+    const [localSearch, setLocalSearch] = useState(search);
+
+    // Debounce effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearchChange(localSearch);
+        }, 500); // 500ms delay for stability
+
+        return () => clearTimeout(timer);
+    }, [localSearch, onSearchChange]);
+
     // Derive active main tab from statusFilter
     const getActiveMainTab = () => {
         if (statusFilter === 'requests' || ['approved', 'pending', 'decline'].includes(statusFilter)) return 'requests';
@@ -45,8 +57,8 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
                     </span>
                     <input
                         type='text'
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)}
                         placeholder='Search service, dentist...'
                         className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-[ring] outline-none font-medium'
                     />

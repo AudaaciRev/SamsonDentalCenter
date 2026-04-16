@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import SessionExpiredModal from '../components/common/SessionExpiredModal';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +8,20 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
+    const [isSessionExpired, setIsSessionExpired] = useState(false);
+
+    // ✅ Listen for global session-expired events from api.js
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            if (token && !isSessionExpired) {
+                console.warn('Session expired event received');
+                setIsSessionExpired(true);
+            }
+        };
+
+        window.addEventListener('session-expired', handleSessionExpired);
+        return () => window.removeEventListener('session-expired', handleSessionExpired);
+    }, [token, isSessionExpired]);
 
     // On mount: check if we have a saved token and validate it
     useEffect(() => {
@@ -71,6 +86,11 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile }}>
             {children}
+            {isSessionExpired && <SessionExpiredModal onLogout={() => {
+                logout();
+                setIsSessionExpired(false);
+                window.location.href = '/login';
+            }} />}
         </AuthContext.Provider>
     );
 };

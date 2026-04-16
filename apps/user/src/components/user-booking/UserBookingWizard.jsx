@@ -7,6 +7,8 @@ import DateTimeStep from './DateTimeStep';
 import UserOtherInfoStep from './UserOtherInfoStep';
 import UserReviewStep from './UserReviewStep';
 import UserBookingSuccess from './UserBookingSuccess';
+import BookingExitModal from './BookingExitModal';
+import { useState } from 'react';
 
 const UserBookingWizard = ({ booking }) => {
     const navigate = useNavigate();
@@ -31,16 +33,20 @@ const UserBookingWizard = ({ booking }) => {
         userWaitlist,
     } = booking;
 
+    const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+
     // ✅ Auto-scroll to top when step changes
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
     const handleExit = () => {
-        if (window.confirm('Are you sure you want to exit? Your progress will be lost.')) {
-            reset();
-            navigate('/patient');
-        }
+        setIsExitModalOpen(true);
+    };
+
+    const confirmExit = () => {
+        reset();
+        navigate(-1);
     };
 
     const breadcrumbLabels = ['Service', 'Date & Time', 'Patient Info', 'Review'];
@@ -162,6 +168,12 @@ const UserBookingWizard = ({ booking }) => {
                     )}
                 </div>
             </main>
+
+            <BookingExitModal
+                isOpen={isExitModalOpen}
+                onClose={() => setIsExitModalOpen(false)}
+                onConfirm={confirmExit}
+            />
         </div>
     );
 };
