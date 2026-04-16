@@ -4,20 +4,23 @@ import useSmoothScroll from './hooks/useSmoothScroll';
 import { ServicesProvider } from './context/ServicesContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppointmentProvider } from './context/AppointmentContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 const App = () => {
     useSmoothScroll();
 
     return (
-        <BrowserRouter>
-            <ServicesProvider>
-                <NotificationProvider>
-                    <AppointmentProvider>
-                        <AppRoutes />
-                    </AppointmentProvider>
-                </NotificationProvider>
-            </ServicesProvider>
-        </BrowserRouter>
+        <ThemeProvider>
+            <BrowserRouter>
+                <ServicesProvider>
+                    <NotificationProvider>
+                        <AppointmentProvider>
+                            <AppRoutes />
+                        </AppointmentProvider>
+                    </NotificationProvider>
+                </ServicesProvider>
+            </BrowserRouter>
+        </ThemeProvider>
     );
 };
 

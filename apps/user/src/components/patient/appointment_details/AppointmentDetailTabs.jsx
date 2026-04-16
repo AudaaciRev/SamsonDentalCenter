@@ -17,7 +17,7 @@ const AppointmentDetailTabs = ({ activeTab, setActiveTab, notes }) => {
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`text-[11px] sm:text-sm font-bold transition-all relative pb-3 uppercase tracking-wider ${
+                            className={`text-[11px] sm:text-sm font-bold transition-colors relative pb-3 uppercase tracking-wider ${
                                 isActive
                                     ? 'text-gray-900 dark:text-white'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'

@@ -53,8 +53,10 @@ const AppointmentCancelModal = ({ show, onClose, cancelReason, setCancelReason, 
                             <AlertCircle size={28} />
                         </div>
                         <div className='space-y-1.5'>
-                            <h3 className='text-2xl font-black text-slate-900 dark:text-white font-outfit'>Cancel Appointment</h3>
-                            <p className='text-[13px] sm:text-[14px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed max-w-[280px] mx-auto'>
+                            <h3 className='text-xl sm:text-2xl font-black text-gray-900 dark:text-white font-outfit text-center'>
+                                Wait! Are you sure?
+                            </h3>
+                            <p className='mt-2 text-center text-[13px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed max-w-[280px] mx-auto'>
                                 We're sorry you can't make it. You can always reschedule for a better time.
                             </p>
                         </div>
@@ -62,22 +64,25 @@ const AppointmentCancelModal = ({ show, onClose, cancelReason, setCancelReason, 
 
                     {/* Custom Selection Area */}
                     <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <label className='block text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest'>
-                                Help us improve by sharing the reason
-                            </label>
-                            <div className='relative group'>
-                                <select
-                                    value={reasonType}
-                                    onChange={handleTypeChange}
-                                    disabled={cancelling}
-                                    className='w-full appearance-none px-5 py-3.5 bg-slate-50 dark:bg-gray-800 border border-slate-100 dark:border-gray-700 rounded-2xl text-[14px] font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-error-500/50 transition-all text-left'
-                                >
-                                    <option value="" disabled>Choose a reason...</option>
-                                    {CANCEL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
-                                <ChevronDown size={18} className='absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-error-500 transition-colors' />
-                            </div>
+                        <div className='flex items-center justify-between mb-2 px-1'>
+                            <span className='text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500'>
+                                Cancellation Reason
+                            </span>
+                        </div>
+                        <div className='relative group'>
+                            <div className={`absolute inset-0 bg-gray-100 dark:bg-white/5 rounded-2xl transition-all duration-300 group-hover:bg-gray-200 dark:group-hover:bg-white/10`} />
+                            <select
+                                value={reasonType}
+                                onChange={handleTypeChange}
+                                disabled={cancelling}
+                                className={`relative w-full bg-transparent border-2 border-transparent text-gray-900 dark:text-white px-4 py-3.5 rounded-2xl text-sm font-bold focus:outline-none focus:border-error-500 transition-all appearance-none outline-none ${
+                                    !reasonType ? 'text-gray-400 dark:text-gray-600' : ''
+                                }`}
+                            >
+                                <option value="" disabled>Choose a reason...</option>
+                                {CANCEL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                            <ChevronDown size={18} className='absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-error-500 transition-colors' />
                         </div>
 
                         {showOthers && (
@@ -107,7 +112,7 @@ const AppointmentCancelModal = ({ show, onClose, cancelReason, setCancelReason, 
                         <button
                             onClick={onClose}
                             disabled={cancelling}
-                            className='flex-1 px-6 py-3.5 rounded-2xl border border-slate-200 dark:border-white/10 text-[15px] font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all active:scale-95'
+                            className='flex-1 py-3 text-sm font-bold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors active:scale-95'
                         >
                             Keep It
                         </button>

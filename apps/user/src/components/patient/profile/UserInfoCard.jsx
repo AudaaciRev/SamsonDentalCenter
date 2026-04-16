@@ -80,7 +80,7 @@ export default function UserInfoCard() {
                 <Button
                     variant='outline'
                     onClick={openModal}
-                    className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto transition-all duration-300 hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
+                    className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
                 >
                     <svg
                         className='fill-current'

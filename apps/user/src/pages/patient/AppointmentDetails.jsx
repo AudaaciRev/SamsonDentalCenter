@@ -12,6 +12,7 @@ import AppointmentDetailFooter from '../../components/patient/appointment_detail
 import AppointmentCancelModal from '../../components/patient/appointment_details/AppointmentCancelModal';
 import ReschedulePolicyModal from '../../components/patient/appointment_details/ReschedulePolicyModal';
 import CombinedOverview from '../../components/patient/appointment_details/CombinedOverview';
+import AppointmentDetailSkeleton from '../../components/patient/appointment_details/AppointmentDetailSkeleton';
 
 // ---------------------------------------------------------------------------
 // Compute a human-readable duration
@@ -31,12 +32,6 @@ const getDuration = (start, end) => {
     return `${m} min`;
 };
 
-// ---------------------------------------------------------------------------
-// Skeleton placeholder
-// ---------------------------------------------------------------------------
-const Skeleton = ({ className = '' }) => (
-    <div className={`bg-gray-100 dark:bg-white/[0.06] rounded animate-pulse ${className}`} />
-);
 
 // ---------------------------------------------------------------------------
 // Main Wrapper
@@ -70,16 +65,7 @@ const AppointmentDetails = () => {
                     parentName='My Appointments'
                     parentPath='/patient/appointments'
                 />
-                <div className='flex-grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden p-6 gap-6'>
-                    <div className='flex items-center gap-4'>
-                        <Skeleton className='w-16 h-16 rounded-full' />
-                        <div className='space-y-2 flex-1'>
-                            <Skeleton className='h-5 w-48' />
-                            <Skeleton className='h-4 w-32' />
-                        </div>
-                    </div>
-                    <Skeleton className='h-48 flex-1 rounded-2xl' />
-                </div>
+                <AppointmentDetailSkeleton />
             </>
         );
     }
@@ -176,15 +162,15 @@ const AppointmentDetails = () => {
                     <div className='px-0 py-6 sm:p-8 md:p-10 overflow-y-auto grow no-scrollbar pb-28 sm:pb-8 md:pb-10 bg-white/50 dark:bg-transparent'>
                         <div className='max-w-4xl mx-auto space-y-3 sm:space-y-8'>
                             {/* Header Section: Service Name & Status */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-slate-900/40 border-0 sm:border border-slate-100/80 dark:border-white/5 rounded-none sm:rounded-3xl px-4 pb-4 pt-0 sm:p-8 shadow-none sm:shadow-sm sm:shadow-slate-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl px-4 pb-4 pt-0 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
                                 <div className='flex flex-row items-center justify-between gap-4'>
                                     <div className='space-y-2'>
-                                        <h2 className='text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white font-outfit leading-tight tracking-tight'>
+                                        <h2 className='text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 dark:text-white font-outfit leading-tight tracking-tight'>
                                             {serviceName}
                                         </h2>
-                                        <div className='flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-bold'>
+                                        <div className='flex items-center gap-2 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 font-bold'>
                                             <span className='uppercase tracking-[0.15em] opacity-40'>Appointment ID:</span>
-                                            <span className='font-mono text-slate-900 dark:text-slate-200 px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 rounded'>
+                                            <span className='font-mono text-gray-900 dark:text-gray-200 px-1.5 py-0.5 bg-gray-100 dark:bg-white/5 rounded'>
                                                 {raw.id?.slice(0, 8).toUpperCase()}
                                             </span>
                                         </div>
@@ -211,7 +197,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Timeline Section wrapped in its own container */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-slate-900/40 border-0 sm:border border-slate-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-slate-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
                                 <AppointmentDetailStatus
                                     displayStatus={displayStatus}
                                     originalStatus={raw.status}
@@ -225,7 +211,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Overview Section */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-slate-900/40 border-0 sm:border border-slate-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-slate-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
                                 <CombinedOverview
                                     dentistName={dentistName}
                                     specialization={specialization}
@@ -238,7 +224,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Tabs Section */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-slate-900/40 border-0 sm:border border-slate-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-slate-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
                                 <AppointmentDetailTabs
                                     activeTab={activeTab}
                                     setActiveTab={setActiveTab}

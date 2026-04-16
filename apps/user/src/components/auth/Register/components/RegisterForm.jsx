@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, ChevronRight, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTheme } from '../../../../context/ThemeContext';
 import { Button } from '@/components/ui';
 
 const InputGroup = ({ label, icon: Icon, error, children }) => (
@@ -44,6 +45,13 @@ const inputClassName = (error, value) =>
     );
 
 const RegisterForm = ({ onSubmit, loading = false, error = null }) => {
+    const { setIsDarkModeAllowed } = useTheme();
+
+    // Force light mode on register
+    useEffect(() => {
+        setIsDarkModeAllowed(false);
+    }, [setIsDarkModeAllowed]);
+
     const [signupData, setSignupData] = useState({
         firstName: '',
         middleName: '',

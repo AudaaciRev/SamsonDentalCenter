@@ -181,14 +181,14 @@ const AppointmentDetailStatus = ({
 
                                 {/* Step Label */}
                                 <div className='px-4'>
-                                    <h4 className='text-[13px] sm:text-[14px] font-black mb-1.5 transition-colors text-slate-900 dark:text-white'>
+                                    <h4 className='text-[13px] sm:text-[14px] font-black mb-1.5 transition-colors text-gray-900 dark:text-white'>
                                         {step.title}
                                     </h4>
-                                    <p className='text-[11px] sm:text-[12px] font-bold leading-relaxed max-w-[160px] transition-colors text-slate-600 dark:text-gray-400'>
+                                    <p className='text-[11px] sm:text-[12px] font-bold leading-relaxed max-w-[160px] transition-colors text-gray-600 dark:text-gray-400'>
                                         {step.desc}
                                     </p>
                                     {step.time && (
-                                        <div className='mt-2 text-[10px] text-slate-400 dark:text-gray-500 font-mono font-bold uppercase tracking-wider opacity-60'>
+                                        <div className='mt-2 text-[10px] text-gray-400 dark:text-gray-500 font-mono font-bold uppercase tracking-wider opacity-60'>
                                             {step.time}
                                         </div>
                                     )}

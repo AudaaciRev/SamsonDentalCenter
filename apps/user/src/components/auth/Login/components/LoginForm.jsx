@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTheme } from '../../../../context/ThemeContext';
 import { Button } from '@/components/ui';
 
 const InputGroup = ({ label, icon: Icon, error, children }) => (
@@ -44,6 +45,13 @@ const inputClassName = (error, value) =>
     );
 
 const LoginForm = ({ onSubmit, loading = false, error = null }) => {
+    const { setIsDarkModeAllowed } = useTheme();
+
+    // Force light mode on login
+    useEffect(() => {
+        setIsDarkModeAllowed(false);
+    }, [setIsDarkModeAllowed]);
+
     const [email, setEmail] = useState('');
     const [pass, setPass] = useState('');
     const [emailError, setEmailError] = useState('');

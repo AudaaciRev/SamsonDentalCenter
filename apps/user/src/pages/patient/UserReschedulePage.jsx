@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useAppointmentDetail from '../../hooks/useAppointmentDetail';
 import useUserReschedule from '../../hooks/useUserReschedule';
 import UserRescheduleWizard from '../../components/user-reschedule/UserRescheduleWizard';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -16,12 +17,19 @@ const UserReschedulePage = () => {
     
     // Initialize reschedule flow
     const reschedule = useUserReschedule(id, appointment);
+    const { setIsDarkModeAllowed } = useTheme();
 
     useEffect(() => {
         if (!authLoading && !user) {
             navigate(`/login?redirect=/patient/appointments/${id}/reschedule`);
         }
     }, [user, authLoading, navigate, id]);
+
+    // Theme Guard: Allow dark mode while page is mounted
+    useEffect(() => {
+        setIsDarkModeAllowed(true);
+        return () => setIsDarkModeAllowed(false);
+    }, [setIsDarkModeAllowed]);
 
     if (authLoading || aptLoading) {
         return (

@@ -22,7 +22,7 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
     return (
         <div 
             onClick={() => onViewDetails(appointment.id)}
-            className='group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'
+            className='group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'
         >
             {/* Desktop View (sm and up) */}
             <div className='hidden sm:flex items-center gap-4 w-full'>

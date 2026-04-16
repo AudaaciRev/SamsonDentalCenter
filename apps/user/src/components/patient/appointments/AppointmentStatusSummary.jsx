@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Clock, XCircle, CheckCircle } from 'lucide-react';
 
 const StatCard = ({ title, count, icon: Icon, iconColor }) => (
-    <div className="flex-shrink-0 w-[155px] sm:w-auto sm:flex-1 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:shadow-md">
+    <div className="flex-shrink-0 w-[155px] sm:w-auto sm:flex-1 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-[box-shadow,transform] hover:shadow-md">
         <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center shrink-0">
                 <Icon size={20} className={iconColor} />

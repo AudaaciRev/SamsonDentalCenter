@@ -26,12 +26,12 @@ const PatientNotification = () => {
     return (
         <div className='relative' ref={notificationRef}>
             <button
-                className='relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-gray-700 h-10 w-10 hover:bg-gray-100 lg:h-11 lg:w-11'
+                className='relative flex items-center justify-center text-gray-500 bg-white border border-gray-200 rounded-full hover:text-gray-700 h-10 w-10 hover:bg-gray-100 lg:h-11 lg:w-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
                 onClick={toggleDropdown}
                 aria-label='Notifications'
             >
                 {unreadCount > 0 && (
-                    <span className='absolute -right-0.5 -top-0.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white'>
+                    <span className='absolute -right-0.5 -top-0.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-gray-800'>
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -52,9 +52,9 @@ const PatientNotification = () => {
             </button>
 
             {isOpen && (
-                <div className='absolute right-[-100px] sm:right-0 mt-3 flex h-auto max-h-[480px] w-[300px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg z-50 sm:w-[350px]'>
-                    <div className='flex items-center justify-between pb-3 mb-3 border-b border-gray-100'>
-                        <h5 className='text-lg font-semibold text-gray-800'>
+                <div className='absolute right-[-100px] sm:right-0 mt-3 flex h-auto max-h-[480px] w-[300px] flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-theme-lg z-50 sm:w-[350px]'>
+                    <div className='flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800'>
+                        <h5 className='text-lg font-semibold text-gray-800 dark:text-white'>
                             Notification
                         </h5>
                     </div>
@@ -69,18 +69,18 @@ const PatientNotification = () => {
                                     <Link 
                                         to={`/patient/notifications?id=${n.id}`}
                                         onClick={(e) => handleRead(n.id, e)}
-                                        className={`flex gap-3 rounded-lg border-b border-gray-50 p-3 hover:bg-gray-50 transition-colors ${!n.is_read ? 'bg-brand-50/30' : ''}`}
+                                        className={`flex gap-3 rounded-lg border-b border-gray-50 dark:border-gray-800/50 p-3 hover:bg-gray-50 dark:hover:bg-white/5 ${!n.is_read ? 'bg-gray-50/50 dark:bg-white/[0.03]' : ''}`}
                                     >
-                                        <div className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 ${!n.is_read ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-400'}`}>
+                                        <div className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 ${!n.is_read ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white' : 'bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-600'}`}>
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin='round' strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                             </svg>
                                         </div>
                                         <div className='block text-left truncate'>
-                                            <p className={`text-sm mb-1 leading-tight truncate ${!n.is_read ? 'text-gray-900 font-bold' : 'text-gray-600'}`}>
+                                            <p className={`text-sm mb-1 leading-tight truncate ${!n.is_read ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-600 dark:text-gray-400'}`}>
                                                 {n.title}
                                             </p>
-                                            <p className='text-xs text-gray-400 truncate'>
+                                            <p className='text-xs text-gray-400 dark:text-gray-500 truncate'>
                                                 {n.message}
                                             </p>
                                             <span className='text-[10px] text-gray-400 font-medium mt-1 block'>
@@ -94,7 +94,7 @@ const PatientNotification = () => {
                     </ul>
                     <Link
                         to='/patient/notifications'
-                        className='block px-4 py-3 mt-3 text-sm font-bold text-center text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20'
+                        className='block px-4 py-3 mt-3 text-sm font-bold text-center text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition-[transform] shadow-md shadow-brand-500/20'
                         onClick={() => setIsOpen(false)}
                     >
                         View All Notifications

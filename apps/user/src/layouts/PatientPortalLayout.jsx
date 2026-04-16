@@ -1,11 +1,20 @@
 import { SidebarProvider, useSidebar } from '../context/SidebarContext';
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import PatientHeader from '../components/patient/PatientHeader';
+import { useTheme } from '../context/ThemeContext';
 import Backdrop from '../components/patient/Backdrop';
 import PatientSidebar from '../components/patient/PatientSidebar';
 
 const LayoutContent = () => {
     const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+    const { setIsDarkModeAllowed } = useTheme();
+
+    // Theme Guard: Allow dark mode while portal is mounted
+    useEffect(() => {
+        setIsDarkModeAllowed(true);
+        return () => setIsDarkModeAllowed(false);
+    }, [setIsDarkModeAllowed]);
 
     return (
         <div className='min-h-screen xl:flex bg-white sm:bg-transparent dark:bg-gray-900 dark:sm:bg-transparent'>
@@ -14,7 +23,7 @@ const LayoutContent = () => {
                 <Backdrop />
             </div>
             <div
-                className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+                className={`flex-1 flex flex-col transition-[margin] duration-300 ease-in-out ${
                     isExpanded || isHovered
                         ? 'lg:ml-[290px]'
                         : 'lg:ml-[90px]'
