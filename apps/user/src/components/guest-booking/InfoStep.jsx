@@ -74,7 +74,7 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
     const labelClasses = "mb-1.5 block text-[clamp(12px,0.8vw,13px)] font-bold text-gray-700 dark:text-gray-400 uppercase tracking-widest opacity-80 leading-none";
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10 sm:pb-6">
             {/* Header Section */}
             <div className='mb-8 sm:mb-10'>
                 <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
@@ -206,21 +206,11 @@ const InfoStep = ({ formData, onUpdate, onNext, onBack }) => {
                 </section>
             </div>
 
-            {/* Navigation Footer */}
-            <div className='flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 sm:gap-0 mt-8 sm:mt-12 pt-4 sm:pt-6'>
-                <button
-                    onClick={onBack}
-                    className='w-full sm:w-auto text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[13px] sm:text-sm px-6 py-3 sm:px-8 transition-colors uppercase tracking-widest'
-                >
-                    Back
-                </button>
-                <button
-                    onClick={handleNext}
-                    className='w-full sm:w-auto bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-10 sm:py-4 rounded-2xl transition-all shadow-theme-md flex items-center justify-center gap-2 sm:gap-2.5 text-[14px] sm:text-base uppercase tracking-widest'
-                >
-                    Continue to Review
-                    <ArrowRight size={20} className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
+            <div className='fixed bottom-0 left-0 right-0 sm:relative z-40 px-6 py-4 sm:px-0 sm:py-0 sm:mt-6 sm:pt-2 bg-white/95 dark:bg-gray-900/95 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border-t border-gray-100 dark:border-gray-800 sm:border-t-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] sm:shadow-none transition-all'>
+                <div className='flex items-center gap-3 w-full sm:justify-between'>
+                    <button onClick={onBack} className='flex-1 sm:flex-none sm:min-w-[120px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[11px] sm:text-sm px-6 py-3.5 sm:px-8 transition-colors uppercase tracking-widest bg-gray-50 dark:bg-gray-800 sm:bg-transparent rounded-2xl sm:rounded-2xl border border-transparent shadow-theme-xs'>Back</button>
+                    <button onClick={handleNext} className='flex-[2] sm:flex-none sm:min-w-[240px] bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-10 sm:py-4 rounded-2xl transition-all shadow-theme-md flex items-center justify-center gap-2 sm:gap-2.5 text-[12px] sm:text-base uppercase tracking-widest'>Continue to Review<ArrowRight size={20} className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                </div>
             </div>
         </div>
     );
