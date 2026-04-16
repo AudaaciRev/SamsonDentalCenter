@@ -11,108 +11,82 @@ const CombinedOverview = ({
     isRepresentativeBooking,
 }) => {
     return (
-        <div className='mb-12 sm:mb-16'>
-            <div className='flex items-center gap-4 mb-8 sm:mb-10'>
-                <h2 className='text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest'>
-                    Appointment Overview
-                </h2>
-                <div className='h-px grow bg-gray-200 dark:bg-gray-800'></div>
-            </div>
-
-            <div className='bg-gray-50/50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 sm:p-7 flex flex-col md:flex-row gap-6 sm:gap-8 relative overflow-hidden'>
-                {/* Visual accent left line */}
-                <div className='absolute left-0 top-0 bottom-0 w-1.5 bg-brand-500 rounded-l-3xl opacity-80'></div>
-
-                {/* Left Side: Doctor */}
-                <div className='md:w-[40%] shrink-0 flex flex-col items-start'>
-                    <span className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold mb-4'>
+        <div className='flex flex-col lg:flex-row gap-8 lg:gap-16 items-start'>
+            {/* Left Column: Assigned Doctor */}
+            <div className='w-full lg:w-[40%] space-y-4 sm:space-y-6 sm:px-0'>
+                <div>
+                    <h3 className='text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.2em] mb-3 sm:mb-4'>
                         Assigned Doctor
-                    </span>
-                    <div className='flex items-center gap-4'>
-                        <div className='w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-lg shadow-sm border border-brand-100/50 dark:border-brand-500/20'>
+                    </h3>
+                    <div className='flex items-center gap-4 sm:gap-5'>
+                        <div className='w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center font-black text-xl sm:text-2xl border border-brand-500/20 shrink-0'>
                             {dentistName
                                 .replace(/^Dr\.\s*/i, '')
                                 .charAt(0)
                                 .toUpperCase()}
                         </div>
-                        <div>
-                            <h3 className='text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight leading-tight mb-1'>
+                        <div className='space-y-0.5 sm:space-y-1 overflow-hidden'>
+                            <h4 className='text-base sm:text-xl font-black text-slate-900 dark:text-white truncate leading-tight'>
                                 {dentistName}
-                            </h3>
-                            <p className='text-[13px] text-brand-600 dark:text-brand-400 font-medium'>
+                            </h4>
+                            <p className='text-xs sm:text-[13px] text-brand-600 dark:text-brand-400 font-bold'>
                                 {specialization || 'General Dentistry'}
                             </p>
                         </div>
                     </div>
-                    <p className='mt-5 text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium max-w-sm'>
-                        Experience exceptional care with your assigned doctor, dedicated to ensuring
-                        a comfortable and professional environment.
-                    </p>
+                </div>
+                <p className='text-[11px] sm:text-[13px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed opacity-80'>
+                    Experience exceptional care with your assigned doctor, dedicated to ensuring a comfortable and professional environment.
+                </p>
+            </div>
+
+            {/* Divider (Mobile only) */}
+            <div className='block lg:hidden w-full h-px bg-slate-100 dark:bg-white/5'></div>
+
+            {/* Right Column: Appointment Logistics */}
+            <div className='flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8 sm:gap-y-10 w-full sm:px-0'>
+                {/* Date Selection */}
+                <div className='space-y-2 sm:space-y-3'>
+                    <div className='flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.15em]'>
+                        <Calendar className='w-3 h-3' />
+                        Date
+                    </div>
+                    <div className='text-[13px] sm:text-[16px] font-black text-slate-900 dark:text-white'>
+                        {dateFormatted}
+                    </div>
                 </div>
 
-                <div className='hidden md:block w-px bg-gray-200/80 dark:bg-gray-800/80'></div>
-                <div className='block md:hidden h-px bg-gray-200/80 dark:bg-gray-800/80 w-full my-1'></div>
-
-                {/* Right Side: Appointment Details */}
-                <div className='flex-1 flex flex-col space-y-5 sm:space-y-6'>
-                    <span className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold'>
-                        Appointment Detail
-                    </span>
-
-                    {/* Date & Time */}
-                    <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8'>
-                        <div className='sm:w-24 shrink-0 flex items-center gap-2'>
-                            <Calendar className='w-4 h-4 text-gray-400' />
-                            <span className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold'>
-                                Date & Time
-                            </span>
-                        </div>
-                        <div className='flex flex-wrap items-center gap-2 text-[14px] sm:text-[15px]'>
-                            <span className='text-gray-900 dark:text-white font-bold tracking-tight'>
-                                {dateFormatted}
-                            </span>
-                            <span className='text-gray-300 dark:text-gray-700 mx-0.5'>|</span>
-                            <span className='text-gray-800 dark:text-gray-200 font-medium flex items-center gap-1.5'>
-                                <Clock className='w-3.5 h-3.5 text-gray-400 hidden sm:inline-block' />
-                                {timeFormatted}
-                            </span>
-                        </div>
+                {/* Time Selection */}
+                <div className='space-y-2 sm:space-y-3'>
+                    <div className='flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.15em]'>
+                        <Clock className='w-3 h-3' />
+                        Time
                     </div>
+                    <div className='text-[13px] sm:text-[16px] font-black text-slate-900 dark:text-white'>
+                        {timeFormatted}
+                    </div>
+                </div>
 
-                    {/* Duration */}
-                    {duration && (
-                        <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8'>
-                            <div className='sm:w-24 shrink-0 flex items-center gap-2'>
-                                <Timer className='w-4 h-4 text-gray-400' />
-                                <span className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold'>
-                                    Duration
-                                </span>
-                            </div>
-                            <div className='flex items-center gap-3'>
-                                <span className='text-[14px] sm:text-[15px] text-gray-900 dark:text-white font-bold tracking-tight'>
-                                    {duration}
-                                </span>
-                            </div>
-                        </div>
-                    )}
+                {/* Duration */}
+                <div className='space-y-2 sm:space-y-3'>
+                    <div className='flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.15em]'>
+                        <Timer className='w-3 h-3' />
+                        Duration
+                    </div>
+                    <div className='text-[13px] sm:text-[16px] font-black text-slate-900 dark:text-white'>
+                        {duration || '30 - 60 mins'}
+                    </div>
+                </div>
 
-                    {/* Patient */}
-                    <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8'>
-                        <div className='sm:w-24 shrink-0 flex items-center gap-2'>
-                            <User className='w-4 h-4 text-gray-400' />
-                            <span className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold'>
-                                Patient
-                            </span>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                            <span className='text-[14px] sm:text-[15px] text-gray-900 dark:text-white font-bold tracking-tight'>
-                                {patientLabel}
-                            </span>
-                            {isRepresentativeBooking && (
-                                <span className='px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded uppercase tracking-widest'>
-                                    Representative
-                                </span>
-                            )}
+                {/* Patient Information */}
+                <div className='space-y-2 sm:space-y-3'>
+                    <div className='flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.15em]'>
+                        <User className='w-3 h-3' />
+                        Patient
+                    </div>
+                    <div className='space-y-2'>
+                        <div className='text-[13px] sm:text-[16px] font-black text-slate-900 dark:text-white'>
+                            {patientLabel}
                         </div>
                     </div>
                 </div>

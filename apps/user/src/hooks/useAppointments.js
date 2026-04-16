@@ -28,21 +28,24 @@ export const STATUS_COLOR = {
 };
 
 export const getDisplayStatus = (status, approvalStatus) => {
-    // Terminal statuses always win — a cancelled appointment is cancelled
-    // regardless of what approval_status says (can be 'approved' after a reschedule)
+    // 1. Rejection is a specific case of "Terminal" in the requests context
+    // If it's rejected, we want to see "Rejected" even if status is technically cancelled
+    const appStatus = (approvalStatus || '').toLowerCase();
+    if (appStatus === 'rejected') {
+        return { label: 'Rejected', color: STATUS_COLOR.Rejected };
+    }
+
+    // 2. Terminal statuses always win — a cancelled appointment is cancelled
+    // regardless of what approval_status says (e.g. approved then cancelled)
     const TERMINAL = ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'COMPLETED', 'IN_PROGRESS', 'RESCHEDULED'];
     if (TERMINAL.includes((status || '').toUpperCase())) {
         const label = STATUS_LABEL[status] || status;
         return { label, color: STATUS_COLOR[label] || 'light' };
     }
 
-    // For non-terminal appointments, approval_status drives the badge
-    const appStatus = (approvalStatus || '').toLowerCase();
+    // 3. For non-terminal appointments, approval_status drives the badge
     if (appStatus === 'approved') {
         return { label: 'Approved', color: STATUS_COLOR.Approved };
-    }
-    if (appStatus === 'rejected') {
-        return { label: 'Rejected', color: STATUS_COLOR.Rejected };
     }
 
     // Fallback to primary status
@@ -125,7 +128,8 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
 
     const isHistoryStatus = useCallback((a) => {
         const s = (a.status || '').toUpperCase();
-        return ['COMPLETED', 'CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes(s);
+        const as = (a.approval_status || '').toLowerCase();
+        return ['COMPLETED', 'CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes(s) && as !== 'rejected';
     }, []);
 
     const filtered = useMemo(() => {
@@ -138,7 +142,7 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
             else if (status === 'decline') result = result.filter(isRejected);
             else if (status === 'history') result = result.filter(isHistoryStatus);
             else if (status === 'completed') result = result.filter(a => (a.status || '').toUpperCase() === 'COMPLETED');
-            else if (status === 'cancel') result = result.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()));
+            else if (status === 'cancel') result = result.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected');
         }
         return [...result].sort((a, b) => {
             const dateA = new Date(`${a.appointment_date}T${a.start_time}`);
@@ -162,7 +166,7 @@ export const useAppointments = ({ status = 'all', sort = 'desc', limit = 10 } = 
             decline: allAppointments.filter(isRejected).length,
             history: allAppointments.filter(isHistoryStatus).length,
             completed: allAppointments.filter(a => (a.status || '').toUpperCase() === 'COMPLETED').length,
-            cancel: allAppointments.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase())).length,
+            cancel: allAppointments.filter(a => ['CANCELLED', 'LATE_CANCEL', 'NO_SHOW'].includes((a.status || '').toUpperCase()) && (a.approval_status || '').toLowerCase() !== 'rejected').length,
         };
     }, [allAppointments, isApproved, isPending, isRejected, isHistoryStatus]);
 
