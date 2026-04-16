@@ -116,6 +116,7 @@ const GuestBookingWizard = ({ booking }) => {
                             onSelect={(id, name, tier, duration) => updateFields({ service_id: id, service_name: name, service_tier: tier, service_duration: duration })}
                             onUpdateFields={updateFields}
                             onNext={nextStep}
+                            allowSpecialized={false}
                         />
                     )}
 

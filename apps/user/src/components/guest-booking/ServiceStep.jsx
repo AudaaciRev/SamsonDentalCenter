@@ -1,23 +1,25 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, Stethoscope, Clock, ShieldCheck, ChevronRight } from 'lucide-react';
-import { useGuestBooking } from '../../context/GuestBookingContext';
+import useServices from '../../hooks/useServices';
 import SpecializedServiceModal from './SpecializedServiceModal';
 
-const ServiceStep = ({ onNext }) => {
-    const { services, loading, error, selectedServiceId, setSelectedServiceId } = useGuestBooking();
+const ServiceStep = ({ selectedServiceId, onSelect, onNext, allowSpecialized = false }) => {
+    const { services, loading, error } = useServices();
     const [specializedService, setSpecializedService] = useState(null);
     const [category, setCategory] = useState('All');
 
     const filteredServices = services?.filter(service => {
         if (category === 'All') return true;
-        return service.category === category;
+        return service.tier?.toLowerCase() === category.toLowerCase();
     });
 
     const handleServiceSelect = (service) => {
-        if (service.category === 'Specialized') {
+        const isSpecialized = service.tier?.toLowerCase() === 'specialized';
+        
+        if (isSpecialized && !allowSpecialized) {
             setSpecializedService(service);
         } else {
-            setSelectedServiceId(service.id);
+            onSelect(service.id, service.name, service.tier, service.duration_minutes);
         }
     };
 
@@ -90,9 +92,9 @@ const ServiceStep = ({ onNext }) => {
                                     <div className='flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 shadow-theme-xs'>
                                         <Clock size={12} className="sm:hidden text-brand-500" />
                                         <Clock size={14} className="hidden sm:block text-brand-500" />
-                                        {service.duration}m
+                                        {service.duration_minutes}m
                                     </div>
-                                    {service.category === 'Specialized' && (
+                                    {service.tier?.toLowerCase() === 'specialized' && !allowSpecialized && (
                                         <div className='flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest'>
                                             <ShieldCheck size={12} />
                                             Specialized

@@ -120,6 +120,7 @@ const UserBookingWizard = ({ booking }) => {
                                 })
                             }
                             onNext={nextStep}
+                            allowSpecialized={true}
                         />
                     )}
 
