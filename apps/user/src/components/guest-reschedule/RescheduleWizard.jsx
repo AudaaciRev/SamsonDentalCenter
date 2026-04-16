@@ -38,7 +38,7 @@ const RescheduleWizard = ({ reschedule }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
-    const breadcrumbLabels = ['Pick Slot', 'Review Changes'];
+    const breadcrumbLabels = ['Service', 'Date & Time', 'Review'];
 
     const handleExit = () => {
         if (window.confirm('Discard rescheduling changes and return home?')) {
@@ -86,7 +86,7 @@ const RescheduleWizard = ({ reschedule }) => {
                 <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                     <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center">
                         <StepIndicator
-                            currentStep={2}
+                            currentStep={4}
                             labels={[...breadcrumbLabels, 'Confirmed']}
                             onStepClick={() => {}}
                         />
@@ -115,9 +115,9 @@ const RescheduleWizard = ({ reschedule }) => {
                     </div>
 
                     <StepIndicator
-                        currentStep={step}
+                        currentStep={step + 2}
                         labels={breadcrumbLabels}
-                        onStepClick={goToStep}
+                        onStepClick={(index) => index > 0 && goToStep(index - 1)}
                     />
                 </div>
             </header>

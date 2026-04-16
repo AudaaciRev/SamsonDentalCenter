@@ -37,7 +37,7 @@ const UserRescheduleWizard = ({ reschedule, appointment }) => {
         }
     };
 
-    const breadcrumbLabels = ['Date & Time', 'Review'];
+    const breadcrumbLabels = ['Service', 'Date & Time', 'Review'];
 
     if (result && result.success) {
         return (
@@ -45,7 +45,7 @@ const UserRescheduleWizard = ({ reschedule, appointment }) => {
                 <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                     <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center relative">
                         <StepIndicator
-                            currentStep={3} // Success step indicator
+                            currentStep={step + 1} // success = 4
                             labels={[...breadcrumbLabels, 'Done']}
                             onStepClick={() => {}}
                         />
@@ -79,9 +79,9 @@ const UserRescheduleWizard = ({ reschedule, appointment }) => {
                     </div>
 
                     <StepIndicator
-                        currentStep={step}
+                        currentStep={step + 1}
                         labels={breadcrumbLabels}
-                        onStepClick={(index) => goToStep(index + 1)}
+                        onStepClick={(index) => index > 0 && goToStep(index)}
                     />
                 </div>
             </header>

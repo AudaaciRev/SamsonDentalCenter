@@ -64,7 +64,7 @@ const GuestBookingWizard = ({ booking }) => {
                 <div className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-theme-xs">
                     <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-center relative">
                         <StepIndicator
-                            currentStep={4} // Verification step
+                            currentStep={5} // Success step indicator
                             labels={[...breadcrumbLabels, 'Verification']}
                             onStepClick={() => {}}
                         />
@@ -100,9 +100,9 @@ const GuestBookingWizard = ({ booking }) => {
 
                     {/* Step Indicator - Truly Centered */}
                     <StepIndicator
-                        currentStep={step}
+                        currentStep={step + 1}
                         labels={breadcrumbLabels}
-                        onStepClick={(index) => goToStep(index + 1)}
+                        onStepClick={(index) => goToStep(index)}
                     />
                 </div>
             </header>
