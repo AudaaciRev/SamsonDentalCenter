@@ -72,6 +72,9 @@ out
 # Vite specific
 .vite/
 
+# Turbo
+.turbo/
+
 # Optional npm cache directory
 .npmrc
 
