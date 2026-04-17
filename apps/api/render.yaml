@@ -3,7 +3,7 @@ services:
     name: primera-dental-api
     env: node
     plan: free
-    rootDir: backend/api
+    rootDir: apps/api
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
