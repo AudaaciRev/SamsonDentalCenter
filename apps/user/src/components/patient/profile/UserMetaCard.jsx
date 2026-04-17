@@ -14,6 +14,13 @@ export default function UserMetaCard() {
     const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url);
     const [isSaving, setIsSaving] = useState(false);
 
+    const getInitials = () => {
+        if (!user) return '?';
+        const first = user.first_name?.[0] || user.full_name?.[0] || user.email?.[0] || 'U';
+        const last = user.last_name?.[0] || '';
+        return (first + last).toUpperCase();
+    };
+
     const AVATARS = [
         'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
         'https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy',
