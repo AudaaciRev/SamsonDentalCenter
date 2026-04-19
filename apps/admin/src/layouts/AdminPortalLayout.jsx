@@ -1,4 +1,5 @@
 import { SidebarProvider, useSidebar } from '../context/SidebarContext';
+import { ServicesProvider } from '../context/ServicesContext';
 import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -40,7 +41,9 @@ const LayoutContent = () => {
 const AdminPortalLayout = () => {
     return (
         <SidebarProvider>
-            <LayoutContent />
+            <ServicesProvider>
+                <LayoutContent />
+            </ServicesProvider>
         </SidebarProvider>
     );
 };

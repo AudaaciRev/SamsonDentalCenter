@@ -19,6 +19,7 @@ const MOCK_DOCTORS = [
         license_number: 'DEN-98231',
         is_active: true,
         service_count: 8,
+        services: ['Dental Cleaning', 'Root Canal', 'Teeth Whitening', 'X-Ray Scan', 'Filling', 'Extraction'],
         created_at: '2023-01-15T10:00:00Z',
         stats: {
             total_appointments: 1240,
@@ -38,6 +39,7 @@ const MOCK_DOCTORS = [
         license_number: 'DEN-77421',
         is_active: true,
         service_count: 5,
+        services: ['Orthodontic Consult', 'Oral Surgery', 'Braces Adjustment', 'Invisalign Check'],
         created_at: '2023-06-20T10:00:00Z',
         stats: {
             total_appointments: 620,
@@ -57,6 +59,7 @@ const MOCK_DOCTORS = [
         license_number: 'DEN-11234',
         is_active: false,
         service_count: 12,
+        services: ['Dental Cleaning', 'Teeth Whitening', 'X-Ray Scan', 'Fluoride Treatment', 'Sealants'],
         created_at: '2024-02-10T10:00:00Z',
         stats: {
             total_appointments: 150,

@@ -45,10 +45,10 @@ export const Modal = ({
         : 'relative w-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-lg max-h-[90vh] flex flex-col overflow-hidden';
 
     return (
-        <div className='fixed inset-0 flex items-center justify-center overflow-y-auto modal z-[999999]'>
+        <div className='fixed inset-0 flex items-center justify-center p-4 overflow-y-auto modal z-[999999]'>
             {!isFullscreen && (
                 <div
-                    className='fixed inset-0 h-full w-full bg-gray-900/60'
+                    className='fixed inset-0 h-full w-full bg-black/60 backdrop-blur-md transition-all duration-300'
                     onClick={onClose}
                 ></div>
             )}

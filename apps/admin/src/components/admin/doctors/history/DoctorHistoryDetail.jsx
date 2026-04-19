@@ -2,8 +2,7 @@ import React from 'react';
 
 const DoctorHistoryDetail = ({ doctor }) => {
     return (
-        <div className='p-4 sm:p-6 lg:p-8'>
-            {/* Performance / Clinical History */}
+        <div className='space-y-6'>
             <div className='p-6 border border-gray-200 rounded-xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
                 <div className='flex items-center justify-between mb-6'>
                     <h4 className='text-[clamp(16px,2vw,18px)] font-bold text-gray-900 dark:text-white'>
