@@ -2,7 +2,7 @@ import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import UserMetaCard from '../../components/patient/profile/UserMetaCard';
 import UserInfoCard from '../../components/patient/profile/UserInfoCard';
 import UserContactCard from '../../components/patient/profile/UserContactCard';
-import UserAddressCard from '../../components/patient/profile/UserAddressCard';
+import ProfileSkeleton from '../../components/patient/profile/ProfileSkeleton';
 
 import { useAuth } from '../../context/AuthContext';
 import ErrorState from '../../components/common/ErrorState';
@@ -21,7 +21,9 @@ export default function PatientProfile() {
                 </div>
                 
                 <div className='sm:mx-0 mx-4 mb-10 space-y-6'>
-                    {error && !loading ? (
+                    {loading && !user ? (
+                        <ProfileSkeleton />
+                    ) : error && !loading ? (
                         <ErrorState 
                             error={error} 
                             onRetry={() => window.location.reload()} 

@@ -141,9 +141,9 @@ const NotificationsPage = () => {
                 
                 <div className='flex flex-col grow'>
                     {/* Inbox Skeleton */}
-                    <div className='mx-4 sm:mx-6 flex flex-col grow bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
+                    <div className='mx-4 sm:mx-6 flex flex-col grow bg-white dark:bg-gray-900 sm:rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
                         <div className='p-6 border-b border-gray-100 dark:border-gray-800'>
-                            <div className='h-10 w-full bg-gray-50 dark:bg-gray-800 rounded-2xl animate-pulse' />
+                            <div className='h-10 w-full bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse' />
                         </div>
                         <NotificationSkeleton rows={6} />
                     </div>
@@ -202,6 +202,7 @@ const NotificationsPage = () => {
                         onToggleStar={handleToggleStar}
                         onNotificationClick={handleNotificationClick}
                         onMarkAllRead={markAllRead}
+                        loading={loading}
                     />
                 </div>
             )}

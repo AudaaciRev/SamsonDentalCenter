@@ -27,7 +27,7 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
             {/* Desktop View (sm and up) */}
             <div className='hidden sm:flex items-center gap-4 w-full'>
                 <div className='shrink-0 pl-1 text-gray-300 dark:text-gray-600 transition-colors group-hover:text-amber-400'>
-                    <div className='w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-sm shadow-sm'>
+                    <div className='w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 font-bold text-sm'>
                         {getInitial(appointment.service)}
                     </div>
                 </div>
@@ -76,7 +76,7 @@ const AppointmentTableRow = ({ appointment, user, openDropdown, onToggleDropdown
             {/* Mobile View (xs only) */}
             <div className='flex sm:hidden gap-4 w-full'>
                 <div className='shrink-0'>
-                    <div className='w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-lg shadow-sm'>
+                    <div className='w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg'>
                         {getInitial(appointment.service)}
                     </div>
                 </div>

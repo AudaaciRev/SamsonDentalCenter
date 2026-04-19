@@ -18,7 +18,7 @@ const AppointmentTable = ({ appointments, loading, error, user, openDropdown, on
             {/* Empty */}
             {!loading && !error && appointments.length === 0 && (
                 <div className='flex flex-col items-center justify-center py-20 text-center px-4'>
-                    <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
+                    <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
                         <Calendar size={32} />
                     </div>
                     <h4 className='text-lg font-bold text-gray-800 dark:text-white mb-1'>No appointments found</h4>

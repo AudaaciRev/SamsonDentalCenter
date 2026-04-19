@@ -1,12 +1,20 @@
 import React from 'react';
-import { ClipboardList, Clock, CheckCircle2, AlertCircle, ArrowUpRight, Calendar } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import StatCard from './StatCard';
 import { formatDate, formatTime } from '../../../hooks/useAppointments';
 import { Link } from 'react-router-dom';
 
 const DashboardStats = ({ entries = [], appointments = [], totalAppointments = 0, loading = false }) => {
+    const scrollRef = React.useRef(null);
+    const [scrolled, setScrolled] = React.useState(false);
+
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            setScrolled(scrollRef.current.scrollLeft > 20);
+        }
+    };
+
     // Latest Appointment — most recently created
-    // NOTE: backend returns `date` (not `appointment_date`)
     const latestAppt = [...appointments]
         .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date))[0];
 
@@ -23,86 +31,96 @@ const DashboardStats = ({ entries = [], appointments = [], totalAppointments = 0
     const serviceName = loading ? '…' : (latestAppt ? latestAppt.service?.name || latestAppt.service : null);
 
     return (
-        <div className='space-y-3 sm:space-y-4'>
-
-            {/* ── Row 1: Latest Appointment — full width hero card ── */}
-            <div className='group relative rounded-none sm:rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm hover:shadow-theme-md transition-all duration-300 overflow-hidden'>
-                <div className='flex items-stretch'>
-                    {/* Left accent bar */}
-                    <div className='w-1.5 bg-gradient-to-b from-brand-400 to-brand-600 shrink-0' />
-
-                    {/* Icon */}
-                    <div className='flex items-center justify-center px-4 sm:px-5'>
-                        <div className='flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 transition-transform group-hover:scale-105 duration-300'>
-                            <Clock size={22} />
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className='flex-grow py-4 sm:py-5 min-w-0'>
-                        {/* Label */}
-                        <p className='text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1'>
-                            Latest Appointment
-                        </p>
-                        {/* Service name */}
-                        <h3 className='text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white font-outfit truncate leading-tight'>
-                            {loading
-                                ? <span className='inline-block w-36 h-5 bg-gray-100 dark:bg-white/10 rounded-full animate-pulse' />
-                                : serviceName || 'No appointments yet'
-                            }
-                        </h3>
-                        {/* Date · Time pills */}
-                        {latestAppt && !loading && (
-                            <div className='flex items-center gap-2 mt-2 flex-wrap'>
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/10 text-[11px] sm:text-xs font-semibold text-brand-600 dark:text-brand-400'>
-                                    <Calendar size={11} />
-                                    {formatDate(latestAppt.date)}
-                                </span>
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.07] text-[11px] sm:text-xs font-semibold text-gray-600 dark:text-gray-300'>
-                                    <Clock size={11} />
-                                    {formatTime(latestAppt.start_time)}
-                                </span>
-                            </div>
+        <div className='flex flex-col lg:grid lg:grid-cols-5 gap-4 min-w-0'>
+            {/* ── Card 1: Latest Appointment ── */}
+            <div className='lg:col-span-2 relative rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] min-h-[100px] sm:min-h-[110px]'>
+                <div className='flex items-center h-full px-4 sm:px-5 py-3.5 sm:py-4'>
+                    <div className='flex items-center gap-3 sm:gap-4 min-w-0 grow'>
+                        {loading ? (
+                            <>
+                                <div className='w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 dark:bg-gray-800 shrink-0 animate-pulse' />
+                                <div className='space-y-1.5 sm:space-y-2 grow'>
+                                    <div className='h-4.5 sm:h-5 w-3/4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse' />
+                                    <div className='h-3.5 sm:h-4 w-1/2 bg-gray-50 dark:bg-gray-800/50 rounded animate-pulse' />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className='flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 shrink-0'>
+                                    <Clock size={18} className="sm:w-[20px] sm:h-[20px]" />
+                                </div>
+                                
+                                <div className='min-w-0 grow'>
+                                    <p className='text-[10px] sm:text-[11px] lg:text-xs font-bold text-gray-500 dark:text-gray-400 mb-0.5 uppercase tracking-wider'>
+                                        Latest Appointment
+                                    </p>
+                                    <h3 className='text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate tracking-tight'>
+                                        {serviceName || 'No appointments'}
+                                    </h3>
+                                    {latestAppt && (
+                                        <div className='flex items-center gap-1.5 sm:gap-2 mt-1.5 flex-wrap'>
+                                            <span className='inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-[9px] sm:text-[10px] lg:text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tight'>
+                                                <Calendar size={10} className="sm:w-[12px] sm:h-[12px]" />
+                                                {formatDate(latestAppt.date)}
+                                            </span>
+                                            <span className='inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-[9px] sm:text-[10px] lg:text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-tight'>
+                                                <Clock size={10} className="sm:w-[12px] sm:h-[12px]" />
+                                                {formatTime(latestAppt.start_time)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
                     </div>
 
-                    {/* View link */}
-                    {latestAppt && (
-                        <div className='flex items-center pr-4 sm:pr-5'>
-                            <Link
-                                to={`/patient/appointments/${latestAppt.id}`}
-                                className='hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-800 rounded-xl hover:text-brand-500 hover:border-brand-200 transition-all'
-                            >
-                                View <ArrowUpRight size={12} />
-                            </Link>
-                            <Link to={`/patient/appointments/${latestAppt.id}`} className='absolute inset-0 sm:hidden z-10' aria-label='View appointment' />
-                        </div>
+                    {/* External Link */}
+                    {latestAppt && !loading && (
+                        <Link to={`/patient/appointments/${latestAppt.id}`} className='absolute inset-0 z-10' aria-label='View appointment' />
                     )}
                 </div>
             </div>
 
-            {/* ── Row 2: 3 Stat cards - Static 3-column grid on all screens ── */}
-            <div className='grid grid-cols-3 gap-2 sm:gap-4'>
-                <StatCard
-                    title='Pending'
-                    value={loading ? '…' : pendingCount.toString()}
-                    icon={AlertCircle}
-                    color='warning'
-                />
-                <StatCard
-                    title='Approved'
-                    value={loading ? '…' : approvedCount.toString()}
-                    icon={CheckCircle2}
-                    color='success'
-                />
-                <StatCard
-                    title='Waitlist'
-                    value={loading ? '…' : waitlistCount.toString()}
-                    icon={ClipboardList}
-                    color='info'
-                />
+            {/* ── Cards 2-4: Stats (2-Card Carousel) ── */}
+            <div 
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className='flex overflow-x-auto lg:contents gap-4 pb-1 lg:pb-0 no-scrollbar snap-x snap-mandatory'
+            >
+                <div className='min-w-[calc(50%-8px)] lg:min-w-0 lg:col-span-1 snap-start'>
+                    <StatCard
+                        title='Pending'
+                        value={pendingCount.toString()}
+                        icon={AlertCircle}
+                        color='warning'
+                        loading={loading}
+                    />
+                </div>
+                <div className='min-w-[calc(50%-8px)] lg:min-w-0 lg:col-span-1 snap-start'>
+                    <StatCard
+                        title='Approved'
+                        value={approvedCount.toString()}
+                        icon={CheckCircle2}
+                        color='success'
+                        loading={loading}
+                    />
+                </div>
+                <div className='min-w-[calc(50%-8px)] lg:min-w-0 lg:col-span-1 snap-start'>
+                    <StatCard
+                        title='Waitlist'
+                        value={waitlistCount.toString()}
+                        icon={ClipboardList}
+                        color='info'
+                        loading={loading}
+                    />
+                </div>
             </div>
 
+            {/* Mobile Pagination Dots (2 Pages) */}
+            <div className='flex lg:hidden justify-center gap-1.5 mt-[-4px] mb-1'>
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${!scrolled ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-700'}`} />
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${scrolled ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-700'}`} />
+            </div>
         </div>
     );
 };

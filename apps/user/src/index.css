@@ -179,9 +179,22 @@
     }
 }
 
-/* ── Sidebar Menu Utilities ── */
+/* Sidebar Menu Utilities */
+/* Sidebar Menu Utilities */
 @utility menu-item {
-    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+    @apply relative flex items-center w-full py-2 pl-[13px] pr-3 font-medium rounded-lg text-theme-sm transition-all duration-300;
+}
+
+@utility sidebar-text-expanded {
+    @apply opacity-100 max-w-[200px] ml-4 translate-x-0 visible;
+}
+
+@utility sidebar-text-collapsed {
+    @apply opacity-0 max-w-0 ml-0 -translate-x-2 invisible;
+}
+
+@utility sidebar-text-base {
+    @apply transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden;
 }
 
 @utility menu-item-active {

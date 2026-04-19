@@ -178,6 +178,7 @@ const navItems = [
     },
 ];
 
+
 const PatientSidebar = () => {
     const { isExpanded, isMobileOpen, setIsMobileOpen, isHovered, setIsHovered } = useSidebar();
     const location = useLocation();
@@ -193,7 +194,7 @@ const PatientSidebar = () => {
 
     return (
         <aside
-            className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 pb-4 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-[width,transform,padding] duration-300 ease-in-out z-50 border-r border-gray-200 
+            className={`fixed top-16 lg:top-0 flex flex-col px-5 pb-20 lg:pb-8 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-[calc(100dvh-64px)] lg:h-[100dvh] transition-[width,transform,padding] duration-300 ease-in-out z-50 border-r border-gray-200 
                 ${
                     isExpanded || isMobileOpen
                         ? 'w-[290px]'
@@ -206,72 +207,43 @@ const PatientSidebar = () => {
             onMouseEnter={() => !isExpanded && setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Logo */}
-            <div
-                className={`py-8 flex ${
-                    !isExpanded && !isHovered
-                        ? 'lg:justify-center'
-                        : 'justify-start'
-                }`}
-            >
-                <Link to='/patient'>
-                    {isExpanded || isHovered || isMobileOpen ? (
-                        <>
-                            <span className='text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase font-outfit'>
-                                Samson <span className='text-brand-500'>Dental</span>
-                            </span>
-                            {/* 
-                            <img
-                                className='dark:hidden'
-                                src='/images/logo/logo.svg'
-                                alt='Logo'
-                                width={150}
-                                height={40}
-                            />
-                            <img
-                                className='hidden dark:block'
-                                src='/images/logo/logo-dark.svg'
-                                alt='Logo'
-                                width={150}
-                                height={40}
-                            />
-                            */}
-                        </>
-                    ) : (
-                        <>
-                            <span className='text-2xl font-black text-brand-500 font-outfit'>
-                                S
-                            </span>
-                            {/* 
-                            <img
-                                src='/images/logo/logo-icon.svg'
-                                alt='Logo'
-                                width={32}
-                                height={32}
-                            />
-                            */}
-                        </>
-                    )}
+            <div className={`py-8 flex w-full transition-all duration-300 pl-[13px]`}>
+                <Link to='/patient' className="flex items-center min-h-[40px]">
+                    <div className="flex items-center">
+                        <span className="text-2xl font-black text-brand-500 font-outfit min-w-[24px] flex justify-center">
+                            S
+                        </span>
+                        <span 
+                            className={`sidebar-text-base text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase font-outfit ${
+                                isExpanded || isHovered || isMobileOpen 
+                                ? 'opacity-100 max-w-[200px] visible ml-0' 
+                                : 'opacity-0 max-w-0 invisible ml-0'
+                            }`}
+                        >
+                            amson <span className='text-brand-500'>Dental</span>
+                        </span>
+                    </div>
                 </Link>
             </div>
 
             {/* Nav */}
-            <div className='flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar'>
+            <div className='flex-1 min-h-0 flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar'>
                 <nav className='mb-6'>
                     <div className='flex flex-col'>
                         <div>
                             <h2
-                                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                                    !isExpanded && !isHovered
-                                        ? 'lg:justify-center'
-                                        : 'justify-start'
-                                }`}
+                                className={`mb-4 text-xs uppercase flex items-center leading-[20px] text-gray-400 pl-[13px] transition-all duration-300`}
                             >
-                                {isExpanded || isHovered || isMobileOpen ? (
-                                    'Menu'
-                                ) : (
+                                <div className={`flex items-center transition-all duration-300 ${isExpanded || isHovered || isMobileOpen ? 'opacity-0 scale-50 w-0 overflow-hidden' : 'opacity-100 scale-100 w-[24px]'}`}>
                                     <HorizontalDots className='size-6' />
-                                )}
+                                </div>
+                                <span className={`sidebar-text-base ${
+                                    isExpanded || isHovered || isMobileOpen 
+                                    ? 'opacity-100 max-w-[200px] visible ml-0' 
+                                    : 'opacity-0 max-w-0 invisible ml-0 text-transparent'
+                                }`}>
+                                    Menu
+                                </span>
                             </h2>
                             <ul className='flex flex-col gap-1'>
                                 {navItems.map((nav) => (
@@ -282,14 +254,10 @@ const PatientSidebar = () => {
                                                 isActive(nav.path)
                                                     ? 'menu-item-active'
                                                     : 'menu-item-inactive'
-                                            } ${
-                                                !isExpanded && !isHovered
-                                                    ? 'lg:justify-center'
-                                                    : 'lg:justify-start'
                                             }`}
                                         >
                                             <span
-                                                className={`menu-item-icon-size ${
+                                                className={`menu-item-icon-size shrink-0 ${
                                                     isActive(nav.path)
                                                         ? 'menu-item-icon-active'
                                                         : 'menu-item-icon-inactive'
@@ -297,13 +265,13 @@ const PatientSidebar = () => {
                                             >
                                                 {nav.icon}
                                             </span>
-                                            {(isExpanded ||
-                                                isHovered ||
-                                                isMobileOpen) && (
-                                                <span className='menu-item-text'>
-                                                    {nav.name}
-                                                </span>
-                                            )}
+                                            <span className={`sidebar-text-base menu-item-text ${
+                                                isExpanded || isHovered || isMobileOpen 
+                                                ? 'sidebar-text-expanded' 
+                                                : 'sidebar-text-collapsed'
+                                            }`}>
+                                                {nav.name}
+                                            </span>
                                         </Link>
                                     </li>
                                 ))}
@@ -314,25 +282,23 @@ const PatientSidebar = () => {
             </div>
 
             {/* Sidebar Footer */}
-            <div className='mt-auto pt-6 border-t border-gray-100 dark:border-gray-800'>
+            <div className='mt-auto pt-4 border-t border-gray-100 dark:border-gray-800'>
                 <ul className='flex flex-col gap-1'>
                     <li>
                         <Link
                             to='/'
-                            className={`menu-item group menu-item-inactive ${
-                                !isExpanded && !isHovered
-                                    ? 'lg:justify-center'
-                                    : 'lg:justify-start'
-                            }`}
+                            className={`menu-item group menu-item-inactive`}
                         >
-                            <span className='menu-item-icon-size menu-item-icon-inactive'>
+                            <span className='menu-item-icon-size menu-item-icon-inactive shrink-0'>
                                 <HomeIcon />
                             </span>
-                            {(isExpanded || isHovered || isMobileOpen) && (
-                                <span className='menu-item-text'>
-                                    Back to Home
-                                </span>
-                            )}
+                            <span className={`sidebar-text-base menu-item-text ${
+                                isExpanded || isHovered || isMobileOpen 
+                                ? 'sidebar-text-expanded' 
+                                : 'sidebar-text-collapsed'
+                            }`}>
+                                Back to Home
+                            </span>
                         </Link>
                     </li>
                 </ul>

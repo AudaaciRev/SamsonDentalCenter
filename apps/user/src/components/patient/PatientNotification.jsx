@@ -26,7 +26,7 @@ const PatientNotification = () => {
     return (
         <div className='relative' ref={notificationRef}>
             <button
-                className='relative flex items-center justify-center text-gray-500 bg-white border border-gray-200 rounded-full hover:text-gray-700 h-10 w-10 hover:bg-gray-100 lg:h-11 lg:w-11 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
+                className='relative flex items-center justify-center text-gray-500 bg-white border border-gray-200 rounded-full hover:text-gray-700 h-10 w-10 hover:bg-gray-100 lg:h-11 lg:w-11 dark:bg-white/[0.03] dark:border-gray-800 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5'
                 onClick={toggleDropdown}
                 aria-label='Notifications'
             >
@@ -52,7 +52,7 @@ const PatientNotification = () => {
             </button>
 
             {isOpen && (
-                <div className='absolute right-[-52px] sm:right-0 mt-3 flex h-auto max-h-[480px] w-[300px] sm:w-[350px] flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 shadow-theme-lg z-50'>
+                <div className='absolute right-[-52px] sm:right-0 mt-3 flex h-auto max-h-[480px] w-[300px] sm:w-[350px] flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-2 shadow-theme-lg z-50 backdrop-blur-sm'>
                     <div className='flex items-center justify-between px-3 py-3 border-b border-gray-100 dark:border-gray-800 mb-1'>
                         <h5 className='text-sm sm:text-base font-bold text-gray-800 dark:text-white font-outfit uppercase tracking-tight'>
                             Notifications

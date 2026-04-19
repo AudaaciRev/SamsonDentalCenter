@@ -1,4 +1,4 @@
-import { Search, Clock, RotateCcw, History } from 'lucide-react';
+import { Search, Clock, RotateCcw, History, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import { PlusIcon } from './AppointmentIcons';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -11,13 +11,13 @@ const MAIN_TABS = [
 
 const SUB_FILTERS = {
     requests: [
-        { id: 'approved', label: 'Approved', key: 'approved' },
-        { id: 'pending', label: 'Pending', key: 'pending' },
-        { id: 'decline', label: 'Rejected', key: 'decline' },
+        { id: 'approved', label: 'Approved', key: 'approved', icon: CheckCircle2 },
+        { id: 'pending', label: 'Pending', key: 'pending', icon: Clock },
+        { id: 'decline', label: 'Rejected', key: 'decline', icon: XCircle },
     ],
     history: [
-        { id: 'cancel', label: 'Cancelled', key: 'cancel' },
-        { id: 'completed', label: 'Completed', key: 'completed' },
+        { id: 'cancel', label: 'Cancelled', key: 'cancel', icon: XCircle },
+        { id: 'completed', label: 'Completed', key: 'completed', icon: CheckCircle2 },
     ],
 };
 
@@ -48,7 +48,7 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
     };
 
     return (
-        <div className='border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900'>
+        <div className='border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-transparent'>
             {/* Search and Action Row */}
             <div className='px-4 sm:px-6 pt-5 pb-0 sm:pt-5 sm:pb-3 flex items-center gap-3 sm:gap-4'>
                 <div className='relative flex-grow'>
@@ -60,12 +60,12 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)}
                         placeholder='Search service, dentist...'
-                        className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-[ring] outline-none font-medium'
+                        className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/5 border-none rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-white/10 transition-[ring] outline-none font-medium'
                     />
                 </div>
                 <Link
                     to='/patient/book'
-                    className='hidden sm:inline-flex shrink-0 items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-brand-500 rounded-2xl hover:bg-brand-600 transition-[transform] shadow-lg shadow-brand-500/20 active:scale-95'
+                    className='hidden sm:inline-flex shrink-0 items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-[transform] active:scale-95'
                 >
                     <PlusIcon size={16} />
                     <span className='whitespace-nowrap'>New Appointment</span>
@@ -89,7 +89,7 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
                             }`}
                         >
                             <span>{tab.label}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${
                                 isActive 
                                 ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400' 
                                 : 'bg-gray-100 dark:bg-white/10 text-gray-400'
@@ -108,7 +108,7 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
 
             {/* Sub-Navigation (Pills) */}
             {currentSubFilters.length > 0 && (
-                <div className='px-4 sm:px-6 py-4 bg-gray-50/30 dark:bg-white/[0.01] border-t border-gray-50 dark:border-gray-800/50 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar'>
+                <div className='px-4 sm:px-6 py-4 bg-gray-50/30 dark:bg-white/[0.02] border-t border-gray-50 dark:border-gray-800/50 flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar'>
                     {currentSubFilters.map((sub) => {
                         const isSubActive = statusFilter === sub.id;
                         const count = counts[sub.key] || 0;
@@ -123,14 +123,19 @@ const AppointmentFilters = ({ search, onSearchChange, statusFilter, onStatusChan
                                         onStatusChange(sub.id);
                                     }
                                 }}
-                                className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-[transform] whitespace-nowrap flex items-center gap-2 ${
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                                     isSubActive 
-                                    ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' 
-                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                                    ? 'bg-brand-500 text-white' 
+                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
                                 }`}
                             >
-                                {sub.label}
-                                <span className={`text-[10px] opacity-70 ${isSubActive ? 'text-white' : 'text-gray-400'}`}>
+                                {sub.icon && <sub.icon size={14} />}
+                                <span>{sub.label}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                                    isSubActive 
+                                    ? 'bg-white/20 text-white' 
+                                    : 'bg-gray-200 dark:bg-white/10 text-gray-400'
+                                }`}>
                                     {count}
                                 </span>
                             </button>

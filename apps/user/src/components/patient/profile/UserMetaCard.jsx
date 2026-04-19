@@ -47,7 +47,7 @@ export default function UserMetaCard() {
 
     return (
         <>
-            <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
+            <div className='p-6 border border-gray-200 rounded-xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
                 <div className='flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between'>
                     <div className='flex flex-col items-center w-full gap-6 xl:flex-row'>
                         <div className='w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-gradient-to-br from-brand-400 to-brand-600 text-white font-bold text-2xl shadow-inner shrink-0'>
@@ -75,7 +75,7 @@ export default function UserMetaCard() {
                     <Button
                         variant='outline'
                         onClick={openModal}
-                        className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
+                        className='flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-bold lg:inline-flex lg:w-auto hover:border-brand-500 hover:text-brand-500'
                     >
                         <svg
                             className='fill-current'
@@ -101,14 +101,14 @@ export default function UserMetaCard() {
                     className='fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md w-screen h-screen'
                     onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
                 >
-                    <div className='relative w-full max-w-md bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-gray-800 animate-[fadeIn_0.2s_ease-out] overflow-hidden'>
+                    <div className='relative w-full max-w-md bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 animate-[fadeIn_0.2s_ease-out] overflow-hidden'>
                         {/* Visual Header Bar */}
                         <div className='h-1.5 w-full bg-brand-500' />
                         
                         <div className='p-6 sm:p-8 space-y-6'>
                             {/* Icon & Title */}
                             <div className='flex flex-col items-center text-center space-y-4'>
-                                <div className='w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'>
+                                <div className='w-14 h-14 rounded-lg flex items-center justify-center bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'>
                                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                                     </svg>
@@ -128,10 +128,10 @@ export default function UserMetaCard() {
                                     <div 
                                         key={i}
                                         onClick={() => setSelectedAvatar(url)}
-                                        className={`relative cursor-pointer group rounded-2xl border-2 transition-all duration-300 aspect-square overflow-hidden flex items-center justify-center p-1
-                                            ${selectedAvatar === url ? 'border-brand-500 bg-brand-50 shadow-md shadow-brand-500/10' : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'}`}
+                                        className={`relative cursor-pointer group rounded-lg border-2 transition-all duration-300 aspect-square overflow-hidden flex items-center justify-center p-1
+                                            ${selectedAvatar === url ? 'border-brand-500 bg-brand-50' : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'}`}
                                     >
-                                        <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform" />
+                                        <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover rounded-md group-hover:scale-110 transition-transform" />
                                         {selectedAvatar === url && (
                                             <div className="absolute top-1 right-1 bg-brand-500 text-white rounded-full p-0.5 shadow-sm scale-75">
                                                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -148,7 +148,7 @@ export default function UserMetaCard() {
                                     onClick={closeModal}
                                     type="button"
                                     disabled={isSaving}
-                                    className='flex-1 px-4 py-3.5 rounded-2xl border border-gray-100 dark:border-white/5 text-[14px] font-black text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95'
+                                    className='flex-1 px-4 py-3.5 rounded-lg border border-gray-100 dark:border-white/5 text-[14px] font-black text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95'
                                 >
                                     Cancel
                                 </button>
@@ -156,7 +156,7 @@ export default function UserMetaCard() {
                                     onClick={handleSave}
                                     type='button'
                                     disabled={isSaving}
-                                    className='flex-1 px-6 py-3.5 rounded-2xl bg-brand-500 text-[14px] font-black text-white hover:bg-brand-600 shadow-lg shadow-brand-500/20 transition-all active:scale-95 disabled:opacity-50'
+                                    className='flex-1 px-6 py-3.5 rounded-lg bg-brand-500 text-[14px] font-black text-white hover:bg-brand-600 transition-all active:scale-95 disabled:opacity-50'
                                 >
                                     {isSaving ? 'Saving...' : 'Save'}
                                 </button>

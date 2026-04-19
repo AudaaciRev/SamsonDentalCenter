@@ -32,7 +32,7 @@ export default function UserContactCard() {
     };
 
     return (
-        <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
+        <div className='p-6 border border-gray-200 rounded-xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
             <div className='flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between'>
                 <div className="flex-1">
                     <h4 className='text-[clamp(16px,2vw,18px)] font-bold text-gray-900 dark:text-white lg:mb-6 mb-4'>
@@ -54,7 +54,7 @@ export default function UserContactCard() {
                 <Button
                     variant='outline'
                     onClick={openModal}
-                    className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
+                    className='flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-bold lg:inline-flex lg:w-auto hover:border-brand-500 hover:text-brand-500'
                 >
                     <svg
                         className='fill-current'
@@ -76,7 +76,7 @@ export default function UserContactCard() {
             </div>
 
             <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[480px] w-[95%] sm:w-full m-auto'>
-                <div className='no-scrollbar relative w-full overflow-y-auto rounded-[2rem] bg-white p-6 dark:bg-gray-900 sm:p-8'>
+                <div className='no-scrollbar relative w-full overflow-y-auto rounded-xl bg-white p-6 dark:bg-gray-900 sm:p-8'>
                     <div className='pr-8 sm:pr-12'>
                         <h4 className='mb-1 text-xl font-bold text-gray-900 dark:text-white'>
                             Edit Contact Information
@@ -91,7 +91,7 @@ export default function UserContactCard() {
                                 <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Phone Number</Label>
                                 <Input 
                                     name="phone"
-                                    className="text-sm font-medium h-12 rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500/10" 
+                                    className="text-sm font-medium h-12 rounded-lg border-gray-200 focus:border-brand-500 focus:ring-brand-500/10" 
                                     type='text' 
                                     defaultValue={user?.phone || ''} 
                                     placeholder="Enter your phone number"
@@ -101,7 +101,7 @@ export default function UserContactCard() {
                             <div>
                                 <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Email Address</Label>
                                 <Input 
-                                    className="text-sm font-medium h-12 rounded-xl bg-gray-50/50 opacity-70 cursor-not-allowed border-gray-200" 
+                                    className="text-sm font-medium h-12 rounded-lg bg-gray-50/50 opacity-70 cursor-not-allowed border-gray-200" 
                                     type='email' 
                                     defaultValue={user?.email || ''} 
                                     readOnly 
@@ -112,10 +112,10 @@ export default function UserContactCard() {
                         </div>
 
                         <div className='flex items-center gap-3 mt-2 sm:justify-end'>
-                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-lg font-bold" disabled={isSaving}>
                                 Cancel
                             </Button>
-                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-lg font-bold" disabled={isSaving}>
                                 {isSaving ? 'Saving...' : 'Save'}
                             </Button>
                         </div>

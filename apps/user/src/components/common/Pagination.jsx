@@ -51,7 +51,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             <button
                 onClick={handlePrevious}
                 disabled={currentPage === 1}
-                className='w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl text-slate-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all active:scale-95 shadow-sm'
+                className='w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg text-slate-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all active:scale-95'
                 aria-label='Previous Page'
             >
                 <ChevronLeft
@@ -76,10 +76,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                         <button
                             key={n}
                             onClick={() => onPageChange(n)}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all active:scale-90 ${
+                            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all active:scale-90 ${
                                 currentPage === n
-                                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 -translate-y-px'
-                                    : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-brand-200 dark:hover:border-brand-500/50 hover:text-brand-500 shadow-sm'
+                                    ? 'bg-brand-500 text-white -translate-y-px'
+                                    : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-brand-200 dark:hover:border-brand-500/50 hover:text-brand-500'
                             }`}
                         >
                             {n}
@@ -91,7 +91,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             <button
                 onClick={handleNext}
                 disabled={currentPage === totalPages}
-                className='w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl text-slate-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all active:scale-95 shadow-sm'
+                className='w-10 h-10 flex items-center justify-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg text-slate-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-gray-700 transition-all active:scale-95'
                 aria-label='Next Page'
             >
                 <ChevronRight
