@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 
@@ -15,31 +15,6 @@ const GridIcon = () => (
             d='M3.5 3.5H10.5V10.5H3.5V3.5ZM13.5 3.5H20.5V10.5H13.5V3.5ZM3.5 13.5H10.5V20.5H3.5V13.5ZM13.5 13.5H20.5V20.5H13.5V13.5Z'
             stroke='currentColor'
             strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-    </svg>
-);
-
-const CalendarIcon = () => (
-    <svg
-        width='24'
-        height='24'
-        viewBox='0 0 24 24'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-    >
-        <path
-            d='M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-        <path
-            d='M15.695 13.7H15.704M15.695 16.7H15.704M11.995 13.7H12.005M11.995 16.7H12.005M8.295 13.7H8.305M8.295 16.7H8.305'
-            stroke='currentColor'
-            strokeWidth='2'
             strokeLinecap='round'
             strokeLinejoin='round'
         />
@@ -71,60 +46,10 @@ const UserCircleIcon = () => (
     </svg>
 );
 
-const BellIcon = () => (
-    <svg
-        width='24'
-        height='24'
-        viewBox='0 0 24 24'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-    >
-        <path
-            d='M15 17H20L18.595 15.595C18.214 15.214 18 14.697 18 14.159V11C18 7.301 15.482 4.191 12.1 3.507V3.5C12.1 2.672 11.428 2 10.6 2C9.772 2 9.1 2.672 9.1 3.5V3.507C5.718 4.191 3.2 7.301 3.2 11V14.159C3.2 14.697 2.986 15.214 2.605 15.595L1.2 17H6.2M15 17V18C15 20.209 13.209 22 11 22C8.791 22 7 20.209 7 18V17M15 17H7'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-    </svg>
-);
-
-const WaitlistIcon = () => (
-    <svg
-        width='24'
-        height='24'
-        viewBox='0 0 24 24'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-    >
-        <path
-            d='M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-        <path
-            d='M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-        <path
-            d='M23 21V19C22.9993 18.1137 22.7044 17.2522 22.1614 16.5463C21.6184 15.8403 20.8581 15.3331 20 15.11'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
-        <path
-            d='M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11145 19.0078 6.995C19.0078 7.87855 18.7122 8.73608 18.1676 9.43768C17.623 10.1393 16.8604 10.6397 16 10.86'
-            stroke='currentColor'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-        />
+const HomeIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 9.5L12 4L21 9.5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 21V12H15V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
 
@@ -150,35 +75,27 @@ const navItems = [
         path: '/',
     },
     {
-        icon: <CalendarIcon />,
-        name: 'Appointments',
-        path: '/appointments',
-    },
-    {
         icon: <UserCircleIcon />,
-        name: 'My Admins',
-        path: '/admins',
-    },
-    {
-        icon: <CalendarIcon />,
-        name: 'Schedule',
-        path: '/schedule',
-    },
-    {
-        icon: <BellIcon />,
-        name: 'Notifications',
-        path: '/notifications',
-    },
-    {
-        icon: <UserCircleIcon />,
-        name: 'Profile',
-        path: '/profile',
+        name: 'Doctors',
+        path: '/doctors',
+        subItems: [
+            { name: 'Profile', path: '/doctors/profile' },
+            { name: 'Schedule', path: '/doctors/schedule' },
+            { name: 'History', path: '/doctors/history' },
+        ],
     },
 ];
+
+const ChevronDownIcon = ({ className }) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
 
 const AdminSidebar = () => {
     const { isExpanded, isMobileOpen, setIsMobileOpen, isHovered, setIsHovered } = useSidebar();
     const location = useLocation();
+    const [expandedNav, setExpandedNav] = useState('/doctors');
 
     const isActive = useCallback(
         (path) => {
@@ -208,27 +125,22 @@ const AdminSidebar = () => {
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* Logo */}
-            <div
-                className={`py-8 flex ${
-                    !isExpanded && !isHovered
-                        ? 'lg:justify-center'
-                        : 'justify-start'
-                }`}
-            >
-                <Link to='/'>
-                    {isExpanded || isHovered || isMobileOpen ? (
-                        <>
-                            <span className='text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase font-outfit'>
-                                Samson <span className='text-brand-500'>Dental</span>
-                            </span>
-                        </>
-                    ) : (
-                        <>
-                            <span className='text-2xl font-black text-brand-500 font-outfit'>
-                                S
-                            </span>
-                        </>
-                    )}
+            <div className={`py-8 flex w-full transition-all duration-300 pl-[13px]`}>
+                <Link to='/' className="flex items-center min-h-[40px]">
+                    <div className="flex items-center">
+                        <span className="text-2xl font-black text-brand-500 font-outfit min-w-[24px] flex justify-center">
+                            S
+                        </span>
+                        <span 
+                            className={`sidebar-text-base text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase font-outfit ${
+                                isExpanded || isHovered || isMobileOpen 
+                                ? 'opacity-100 max-w-[200px] visible ml-0' 
+                                : 'opacity-0 max-w-0 invisible ml-0'
+                            }`}
+                        >
+                            amson <span className='text-brand-500'>Dental</span>
+                        </span>
+                    </div>
                 </Link>
             </div>
 
@@ -238,56 +150,149 @@ const AdminSidebar = () => {
                     <div className='flex flex-col'>
                         <div>
                             <h2
-                                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                                    !isExpanded && !isHovered
-                                        ? 'lg:justify-center'
-                                        : 'justify-start'
-                                }`}
+                                className={`mb-4 text-xs uppercase flex items-center leading-[20px] text-gray-400 pl-[13px] transition-all duration-300`}
                             >
-                                {isExpanded || isHovered || isMobileOpen ? (
-                                    'Menu'
-                                ) : (
+                                <div className={`flex items-center transition-all duration-300 ${isExpanded || isHovered || isMobileOpen ? 'opacity-0 scale-50 w-0 overflow-hidden' : 'opacity-100 scale-100 w-[24px]'}`}>
                                     <HorizontalDots className='size-6' />
-                                )}
+                                </div>
+                                <span className={`sidebar-text-base ${
+                                    isExpanded || isHovered || isMobileOpen 
+                                    ? 'opacity-100 max-w-[200px] visible ml-0' 
+                                    : 'opacity-0 max-w-0 invisible ml-0 text-transparent'
+                                }`}>
+                                    Menu
+                                </span>
                             </h2>
                             <ul className='flex flex-col gap-1'>
-                                {navItems.map((nav) => (
-                                    <li key={nav.name}>
-                                        <Link
-                                            to={nav.path}
-                                            className={`menu-item group ${
-                                                isActive(nav.path)
-                                                    ? 'menu-item-active'
-                                                    : 'menu-item-inactive'
-                                            } ${
-                                                !isExpanded && !isHovered
-                                                    ? 'lg:justify-center'
-                                                    : 'lg:justify-start'
-                                            }`}
-                                        >
-                                            <span
-                                                className={`menu-item-icon-size ${
-                                                    isActive(nav.path)
-                                                        ? 'menu-item-icon-active'
-                                                        : 'menu-item-icon-inactive'
-                                                }`}
+                                {navItems.map((nav) => {
+                                    const hasSubItems = nav.subItems && nav.subItems.length > 0;
+                                    const isNavExpanded = expandedNav === nav.path;
+                                    const isMainActive = isActive(nav.path);
+
+                                    return (
+                                        <li key={nav.name}>
+                                            <div
+                                                onClick={() => {
+                                                    if (hasSubItems) {
+                                                        setExpandedNav(isNavExpanded ? null : nav.path);
+                                                    }
+                                                }}
+                                                className={`cursor-pointer ${hasSubItems ? '' : 'pointer-events-none'}`}
                                             >
-                                                {nav.icon}
-                                            </span>
-                                            {(isExpanded ||
-                                                isHovered ||
-                                                isMobileOpen) && (
-                                                <span className='menu-item-text'>
-                                                    {nav.name}
-                                                </span>
+                                                {hasSubItems ? (
+                                                    <div
+                                                        className={`menu-item group ${
+                                                            isMainActive
+                                                                ? 'menu-item-active'
+                                                                : 'menu-item-inactive'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`menu-item-icon-size shrink-0 ${
+                                                                isMainActive
+                                                                    ? 'menu-item-icon-active'
+                                                                    : 'menu-item-icon-inactive'
+                                                            }`}
+                                                        >
+                                                            {nav.icon}
+                                                        </span>
+                                                        <span className={`sidebar-text-base flex-grow ${
+                                                            isExpanded || isHovered || isMobileOpen 
+                                                            ? 'sidebar-text-expanded' 
+                                                            : 'sidebar-text-collapsed'
+                                                        }`}>
+                                                            {nav.name}
+                                                        </span>
+                                                        <span className={`transition-transform duration-200 ${isNavExpanded ? 'rotate-180' : ''} ${
+                                                            isExpanded || isHovered || isMobileOpen ? 'opacity-100 block' : 'opacity-0 hidden'
+                                                        }`}>
+                                                            <ChevronDownIcon className="w-4 h-4" />
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <Link
+                                                        to={nav.path}
+                                                        className={`menu-item group ${
+                                                            isActive(nav.path)
+                                                                ? 'menu-item-active'
+                                                                : 'menu-item-inactive'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`menu-item-icon-size shrink-0 ${
+                                                                isActive(nav.path)
+                                                                    ? 'menu-item-icon-active'
+                                                                    : 'menu-item-icon-inactive'
+                                                            }`}
+                                                        >
+                                                            {nav.icon}
+                                                        </span>
+                                                        <span className={`sidebar-text-base ${
+                                                            isExpanded || isHovered || isMobileOpen 
+                                                            ? 'sidebar-text-expanded' 
+                                                            : 'sidebar-text-collapsed'
+                                                        }`}>
+                                                            {nav.name}
+                                                        </span>
+                                                    </Link>
+                                                )}
+                                            </div>
+
+                                            {/* SubItems */}
+                                            {hasSubItems && (
+                                                <ul
+                                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                                        isNavExpanded && (isExpanded || isHovered || isMobileOpen)
+                                                            ? 'max-h-52 opacity-100 mt-1'
+                                                            : 'max-h-0 opacity-0'
+                                                    }`}
+                                                >
+                                                    {nav.subItems.map((sub) => (
+                                                        <li key={sub.name}>
+                                                            <Link
+                                                                to={sub.path}
+                                                                className={`flex items-center pl-12 pr-4 py-2.5 text-sm font-medium transition-colors rounded-lg mx-2 ${
+                                                                    location.pathname.startsWith(sub.path)
+                                                                        ? 'text-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                                                                        : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                                                                }`}
+                                                            >
+                                                                {sub.name}
+                                                            </Link>
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             )}
-                                        </Link>
-                                    </li>
-                                ))}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     </div>
                 </nav>
+            </div>
+
+            {/* Sidebar Footer */}
+            <div className='mt-auto pt-4 border-t border-gray-100 dark:border-gray-800'>
+                <ul className='flex flex-col gap-1'>
+                    <li>
+                        <Link
+                            to='/'
+                            className={`menu-item group menu-item-inactive`}
+                        >
+                            <span className='menu-item-icon-size menu-item-icon-inactive shrink-0'>
+                                <HomeIcon />
+                            </span>
+                            <span className={`sidebar-text-base ${
+                                isExpanded || isHovered || isMobileOpen 
+                                ? 'sidebar-text-expanded' 
+                                : 'sidebar-text-collapsed'
+                            }`}>
+                                Back to Home
+                            </span>
+                        </Link>
+                    </li>
+                </ul>
             </div>
         </aside>
     );

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Calendar } from 'lucide-react';
 
@@ -52,7 +52,7 @@ const APPOINTMENTS = [
 
 const DashboardAppointments = () => {
     return (
-        <div className='rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm overflow-hidden flex flex-col h-full'>
+        <div className='rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] transition-colors hover:border-gray-300 dark:hover:border-gray-700 overflow-hidden flex flex-col h-full'>
             <div className='flex items-center justify-between p-6 pb-4'>
                 <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90 font-outfit'>
                     Upcoming Appointments

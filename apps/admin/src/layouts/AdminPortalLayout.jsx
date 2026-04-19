@@ -1,11 +1,19 @@
-﻿import { SidebarProvider, useSidebar } from '../context/SidebarContext';
+import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
 import AdminHeader from '../components/admin/AdminHeader';
 import Backdrop from '../components/admin/Backdrop';
 import AdminSidebar from '../components/admin/AdminSidebar';
+import { useTheme } from '../context/ThemeContext';
 
 const LayoutContent = () => {
     const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+    const { setIsDarkModeAllowed } = useTheme();
+
+    useEffect(() => {
+        setIsDarkModeAllowed(true);
+        return () => setIsDarkModeAllowed(false);
+    }, [setIsDarkModeAllowed]);
 
     return (
         <div className='min-h-screen xl:flex bg-white sm:bg-transparent dark:bg-gray-900 dark:sm:bg-transparent'>
