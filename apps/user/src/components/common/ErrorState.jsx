@@ -45,8 +45,8 @@ const ErrorState = ({ error, onRetry, title, parentName, parentPath }) => {
     const Icon = config.icon;
 
     return (
-        <div className='flex-grow flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-gray-900 sm:rounded-[2.5rem] border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
-            <div className={`w-20 h-20 ${config.bg} ${config.color} rounded-[2rem] flex items-center justify-center mb-8 shadow-theme-sm transition-transform hover:scale-105 duration-300`}>
+        <div className='flex-grow flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-gray-900 sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
+            <div className={`w-20 h-20 ${config.bg} ${config.color} rounded-xl flex items-center justify-center mb-8 transition-transform hover:scale-105 duration-300`}>
                 <Icon size={40} strokeWidth={2.5} />
             </div>
 
@@ -68,7 +68,7 @@ const ErrorState = ({ error, onRetry, title, parentName, parentPath }) => {
                 {parentPath && (
                     <button
                         onClick={() => navigate(parentPath)}
-                        className='order-2 sm:order-1 flex items-center justify-center gap-2 px-8 py-4 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-theme-xs active:scale-95'
+                        className='order-2 sm:order-1 flex items-center justify-center gap-2 px-8 py-4 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700 rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/5 transition-all active:scale-95'
                     >
                         <Undo2 size={18} />
                         Back to {parentName || 'List'}
@@ -77,7 +77,7 @@ const ErrorState = ({ error, onRetry, title, parentName, parentPath }) => {
                 
                 <button
                     onClick={isNotFound ? () => navigate(parentPath || -1) : onRetry}
-                    className='order-1 sm:order-2 flex items-center justify-center gap-2 px-10 py-4 bg-brand-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 active:scale-95'
+                    className='order-1 sm:order-2 flex items-center justify-center gap-2 px-10 py-4 bg-brand-500 text-white rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-brand-600 transition-all active:scale-95'
                 >
                     {isNotFound ? <Undo2 size={18} /> : <RefreshCw size={18} />}
                     {isNotFound ? 'Return' : config.action}

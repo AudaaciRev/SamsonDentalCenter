@@ -60,9 +60,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
         switch (item.status) {
             case 'OFFER_PENDING':
                 return (
-                    <div className="p-6 rounded-[2rem] bg-amber-50 dark:bg-amber-400/[0.03] border border-amber-500/20 animate-pulse">
+                    <div className="p-6 rounded-xl bg-amber-50 dark:bg-amber-400/[0.03] border border-amber-500/20 animate-pulse">
                         <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20">
+                            <div className="p-3 rounded-lg bg-amber-500 text-white">
                                 <Zap size={20} fill="currentColor" />
                             </div>
                             <div className="space-y-1">
@@ -76,9 +76,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                 );
             case 'CONFIRMED':
                 return (
-                    <div className="p-6 rounded-[2rem] bg-success-50 dark:bg-success-400/[0.03] border border-success-500/20">
+                    <div className="p-6 rounded-xl bg-success-50 dark:bg-success-400/[0.03] border border-success-500/20">
                         <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-2xl bg-success-500 text-white shadow-lg shadow-success-500/20">
+                            <div className="p-3 rounded-lg bg-success-500 text-white">
                                 <CheckCircle2 size={20} />
                             </div>
                             <div className="space-y-1">
@@ -92,9 +92,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                 );
             case 'CANCELLED':
                 return (
-                    <div className="p-6 rounded-[2rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/5">
+                    <div className="p-6 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/5">
                         <div className="flex items-start gap-4 opacity-60">
-                            <div className="p-3 rounded-2xl bg-gray-200 dark:bg-gray-800 text-gray-500">
+                            <div className="p-3 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-500">
                                 <X size={20} />
                             </div>
                             <div className="space-y-1">
@@ -108,9 +108,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                 );
             case 'EXPIRED':
                 return (
-                    <div className="p-6 rounded-[2rem] bg-red-50 dark:bg-red-400/[0.03] border border-red-500/20">
+                    <div className="p-6 rounded-xl bg-red-50 dark:bg-red-400/[0.03] border border-red-500/20">
                         <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-2xl bg-red-500 text-white shadow-lg shadow-red-500/20">
+                            <div className="p-3 rounded-lg bg-red-500 text-white">
                                 <Clock size={20} />
                             </div>
                             <div className="space-y-1">
@@ -124,9 +124,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                 );
             default: // WAITING
                 return (
-                    <div className="p-6 rounded-[2rem] bg-brand-50 dark:bg-brand-400/[0.03] border border-brand-500/10">
+                    <div className="p-6 rounded-xl bg-brand-50 dark:bg-brand-400/[0.03] border border-brand-500/10">
                         <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/20">
+                            <div className="p-3 rounded-lg bg-brand-500 text-white">
                                 <Info size={20} />
                             </div>
                             <div className="space-y-1">
@@ -142,12 +142,12 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
     };
 
     return (
-        <div className='flex-grow flex flex-col h-full bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
+        <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
             {/* Action Bar */}
             <div className='px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between'>
                 <button 
                     onClick={onBack}
-                    className='p-2 rounded-xl bg-gray-100 dark:bg-white/[0.05] text-gray-500 hover:bg-gray-200 dark:hover:bg-white/[0.1] transition-colors'
+                    className='p-2 rounded-lg bg-gray-100 dark:bg-white/[0.05] text-gray-500 hover:bg-gray-200 dark:hover:bg-white/[0.1] transition-colors'
                 >
                     <ChevronLeft size={20} />
                 </button>
@@ -155,7 +155,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                 <div className='flex items-center gap-2'>
                     {item.status === 'WAITING' && (
                         <button 
-                            className='p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors'
+                            className='p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors'
                             onClick={handleCancelClick}
                             title="Cancel Request"
                         >
@@ -172,7 +172,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                     {/* Header */}
                     <div className='space-y-6'>
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                            <div className="w-12 h-12 rounded-lg bg-brand-500 flex items-center justify-center text-white">
                                 <Zap size={24} fill="white" />
                             </div>
                             <div>
@@ -205,9 +205,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
 
                     {/* Details Cards */}
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="p-6 rounded-[2rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                        <div className="p-6 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 rounded-xl bg-sky-100 dark:bg-sky-500/10 text-sky-600">
+                                <div className="p-2 rounded-lg bg-sky-100 dark:bg-sky-500/10 text-sky-600">
                                     <CalendarDays size={18} />
                                 </div>
                                 <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Requested waitlist timeslot</span>
@@ -217,9 +217,9 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                             </p>
                         </div>
 
-                        <div className="p-6 rounded-[2rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
+                        <div className="p-6 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.05]">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-500/10 text-purple-600">
+                                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-500/10 text-purple-600">
                                     <Clock size={18} />
                                 </div>
                                 <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Time Window</span>
@@ -232,7 +232,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
 
                     {/* Primary Appointment Context */}
                     {item.backup_appointment && (
-                        <div className={`p-6 sm:p-8 rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${
+                        <div className={`p-6 sm:p-8 rounded-xl relative overflow-hidden transition-all duration-500 ${
                             item.status === 'CONFIRMED' 
                             ? 'bg-success-500/[0.04] border-2 border-success-500/20'
                             : 'bg-brand-50 dark:bg-brand-500/[0.02] border-2 border-dashed border-brand-200 dark:border-brand-500/20'
@@ -289,22 +289,22 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
             </div>
 
             {/* Floating Quick Actions Footer */}
-            <div className='fixed bottom-0 left-0 right-0 sm:relative z-20 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-[0_-8px_20px_rgba(0,0,0,0.05)] sm:shadow-none'>
+            <div className='fixed bottom-0 left-0 right-0 sm:relative z-20 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/95 backdrop-blur-md sm:shadow-none'>
                 <div className='flex items-center gap-3 w-full'>
                     <div className='hidden sm:block sm:w-1/2'></div>
                     <div className='flex flex-1 gap-3 sm:justify-end'>
                         {item.status === 'OFFER_PENDING' ? (
                             <button 
                                 onClick={() => onClaim(item)}
-                                className='flex-1 sm:flex-none sm:min-w-[180px] inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-500 text-white text-[12px] font-black uppercase tracking-widest rounded-2xl hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/20 active:scale-95'
+                                className='flex-1 sm:flex-none sm:min-w-[180px] inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-500 text-white text-[12px] font-black uppercase tracking-widest rounded-lg hover:bg-brand-600 transition-all active:scale-95'
                             >
                                 <Zap size={18} fill="currentColor" />
                                 Claim Slot
                             </button>
                         ) : item.status === 'WAITING' ? (
                             <button 
-                                onClick={handleCancelClick}
-                                className='flex-1 sm:flex-none sm:min-w-[180px] inline-flex items-center justify-center gap-2 px-6 py-4 bg-gray-100 dark:bg-white/[0.05] text-red-500 text-[12px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all'
+                                onClick={() => onCancel(item)}
+                                className='flex-1 sm:flex-none sm:min-w-[180px] inline-flex items-center justify-center gap-2 px-6 py-4 bg-gray-100 dark:bg-white/[0.05] text-red-500 text-[12px] font-black uppercase tracking-widest rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-all'
                             >
                                 <Trash2 size={18} />
                                 Cancel Request
@@ -321,7 +321,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
             {/* Local Cancel Modal */}
             {isCancelModalOpen && (
                 <div className='fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
-                    <div className='w-full max-w-sm bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl p-8 flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-300'>
+                    <div className='w-full max-w-sm bg-white dark:bg-gray-900 rounded-xl p-8 flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-300'>
                         <div className='text-center space-y-2'>
                             <div className='w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-4'>
                                 <AlertTriangle size={32} className='text-amber-500' />
@@ -340,7 +340,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                                     onCancel(item.id, { removeBackup: true });
                                     setIsCancelModalOpen(false);
                                 }}
-                                className='w-full py-5 px-4 rounded-2xl bg-red-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-red-600 active:scale-95 transition-all shadow-lg shadow-red-500/20'
+                                className='w-full py-5 px-4 rounded-lg bg-red-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-red-600 active:scale-95 transition-all'
                             >
                                 Cancel Both
                             </button>
@@ -349,7 +349,7 @@ const WaitlistDetailView = ({ item, onBack, onClaim, onCancel }) => {
                                     onCancel(item.id, { removeBackup: false });
                                     setIsCancelModalOpen(false);
                                 }}
-                                className='w-full py-5 px-4 rounded-2xl bg-gray-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 active:scale-95 transition-all'
+                                className='w-full py-5 px-4 rounded-lg bg-gray-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-[11px] font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-white/10 active:scale-95 transition-all'
                             >
                                 Only Remove Waitlist
                             </button>

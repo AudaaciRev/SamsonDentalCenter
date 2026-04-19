@@ -1,6 +1,7 @@
 import { Search, Mail, Star, Clock, Calendar, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationRow from './NotificationRow';
+import NotificationSkeleton from './NotificationSkeleton';
 import Pagination from '../../common/Pagination';
 
 const CATEGORIES = [
@@ -27,6 +28,7 @@ const NotificationInbox = ({
     onToggleArchive,
     onMarkAllRead,
     onNotificationClick,
+    loading = false
 }) => {
     const [localSearch, setLocalSearch] = useState(searchQuery);
 
@@ -63,7 +65,7 @@ const NotificationInbox = ({
     };
 
     return (
-        <div className='grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden'>
+        <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden'>
             {/* Header / Search Area */}
             <div className='px-4 sm:px-6 py-5 border-b border-gray-100 dark:border-gray-800 space-y-4'>
                 <div className='flex items-center justify-between gap-4'>
@@ -74,7 +76,7 @@ const NotificationInbox = ({
                         <input
                             type='text'
                             placeholder='Search notifications...'
-                            className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/3 border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none'
+                            className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/3 border-none rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-white/10 transition-all outline-none'
                             value={localSearch}
                             onChange={(e) => setLocalSearch(e.target.value)}
                         />
@@ -100,9 +102,9 @@ const NotificationInbox = ({
                             <button
                                 key={cat.id}
                                 onClick={() => onFilterChange(cat.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all group ${
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all group ${
                                     isActive
-                                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
+                                        ? 'bg-brand-500 text-white'
                                         : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
                                 }`}
                             >
@@ -124,7 +126,9 @@ const NotificationInbox = ({
             {/* List Area */}
             <div className='grow flex flex-col'>
                 <div className='flex flex-col grow min-h-120 md:min-h-140 overflow-y-auto pb-14 sm:pb-0'>
-                    {notifications.length > 0 ? (
+                    {loading && notifications.length === 0 ? (
+                        <NotificationSkeleton rows={6} />
+                    ) : notifications.length > 0 ? (
                         notifications.map((n) => (
                             <NotificationRow
                                 key={n.id}
@@ -137,7 +141,7 @@ const NotificationInbox = ({
                         ))
                     ) : (
                         <div className='flex flex-col items-center justify-center py-20 text-center'>
-                            <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
+                            <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
                                 <Mail size={32} />
                             </div>
                             <h4 className='text-lg font-bold text-gray-800 dark:text-white mb-1'>
@@ -149,7 +153,7 @@ const NotificationInbox = ({
                 </div>
 
                 {/* Footer / Pagination Area */}
-                <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-5 border-t border-gray-100 dark:border-gray-800 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-12px_30px_rgba(0,0,0,0.3)] sm:shadow-none'>
+                <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-5 border-t border-gray-100 dark:border-gray-800 sm:shadow-none'>
                     <div className='flex flex-col items-center justify-center w-full max-w-md mx-auto'>
                         {/* Pagination Component - Main Focus */}
                         <div className='flex justify-center'>

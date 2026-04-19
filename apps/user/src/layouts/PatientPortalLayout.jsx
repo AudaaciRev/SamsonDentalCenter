@@ -23,7 +23,7 @@ const LayoutContent = () => {
                 <Backdrop />
             </div>
             <div
-                className={`flex-1 flex flex-col transition-[margin] duration-300 ease-in-out ${
+                className={`flex-1 min-w-0 flex flex-col transition-[margin] duration-300 ease-in-out ${
                     isExpanded || isHovered
                         ? 'lg:ml-[290px]'
                         : 'lg:ml-[90px]'

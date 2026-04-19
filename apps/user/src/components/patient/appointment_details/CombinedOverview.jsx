@@ -19,7 +19,7 @@ const CombinedOverview = ({
                         Assigned Doctor
                     </h3>
                     <div className='flex items-center gap-4 sm:gap-5'>
-                        <div className='w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center font-black text-xl sm:text-2xl border border-brand-500/20 shrink-0'>
+                        <div className='w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center font-black text-xl sm:text-2xl border border-brand-500/20 shrink-0'>
                             {dentistName
                                 .replace(/^Dr\.\s*/i, '')
                                 .charAt(0)

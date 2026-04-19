@@ -52,7 +52,7 @@ const MyAppointments = () => {
         <>
             <PageBreadcrumb pageTitle='My Appointments' className='mb-4' />
             
-            <div className='flex-grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden'>
+            <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden'>
                 {error ? (
                     <ErrorState 
                         error={error} 
@@ -97,7 +97,7 @@ const MyAppointments = () => {
             {!isMobileOpen && (
                 <Link
                     to='/patient/book'
-                    className='fixed bottom-16 right-5 sm:hidden z-50 flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-full shadow-2xl shadow-brand-500/40 active:scale-95 transition-all outline-none'
+                    className='fixed bottom-16 right-5 sm:hidden z-50 flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-lg shadow-2xl shadow-brand-500/40 active:scale-95 transition-all outline-none'
                 >
                     <PlusIcon size={18} />
                     <span className='text-xs font-bold'>New Appointment</span>

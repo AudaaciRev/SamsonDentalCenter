@@ -31,7 +31,7 @@ const DashboardAppointments = () => {
         .slice(0, 5);
 
     return (
-        <div className='rounded-none sm:rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm overflow-hidden flex flex-col h-full'>
+        <div className='rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm overflow-hidden flex flex-col h-full'>
             {/* Header */}
             <div className='flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800'>
                 <h3 className='text-sm sm:text-base font-semibold text-gray-800 dark:text-white/90 font-outfit'>

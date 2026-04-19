@@ -21,7 +21,7 @@ const NotificationRow = ({ notification, onToggleStar, onToggleRead, onClick }) 
     return (
         <div
             onClick={() => onClick(id)}
-            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:shadow-md hover:z-10 ${
+            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-4 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:z-10 ${
                 isRead ? 'bg-white dark:bg-white/[0.02]' : 'bg-brand-50/30 dark:bg-brand-500/5'
             }`}
         >
@@ -88,7 +88,7 @@ const NotificationRow = ({ notification, onToggleStar, onToggleRead, onClick }) 
             {/* Mobile View (xs only) */}
             <div className='flex sm:hidden gap-4 w-full'>
                 <div className='shrink-0'>
-                    <div className='w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-lg shadow-sm'>
+                    <div className='w-12 h-12 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-lg'>
                         {displayCategory.charAt(0)}
                     </div>
                 </div>

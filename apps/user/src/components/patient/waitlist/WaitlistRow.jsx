@@ -37,8 +37,8 @@ const WaitlistRow = ({ item, isActive, onClick }) => {
             }`}
         >
             {/* Status Icon Indicator */}
-            <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                isActive ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'bg-gray-100 dark:bg-white/[0.05] text-gray-400'
+            <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                isActive ? 'bg-brand-500 text-white' : 'bg-gray-100 dark:bg-white/[0.05] text-gray-400'
             }`}>
                 <StatusIcon size={20} />
             </div>

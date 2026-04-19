@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 const StatCard = ({ title, value, icon: Icon, color = 'brand' }) => {
     const colorClasses = {
@@ -9,8 +9,8 @@ const StatCard = ({ title, value, icon: Icon, color = 'brand' }) => {
     };
 
     return (
-        <div className='rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-theme-sm'>
-            <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${colorClasses[color] || colorClasses.brand}`}>
+        <div className='rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 transition-colors hover:border-gray-300 dark:hover:border-gray-700'>
+            <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${colorClasses[color] || colorClasses.brand}`}>
                 {Icon && <Icon size={24} />}
             </div>
 

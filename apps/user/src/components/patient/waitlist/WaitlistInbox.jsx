@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Mail, Clock, CheckCircle2, AlertCircle, Inbox } from 'lucide-react';
 import WaitlistRow from './WaitlistRow';
+import WaitlistSkeleton from './WaitlistSkeleton';
 
 const CATEGORIES = [
     { id: 'All', label: 'All', icon: Inbox },
@@ -30,7 +31,7 @@ const WaitlistInbox = ({
         return () => clearTimeout(timer);
     }, [localQuery, onSearchChange]);
     return (
-        <div className='flex-grow flex flex-col bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden'>
+        <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden'>
             {/* Header / Search Area */}
             <div className='px-4 sm:px-6 py-5 border-b border-gray-100 dark:border-gray-800 space-y-4'>
                 <div className='relative'>
@@ -40,7 +41,7 @@ const WaitlistInbox = ({
                     <input 
                         type='text' 
                         placeholder='Search waitlist...'
-                        className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none'
+                        className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all outline-none'
                         value={localQuery}
                         onChange={(e) => setLocalQuery(e.target.value)}
                     />
@@ -55,9 +56,9 @@ const WaitlistInbox = ({
                             <button
                                 key={cat.id}
                                 onClick={() => onFilterChange(cat.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                                     isActive 
-                                    ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' 
+                                    ? 'bg-brand-500 text-white' 
                                     : 'bg-gray-100 dark:bg-white/[0.05] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]'
                                 }`}
                             >
@@ -71,18 +72,8 @@ const WaitlistInbox = ({
 
             {/* List Area */}
             <div className='flex flex-col grow min-h-[400px] md:min-h-[285px] overflow-y-auto pb-14 sm:pb-0'>
-                {loading ? (
-                    <div className="flex flex-col gap-1 p-4">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="animate-pulse flex items-center gap-4 p-4 rounded-2xl bg-gray-50/50 dark:bg-white/[0.01]">
-                                <div className="w-10 h-10 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-                                <div className="flex-grow space-y-2">
-                                    <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                                    <div className="h-3 w-1/3 bg-gray-100 dark:bg-gray-800/50 rounded-full" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {loading && entries.length === 0 ? (
+                    <WaitlistSkeleton rows={3} />
                 ) : entries.length > 0 ? (
                     entries.map((item) => (
                         <WaitlistRow 
@@ -94,7 +85,7 @@ const WaitlistInbox = ({
                     ))
                 ) : (
                     <div className='flex flex-col items-center justify-center py-20 text-center'>
-                        <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
+                        <div className='w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-xl flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4'>
                             <Clock size={32} />
                         </div>
                         <h4 className='text-lg font-bold text-gray-800 dark:text-white mb-1'>No requests found</h4>
@@ -104,7 +95,7 @@ const WaitlistInbox = ({
             </div>
             
             {/* Footer */}
-            <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between shadow-[0_-8px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-8px_20px_rgba(0,0,0,0.2)] sm:shadow-none'>
+            <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/90 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between sm:shadow-none'>
                 <div className='flex flex-row items-center justify-between w-full gap-2 sm:gap-0'>
                     <div className='w-auto sm:w-1/3 text-left'>
                         <span className='text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap'>
@@ -113,7 +104,7 @@ const WaitlistInbox = ({
                     </div>
                     <div className='flex items-center justify-end sm:justify-center w-auto sm:w-1/3'>
                         <div className='flex items-center gap-1 justify-center shrink-0'>
-                            <button className='w-8 h-8 flex items-center justify-center text-sm font-bold rounded-lg transition-colors bg-brand-500 text-white shadow-md shadow-brand-500/20'>
+                            <button className='w-8 h-8 flex items-center justify-center text-sm font-bold rounded-lg transition-colors bg-brand-500 text-white'>
                                 1
                             </button>
                         </div>

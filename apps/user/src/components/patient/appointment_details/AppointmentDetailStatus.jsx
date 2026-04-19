@@ -164,11 +164,11 @@ const AppointmentDetailStatus = ({
 
                                 {/* Step Icon/Dot */}
                                 <div className='relative z-10 mb-3 sm:mb-6'>
-                                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm ${
+                                    <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
                                         isCompletedStep 
-                                            ? 'bg-brand-500 text-white shadow-brand-500/20' 
+                                            ? 'bg-brand-500 text-white' 
                                             : isErrorStep 
-                                                ? 'bg-red-500 text-white shadow-red-500/20'
+                                                ? 'bg-red-500 text-white'
                                                 : isActiveStep
                                                     ? 'bg-white dark:bg-gray-800 border-2 border-brand-500 text-brand-500'
                                                     : 'bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-800 text-gray-300'

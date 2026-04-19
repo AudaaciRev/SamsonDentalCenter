@@ -42,7 +42,7 @@ export const Modal = ({
 
     const contentClasses = isFullscreen
         ? 'w-full h-full'
-        : 'relative w-full rounded-3xl bg-white dark:bg-gray-900 max-h-[90vh] flex flex-col overflow-hidden';
+        : 'relative w-full rounded-xl bg-white dark:bg-gray-900 max-h-[90vh] flex flex-col overflow-hidden';
 
     return (
         <div className='fixed inset-0 flex items-center justify-center overflow-y-auto modal z-[999999]'>

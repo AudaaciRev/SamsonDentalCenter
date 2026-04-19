@@ -40,7 +40,7 @@ export default function UserInfoCard() {
     };
 
     return (
-        <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
+        <div className='p-6 border border-gray-200 rounded-xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
             <div className='flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between'>
                 <div className="flex-1">
                     <h4 className='text-[clamp(16px,2vw,18px)] font-bold text-gray-900 dark:text-white lg:mb-6 mb-4'>
@@ -70,7 +70,7 @@ export default function UserInfoCard() {
                 <Button
                     variant='outline'
                     onClick={openModal}
-                    className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
+                    className='flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-bold lg:inline-flex lg:w-auto hover:border-brand-500 hover:text-brand-500'
                 >
                     <svg
                         className='fill-current'
@@ -92,7 +92,7 @@ export default function UserInfoCard() {
             </div>
 
             <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[480px] w-[95%] sm:w-full m-auto'>
-                <div className='no-scrollbar relative w-full overflow-y-auto rounded-[2rem] bg-white p-6 dark:bg-gray-900 sm:p-8'>
+                <div className='no-scrollbar relative w-full overflow-y-auto rounded-xl bg-white p-6 dark:bg-gray-900 sm:p-8'>
                     <div className='pr-8 sm:pr-12'>
                         <h4 className='mb-1 text-xl font-bold text-gray-900 dark:text-white'>
                             Edit Information
@@ -108,7 +108,7 @@ export default function UserInfoCard() {
                                     <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">First Name</Label>
                                     <Input 
                                         name="first_name"
-                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        className="text-sm font-medium h-12 rounded-lg" 
                                         defaultValue={user?.first_name}
                                         required
                                         placeholder="First"
@@ -118,7 +118,7 @@ export default function UserInfoCard() {
                                     <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Last Name</Label>
                                     <Input 
                                         name="last_name"
-                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        className="text-sm font-medium h-12 rounded-lg" 
                                         defaultValue={user?.last_name}
                                         required
                                         placeholder="Last"
@@ -128,7 +128,7 @@ export default function UserInfoCard() {
                                     <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Middle Name</Label>
                                     <Input 
                                         name="middle_name"
-                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        className="text-sm font-medium h-12 rounded-lg" 
                                         defaultValue={user?.middle_name}
                                         placeholder="Middle"
                                     />
@@ -137,7 +137,7 @@ export default function UserInfoCard() {
                                     <Label className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-2 block">Suffix</Label>
                                     <Input 
                                         name="suffix"
-                                        className="text-sm font-medium h-12 rounded-xl" 
+                                        className="text-sm font-medium h-12 rounded-lg" 
                                         defaultValue={user?.suffix}
                                         placeholder="Jr/Sr/etc"
                                     />
@@ -146,10 +146,10 @@ export default function UserInfoCard() {
                         </div>
 
                         <div className='flex items-center gap-3 mt-2 sm:justify-end'>
-                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                            <Button variant='outline' type="button" onClick={closeModal} className="flex-1 sm:flex-none h-11 px-6 rounded-lg font-bold" disabled={isSaving}>
                                 Cancel
                             </Button>
-                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold" disabled={isSaving}>
+                            <Button type='submit' className="flex-1 sm:flex-none h-11 px-6 rounded-lg font-bold" disabled={isSaving}>
                                 {isSaving ? 'Saving...' : 'Save'}
                             </Button>
                         </div>

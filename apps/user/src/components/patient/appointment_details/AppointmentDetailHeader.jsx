@@ -10,7 +10,7 @@ const AppointmentDetailHeader = ({ dentistName, specialization }) => {
             <div className='flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10'>
                 {/* Left: Avatar + Title */}
                 <div className='flex items-center gap-5'>
-                    <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xl sm:text-2xl'>
+                    <div className='w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-xl sm:text-2xl'>
                         {dentistName
                             .replace(/^Dr\.\s*/i, '')
                             .charAt(0)

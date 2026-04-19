@@ -38,7 +38,7 @@ export default function UserAddressCard() {
     };
 
     return (
-        <div className='p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
+        <div className='p-6 border border-gray-200 rounded-xl dark:border-gray-800 lg:p-7 bg-white dark:bg-white/[0.03]'>
             <div className='flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between'>
                 <div>
                     <h4 className='text-[clamp(16px,2vw,18px)] font-bold text-gray-900 dark:text-white lg:mb-6 mb-4'>
@@ -78,7 +78,7 @@ export default function UserAddressCard() {
                 <Button
                     variant='outline'
                     onClick={openModal}
-                    className='flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold shadow-theme-xs lg:inline-flex lg:w-auto hover:shadow-lg hover:border-brand-500 hover:text-brand-500'
+                    className='flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-bold lg:inline-flex lg:w-auto hover:border-brand-500 hover:text-brand-500'
                 >
                     <svg
                         className='fill-current'
@@ -100,7 +100,7 @@ export default function UserAddressCard() {
             </div>
 
             <Modal isOpen={isOpen} onClose={closeModal} className='max-w-[500px] m-4'>
-                <div className='relative w-full overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 p-6 sm:p-8'>
+                <div className='relative w-full overflow-y-auto bg-white no-scrollbar rounded-xl dark:bg-gray-900 p-6 sm:p-8'>
                     <div className='px-2 pr-14'>
                         <h4 className='mb-2 text-[clamp(20px,2.5vw,24px)] font-semibold text-gray-800 dark:text-white/90'>
                             Edit Address
@@ -114,25 +114,25 @@ export default function UserAddressCard() {
                             <div className='grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2'>
                                 <div>
                                     <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Country</Label>
-                                    <Input name="country" className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.country || 'Philippines'} />
+                                    <Input name="country" className="text-[clamp(14px,1vw,15px)] rounded-lg" type='text' defaultValue={user?.country || 'Philippines'} />
                                 </div>
 
                                 <div>
                                     <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">City/State</Label>
-                                    <Input name="city" className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.city || 'Manila, Metro Manila'} />
+                                    <Input name="city" className="text-[clamp(14px,1vw,15px)] rounded-lg" type='text' defaultValue={user?.city || 'Manila, Metro Manila'} />
                                 </div>
 
                                 <div>
                                     <Label className="text-[clamp(12px,0.8vw,13px)] font-bold uppercase tracking-wider opacity-70">Postal Code</Label>
-                                    <Input name="postal_code" className="text-[clamp(14px,1vw,15px)]" type='text' defaultValue={user?.postal_code || '1000'} />
+                                    <Input name="postal_code" className="text-[clamp(14px,1vw,15px)] rounded-lg" type='text' defaultValue={user?.postal_code || '1000'} />
                                 </div>
                             </div>
                         </div>
                         <div className='flex items-center gap-3 px-2 mt-6 lg:justify-end'>
-                            <Button variant='outline' onClick={closeModal} disabled={isSaving}>
+                            <Button variant='outline' className="rounded-lg" onClick={closeModal} disabled={isSaving}>
                                 Close
                             </Button>
-                            <Button type='submit' disabled={isSaving}>
+                            <Button type='submit' className="rounded-lg" disabled={isSaving}>
                                 {isSaving ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>

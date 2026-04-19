@@ -78,7 +78,7 @@ const ClaimSlotModal = ({ isOpen, onClose, slot, onConfirm, loading }) => {
                 </div>
 
                 {/* Important Caution */}
-                <div className='relative overflow-hidden p-6 rounded-[2rem] bg-amber-500/[0.03] border border-amber-500/20 group'>
+                <div className='relative overflow-hidden p-6 rounded-xl bg-amber-500/[0.03] border border-amber-500/20 group'>
                     <div className='relative z-10 flex items-start gap-4'>
                         <div className='p-2.5 rounded-xl bg-amber-500/10 text-amber-600'>
                             <AlertTriangle size={20} />
@@ -98,13 +98,13 @@ const ClaimSlotModal = ({ isOpen, onClose, slot, onConfirm, loading }) => {
                     <button 
                         onClick={onClose}
                         disabled={loading}
-                        className='flex-1 px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-gray-800 transition-all rounded-2xl disabled:opacity-50'
+                        className='flex-1 px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-gray-800 transition-all rounded-lg disabled:opacity-50'
                     >
                         Maybe Later
                     </button>
                     <button 
                         disabled={loading}
-                        className='flex-[1.5] flex items-center justify-center gap-3 px-10 py-5 text-[10px] font-black uppercase tracking-widest text-white bg-brand-500 hover:bg-brand-600 transition-all rounded-2xl shadow-[0_20px_40px_-15px_rgba(var(--brand-500-rgb),0.3)] active:scale-95 disabled:opacity-50'
+                        className='flex-[1.5] flex items-center justify-center gap-3 px-10 py-5 text-[10px] font-black uppercase tracking-widest text-white bg-brand-500 hover:bg-brand-600 transition-all rounded-lg active:scale-95 disabled:opacity-50'
                         onClick={() => onConfirm(slot.id)}
                     >
                         {loading ? <Loader2 className='animate-spin' size={20} /> : (

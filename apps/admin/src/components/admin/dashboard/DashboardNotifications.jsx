@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Bell, CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
 const NOTIFICATIONS = [
@@ -36,7 +36,7 @@ const DashboardNotifications = () => {
     };
 
     return (
-        <div className='rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-sm h-full flex flex-col'>
+        <div className='rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] transition-colors hover:border-gray-300 dark:hover:border-gray-700 h-full flex flex-col'>
             <div className='flex items-center justify-between mb-6'>
                 <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90 font-outfit'>
                     Notifications
@@ -67,7 +67,7 @@ const DashboardNotifications = () => {
                 ))}
             </div>
             
-            <button className='mt-6 w-full py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors'>
+            <button className='mt-6 w-full py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors'>
                 Clear All
             </button>
         </div>

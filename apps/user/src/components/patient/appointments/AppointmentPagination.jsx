@@ -2,7 +2,7 @@ import Pagination from '../../common/Pagination';
 
 const AppointmentPagination = ({ page, totalPages, goToPage }) => {
     return (
-        <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-5 border-t border-gray-100 dark:border-gray-800 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-12px_30px_rgba(0,0,0,0.3)] sm:shadow-none'>
+        <div className='fixed bottom-0 left-0 right-0 sm:relative z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-5 border-t border-gray-100 dark:border-gray-800 sm:shadow-none'>
             <div className='flex flex-col items-center justify-center w-full max-w-md mx-auto'>
                 <div className='flex justify-center'>
                     <Pagination

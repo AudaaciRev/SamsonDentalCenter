@@ -12,7 +12,8 @@ import LoginPage from '../pages/auth/LoginPage';
 
 // Admin pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
-import PlaceholderPage from '../pages/admin/PlaceholderPage';
+import Doctors from '../pages/admin/Doctors';
+import AdminProfile from '../pages/admin/AdminProfile';
 
 const AppRoutes = () => {
     return (
@@ -35,11 +36,11 @@ const AppRoutes = () => {
                     }
                 >
                     <Route index element={<AdminDashboard />} />
-                    <Route path='appointments' element={<PlaceholderPage title="Appointments" />} />
-                    <Route path='admins' element={<PlaceholderPage title="My Admins" />} />
-                    <Route path='schedule' element={<PlaceholderPage title="Schedule" />} />
-                    <Route path='notifications' element={<PlaceholderPage title="Notifications" />} />
-                    <Route path='profile' element={<PlaceholderPage title="Profile" />} />
+                    <Route path='doctors'>
+                        <Route index element={<Navigate to="profile" replace />} />
+                        <Route path=':tab/:id?' element={<Doctors />} />
+                    </Route>
+                    <Route path='profile' element={<AdminProfile />} />
                 </Route>
 
                 {/* Ã¢â€â‚¬Ã¢â€â‚¬ Catch-all Ã¢â€â‚¬Ã¢â€â‚¬ */}

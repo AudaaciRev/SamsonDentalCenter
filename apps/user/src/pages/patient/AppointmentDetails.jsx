@@ -152,14 +152,14 @@ const AppointmentDetails = () => {
             />
 
             <div className='flex-grow min-h-0 relative sm:mx-0'>
-                <div className='flex-grow flex flex-col h-full bg-white dark:bg-gray-900 sm:rounded-3xl border-t sm:border border-gray-100 dark:border-gray-800 sm:shadow-theme-sm overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
+                <div className='flex-grow flex flex-col h-full bg-white dark:bg-gray-900 sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden animate-[fadeIn_0.2s_ease-out]'>
                     <AppointmentDetailActionBar onBack={() => navigate('/patient/appointments')} />
 
                     {/* Content Area */}
                     <div className='px-0 py-6 sm:p-8 md:p-10 overflow-y-auto grow no-scrollbar pb-28 sm:pb-8 md:pb-10 bg-white/50 dark:bg-transparent'>
                         <div className='max-w-4xl mx-auto space-y-3 sm:space-y-8'>
                             {/* Header Section: Service Name & Status */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl px-4 pb-4 pt-0 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-xl px-4 pb-4 pt-0 sm:p-8'>
                                 <div className='flex flex-row items-center justify-between gap-4'>
                                     <div className='space-y-2'>
                                         <h2 className='text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 dark:text-white font-outfit leading-tight tracking-tight'>
@@ -194,7 +194,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Timeline Section wrapped in its own container */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-xl p-4 sm:p-8'>
                                 <AppointmentDetailStatus
                                     displayStatus={displayStatus}
                                     originalStatus={raw.status}
@@ -208,7 +208,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Overview Section */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-xl p-4 sm:p-8'>
                                 <CombinedOverview
                                     dentistName={dentistName}
                                     specialization={specialization}
@@ -221,7 +221,7 @@ const AppointmentDetails = () => {
                             </div>
 
                             {/* Tabs Section */}
-                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-3xl p-4 sm:p-8 shadow-none sm:shadow-sm sm:shadow-gray-200/50 dark:shadow-none'>
+                            <div className='bg-transparent sm:bg-white dark:sm:bg-gray-800/40 border-0 sm:border border-gray-100/80 dark:border-white/5 rounded-none sm:rounded-xl p-4 sm:p-8'>
                                 <AppointmentDetailTabs
                                     activeTab={activeTab}
                                     setActiveTab={setActiveTab}
