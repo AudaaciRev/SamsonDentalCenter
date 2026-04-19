@@ -240,5 +240,29 @@
     scrollbar-width: none;
 }
 
+/* Toast Animations */
+@utility animate-in {
+    animation-duration: 500ms;
+    animation-fill-mode: both;
+}
+
+@utility fade-in {
+    animation-name: fadeIn;
+}
+
+@utility slide-in-from-right-10 {
+    animation-name: slideInFromRight;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(2.5rem); }
+    to { transform: translateX(0); }
+}
+
 
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Button, Modal, Input, Label } from '../../ui';
+import { useToast } from '../../../context/ToastContext.jsx';
 
 const ProfileBriefView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const { showToast } = useToast();
     
     // Mock user state
     const [user, setUser] = useState({
@@ -33,6 +35,7 @@ const ProfileBriefView = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        showToast('Admin profile updated successfully!');
         setIsSaving(true);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));

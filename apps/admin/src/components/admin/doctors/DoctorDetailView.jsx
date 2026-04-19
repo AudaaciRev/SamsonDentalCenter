@@ -4,6 +4,7 @@ import DoctorProfileDetail from './profile/DoctorProfileDetail';
 import DoctorScheduleDetail from './schedule/DoctorScheduleDetail';
 import DoctorHistoryDetail from './history/DoctorHistoryDetail';
 import { Button, Modal, Input, Label, Switch } from '../../ui';
+import { useToast } from '../../../context/ToastContext.jsx';
 
 const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
     // Parse Full Name for initial state
@@ -28,6 +29,7 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
     const [isActive, setIsActive] = useState(doctor.is_active);
 
     const [formNames, setFormNames] = useState(initialNames);
+    const { showToast } = useToast();
 
     const AVATARS = [
         'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -49,6 +51,7 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
 
     const handleSaveProfile = async (e) => {
         e.preventDefault();
+        showToast('Professional identity updated successfully!');
         setIsSaving(true);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -83,6 +86,7 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
 
     const handleSaveContact = async (e) => {
         e.preventDefault();
+        showToast('Contact credentials updated successfully!');
         setIsSaving(true);
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -147,15 +151,12 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
                                         <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
                                         <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-2'>
                                             License: <span className='text-gray-900 dark:text-white font-black'>{doctor.license_number}</span>
-                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                            <div className='h-3.5 w-px bg-gray-300 dark:bg-gray-700 mx-1'></div>
+                                            <span className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${
                                                 doctor.is_active ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-gray-100 text-gray-500'
                                             }`}>
-                                                {doctor.is_active ? 'Active' : 'Inactive'}
+                                                Status : {doctor.is_active ? 'Active' : 'Inactive'}
                                             </span>
-                                        </p>
-                                        <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
-                                        <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 justify-center xl:justify-start'>
-                                            <Calendar size={14} /> Joined {formatDate(doctor.created_at)}
                                         </p>
                                     </div>
                                     <p className='text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-2xl font-medium leading-relaxed'>
