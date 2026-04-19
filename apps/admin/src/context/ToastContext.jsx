@@ -32,7 +32,7 @@ export const ToastProvider = ({ children }) => {
         <ToastContext.Provider value={{ showToast }}>
             {children}
             {/* Toast Container - Positioned under the sticky header (approx 72px) */}
-            <div className="fixed top-[4.5rem] sm:top-24 right-4 sm:right-6 z-[9999999] flex flex-col gap-3 max-w-[calc(100vw-2rem)] sm:max-w-sm pointer-events-none">
+            <div className="fixed top-4 sm:top-6 right-4 sm:right-6 z-[9999999] flex flex-col gap-3 max-w-[calc(100vw-2rem)] sm:max-w-sm pointer-events-none">
                 {toasts.map((toast) => (
                     <div 
                         key={toast.id}

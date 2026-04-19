@@ -149,71 +149,77 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
                                             {doctor.tier === 'general' ? 'General Dentist' : 'Specialized Dentist'}
                                         </p>
                                         <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
-                                        <p className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-2'>
-                                            License: <span className='text-gray-900 dark:text-white font-black'>{doctor.license_number}</span>
+                                        <div className='text-[clamp(13px,1.2vw,14px)] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-2'>
+                                            <span>License: <span className='text-gray-900 dark:text-white font-black'>{doctor.license_number}</span></span>
                                             <div className='h-3.5 w-px bg-gray-300 dark:bg-gray-700 mx-1'></div>
                                             <span className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${
                                                 doctor.is_active ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-gray-100 text-gray-500'
                                             }`}>
                                                 Status : {doctor.is_active ? 'Active' : 'Inactive'}
                                             </span>
-                                        </p>
+                                        </div>
                                     </div>
-                                    <p className='text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-2xl font-medium leading-relaxed'>
-                                        {doctor.bio}
-                                    </p>
+                                    {(!activeTab || activeTab === 'profile') && (
+                                        <p className='text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-2xl font-medium leading-relaxed'>
+                                            {doctor.bio}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
-                            <div className='flex flex-col sm:flex-row xl:flex-col gap-2 shrink-0'>
-                                <Button
-                                    variant='outline'
-                                    onClick={() => {
-                                        setSelectedAvatar(doctor.photo_url);
-                                        setIsEditModalOpen(true);
-                                    }}
-                                    className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold w-full sm:w-[160px] hover:border-brand-500 hover:text-brand-500 transition-all font-outfit shadow-sm'
-                                >
-                                    <svg
-                                        className='fill-current'
-                                        width='18'
-                                        height='18'
-                                        viewBox='0 0 18 18'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
+                            {(!activeTab || activeTab === 'profile') && (
+                                <div className='flex flex-col sm:flex-row xl:flex-col gap-2 shrink-0'>
+                                    <Button
+                                        variant='outline'
+                                        onClick={() => {
+                                            setSelectedAvatar(doctor.photo_url);
+                                            setIsEditModalOpen(true);
+                                        }}
+                                        className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold w-full sm:w-[160px] hover:border-brand-500 hover:text-brand-500 transition-all font-outfit shadow-sm'
                                     >
-                                        <path
-                                            fillRule='evenodd'
-                                            clipRule='evenodd'
-                                            d='M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z'
-                                            fill='currentColor'
-                                        />
-                                    </svg>
-                                    Edit Profile
-                                </Button>
-                            </div>
+                                        <svg
+                                            className='fill-current'
+                                            width='18'
+                                            height='18'
+                                            viewBox='0 0 18 18'
+                                            fill='none'
+                                            xmlns='http://www.w3.org/2000/svg'
+                                        >
+                                            <path
+                                                fillRule='evenodd'
+                                                clipRule='evenodd'
+                                                d='M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z'
+                                                fill='currentColor'
+                                            />
+                                        </svg>
+                                        Edit Profile
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Contact & Meta footer within Header Card */}
-                        <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-                            <div className='flex flex-wrap gap-6'>
-                                <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                    <Mail size={16} className='text-gray-400' /> {doctor.email}
+                        {(!activeTab || activeTab === 'profile') && (
+                            <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+                                <div className='flex flex-wrap gap-6'>
+                                    <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
+                                        <Mail size={16} className='text-gray-400' /> {doctor.email}
+                                    </div>
+                                    <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
+                                        <Phone size={16} className='text-gray-400' /> {doctor.phone}
+                                    </div>
                                 </div>
-                                <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                    <Phone size={16} className='text-gray-400' /> {doctor.phone}
+                                <div className='flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0'>
+                                    <Button
+                                        variant='outline'
+                                        onClick={() => setIsEditContactModalOpen(true)}
+                                        className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold hover:border-brand-500 hover:text-brand-500 transition-all shadow-sm w-full sm:w-[160px] font-outfit'
+                                    >
+                                        <Mail size={16} />
+                                        Edit Contact
+                                    </Button>
                                 </div>
                             </div>
-                            <div className='flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0'>
-                                <Button
-                                    variant='outline'
-                                    onClick={() => setIsEditContactModalOpen(true)}
-                                    className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold hover:border-brand-500 hover:text-brand-500 transition-all shadow-sm w-full sm:w-[160px] font-outfit'
-                                >
-                                    <Mail size={16} />
-                                    Edit Contact
-                                </Button>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Dynamic Child Content */}
