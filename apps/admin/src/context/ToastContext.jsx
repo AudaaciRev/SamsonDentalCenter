@@ -36,16 +36,16 @@ export const ToastProvider = ({ children }) => {
                 {toasts.map((toast) => (
                     <div 
                         key={toast.id}
-                        className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-3 sm:p-5 flex gap-3 sm:gap-4 items-center ring-1 ring-black/5 pointer-events-auto animate-in slide-in-from-right-10 fade-in duration-500"
+                        className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl sm:rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] px-5 py-4 flex gap-4 items-center ring-1 ring-black/5 pointer-events-auto animate-in slide-in-from-right-10 fade-in duration-500"
                     >
-                        <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
-                            toast.type === 'success' ? 'bg-success-500 shadow-success-500/20' : 
-                            toast.type === 'error' ? 'bg-red-500 shadow-red-500/20' : 
-                            'bg-amber-500 shadow-amber-500/20'
-                        } text-white`}>
-                            {toast.type === 'success' ? <Check size={18} className="sm:w-6 sm:h-6" /> : 
-                             toast.type === 'error' ? <AlertCircle size={18} className="sm:w-6 sm:h-6" /> : 
-                             <Info size={18} className="sm:w-6 sm:h-6" />}
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
+                            toast.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500' :
+                            toast.type === 'error' ? 'bg-red-50 dark:bg-red-500/10 text-red-500' :
+                            'bg-amber-50 dark:bg-amber-500/10 text-amber-500'
+                        }`}>
+                            {toast.type === 'success' && <Check size={20} className="sm:w-6 sm:h-6" />}
+                            {toast.type === 'error' && <AlertCircle size={20} className="sm:w-6 sm:h-6" />}
+                            {toast.type === 'notice' && <Info size={20} className="sm:w-6 sm:h-6" />}
                         </div>
                         <div className="flex-grow min-w-0">
                             <h4 className="text-[9px] sm:text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">

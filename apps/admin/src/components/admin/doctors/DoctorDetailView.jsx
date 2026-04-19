@@ -386,7 +386,10 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
                             <Button
                                 variant='outline'
                                 type="button"
-                                onClick={() => setIsEditModalOpen(false)}
+                                onClick={() => {
+                                    setIsEditModalOpen(false);
+                                    showToast("Changes discarded. You've exited edit mode.", 'info', 'Notice');
+                                }}
                                 disabled={isSaving}
                                 className='flex-1 sm:flex-none px-6 py-3.5 h-11 rounded-lg text-[14px] font-black text-gray-600 dark:text-gray-400 active:scale-95 transition-all'
                             >
@@ -449,7 +452,10 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab }) => {
                             <Button
                                 variant='outline'
                                 type="button"
-                                onClick={() => setIsEditContactModalOpen(false)}
+                                onClick={() => {
+                                    setIsEditContactModalOpen(false);
+                                    showToast("Changes discarded. You've exited edit mode.", 'notice', 'Notice');
+                                }}
                                 disabled={isSaving}
                                 className='flex-1 sm:flex-none px-6 py-3.5 h-11 rounded-lg text-[14px] font-black text-gray-600 dark:text-gray-400 active:scale-95 transition-all'
                             >

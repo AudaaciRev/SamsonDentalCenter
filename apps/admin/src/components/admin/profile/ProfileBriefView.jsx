@@ -200,7 +200,10 @@ const ProfileBriefView = () => {
                             <Button 
                                 variant='outline'
                                 type="button"
-                                onClick={handleCloseModal}
+                                onClick={() => {
+                                    handleCloseModal();
+                                    showToast("Changes discarded. You've exited edit mode.", 'notice', 'Notice');
+                                }}
                                 disabled={isSaving}
                                 className='px-8 h-12 rounded-lg font-bold'
                             >
