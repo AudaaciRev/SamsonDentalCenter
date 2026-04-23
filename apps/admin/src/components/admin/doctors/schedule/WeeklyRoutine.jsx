@@ -43,6 +43,8 @@ const WeeklyRoutine = () => {
         setter(new Date(date.getFullYear(), date.getMonth() + offset, 1));
     };
 
+    const goThisMonth = () => setCurrentDate(new Date());
+
     // Calendar Generation Logic
     const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
     const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay(); // Sunday is 0
@@ -159,11 +161,11 @@ const WeeklyRoutine = () => {
         <div className='p-[clamp(1rem,5vw,1.75rem)] border border-gray-200 rounded-xl dark:border-gray-800 bg-white dark:bg-white/[0.03] flex flex-col'>
             <div className='mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4'>
                 <div>
-                    <h4 className='text-[clamp(16px,2.5vw,18px)] font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                        Working Hours & Date Blocks
+                    <h4 className='text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+                        Weekly Routine & Blocks
                     </h4>
                     <p className='text-sm font-medium text-gray-500 dark:text-gray-400 mt-1'>
-                        Set the doctor's recurring weekly routine or add temporary blocks for specific dates.
+                        Manage recurring availability and specific date exceptions.
                     </p>
                 </div>
                 <div className='hidden sm:flex items-center gap-3'>
@@ -187,27 +189,32 @@ const WeeklyRoutine = () => {
             </div>
 
             {/* Main Read-only Display view: Full Calendar */}
-            <div className='-mx-[clamp(1rem,5vw,1.75rem)] sm:mx-0 border-y sm:border border-gray-100 dark:border-gray-800 sm:rounded-xl overflow-hidden bg-white dark:bg-transparent'>
-                <div className='flex items-center justify-between px-[clamp(1rem,5vw,1.75rem)] sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.01]'>
-                    <h3 className='text-lg font-bold text-gray-900 dark:text-white'>{monthName} {year}</h3>
+            <div className='-mx-[clamp(1rem,5vw,1.75rem)] sm:mx-0 border-y sm:border border-gray-200 dark:border-gray-700 sm:rounded-xl overflow-hidden bg-white dark:bg-transparent'>
+                <div className='flex flex-col sm:flex-row sm:items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-white/[0.01] gap-4'>
+                    <div>
+                        <h3 className='text-lg font-bold text-gray-900 dark:text-white'>{monthName} {year}</h3>
+                    </div>
                     <div className='flex items-center gap-2'>
-                        <button onClick={() => navMonth(setCurrentDate, currentDate, -1)} className='p-2 rounded-lg hover:bg-white dark:hover:bg-white/5 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 text-gray-500 transition-all'>
-                            <ChevronLeft size={18} />
-                        </button>
-                        <button onClick={() => navMonth(setCurrentDate, currentDate, 1)} className='p-2 rounded-lg hover:bg-white dark:hover:bg-white/5 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 text-gray-500 transition-all'>
-                            <ChevronRight size={18} />
-                        </button>
+                        <Button variant="outline" size="sm" onClick={goThisMonth} className="text-xs font-bold px-3 h-8 border-gray-200 dark:border-gray-700">This Month</Button>
+                        <div className='flex items-center gap-1 ml-2'>
+                            <button onClick={() => navMonth(setCurrentDate, currentDate, -1)} className='p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700 text-gray-500 transition-all'>
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button onClick={() => navMonth(setCurrentDate, currentDate, 1)} className='p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700 text-gray-500 transition-all'>
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className='grid grid-cols-7 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-transparent'>
+                <div className='grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-transparent'>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                         <div key={day} className='py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400'>{day}</div>
                     ))}
                 </div>
 
-                <div className='grid grid-cols-7 bg-gray-100 dark:bg-gray-800 gap-[1px]'>
-                    {Array.from({ length: startingDay }).map((_, i) => <div key={`empty-${i}`} className='bg-gray-100 dark:bg-gray-800/40 aspect-square' />)}
+                <div className='grid grid-cols-7 bg-gray-200 dark:bg-gray-700 gap-[1px]'>
+                    {Array.from({ length: startingDay }).map((_, i) => <div key={`empty-${i}`} className='bg-gray-50 dark:bg-gray-800/40 aspect-square' />)}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                         const dateNum = i + 1;
                         const dateObj = new Date(year, month, dateNum);
@@ -226,7 +233,7 @@ const WeeklyRoutine = () => {
                                 </span>
                                 <div className='flex-grow flex flex-col justify-end pb-0 sm:pb-1 min-w-0 w-full'>
                                     {isEffectivelyWorking ? (
-                                        <div className='w-full text-center text-[9px] sm:text-xs font-bold text-gray-900 dark:text-white truncate bg-gray-50 dark:bg-black/20 rounded py-0.5 sm:py-1 px-0.5 sm:px-1'>
+                                        <div className='w-full text-center text-[9px] sm:text-xs font-bold text-gray-900 dark:text-white truncate bg-gray-100 dark:bg-black/20 rounded py-0.5 sm:py-1 px-0.5 sm:px-1'>
                                             {formatTimeToAMPM(dayConfig.start)}
                                             <span className="hidden lg:inline"> - {formatTimeToAMPM(dayConfig.end)}</span>
                                         </div>
@@ -241,7 +248,7 @@ const WeeklyRoutine = () => {
                         );
                     })}
 
-                    {Array.from({ length: (7 - ((startingDay + daysInMonth) % 7)) % 7 }).map((_, i) => <div key={`empty-end-${i}`} className='bg-gray-100 dark:bg-gray-800/40 aspect-square' />)}
+                    {Array.from({ length: (7 - ((startingDay + daysInMonth) % 7)) % 7 }).map((_, i) => <div key={`empty-end-${i}`} className='bg-gray-50 dark:bg-gray-800/40 aspect-square' />)}
                 </div>
             </div>
 

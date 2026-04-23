@@ -47,6 +47,7 @@
 - Waitlist System
 - Slot Holding Mechanism (with Immediate Feedback)
 - httpOnly Cookie Auth Transition
+- Removed DateBlocks & SpecificTimeBlocks (Admin Schedule)
 
 ## Deployment & Environments
 - Development: `localhost:5000` (API), `localhost:5173` (User App)
