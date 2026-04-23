@@ -1,20 +1,27 @@
 import React from 'react';
 import WeeklyRoutine from './WeeklyRoutine';
-import DateBlocks from './DateBlocks';
-import SpecificTimeBlocks from './SpecificTimeBlocks';
+import WeeklyTimeline from './WeeklyTimeline';
 
 const DoctorScheduleDetail = ({ doctor }) => {
+    const [isBlockModalOpen, setIsBlockModalOpen] = React.useState(false);
+
     return (
         <div className='flex flex-col gap-6'>
             {/* Top row: The main weekly form */}
             <div className='w-full'>
-                <WeeklyRoutine doctor={doctor} />
+                <WeeklyRoutine 
+                    doctor={doctor} 
+                    externalBlockModalOpen={isBlockModalOpen}
+                    setExternalBlockModalOpen={setIsBlockModalOpen}
+                />
             </div>
 
-            {/* Bottom row: Exception blocks */}
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                <DateBlocks doctor={doctor} />
-                <SpecificTimeBlocks doctor={doctor} />
+            {/* Bottom row: Weekly Timeline view */}
+            <div className='w-full'>
+                <WeeklyTimeline 
+                    doctor={doctor} 
+                    onBlockClick={() => setIsBlockModalOpen(true)}
+                />
             </div>
         </div>
     );
