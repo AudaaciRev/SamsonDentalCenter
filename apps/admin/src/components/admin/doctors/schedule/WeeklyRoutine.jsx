@@ -112,12 +112,28 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
         loadData();
     }, [loadData]);
 
+    const syncDraftWithSchedule = useCallback(() => {
+        const deepCopy = schedule.map(day => ({ ...day }));
+        setDraftSchedule(deepCopy);
+        
+        const workingDayWithBreak = schedule.find(d => d.isWorking && d.break_start_time);
+        if (workingDayWithBreak) {
+            setGlobalBreakEnabled(true);
+            setGlobalBreakStart(workingDayWithBreak.break_start_time.substring(0, 5));
+            setGlobalBreakEnd(workingDayWithBreak.break_end_time.substring(0, 5));
+        } else {
+            setGlobalBreakEnabled(false);
+            setGlobalBreakStart('12:00');
+            setGlobalBreakEnd('13:00');
+        }
+    }, [schedule]);
+
     // Keep draft schedule in sync with fetched schedule when modal is not open
     useEffect(() => {
         if (!isEditModalOpen) {
-            setDraftSchedule(schedule);
+            syncDraftWithSchedule();
         }
-    }, [schedule, isEditModalOpen]);
+    }, [isEditModalOpen, syncDraftWithSchedule]);
 
     const navMonth = (setter, date, offset) => {
         setter(new Date(date.getFullYear(), date.getMonth() + offset, 1));
@@ -138,15 +154,15 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
 
     // --- Weekly Edit Actions ---
     const handleToggle = (index) => {
-        const newSchedule = [...draftSchedule];
-        newSchedule[index].isWorking = !newSchedule[index].isWorking;
-        setDraftSchedule(newSchedule);
+        setDraftSchedule(prev => prev.map((day, i) => 
+            i === index ? { ...day, isWorking: !day.isWorking } : day
+        ));
     };
 
     const handleTimeChange = (index, field, value) => {
-        const newSchedule = [...draftSchedule];
-        newSchedule[index][field] = value;
-        setDraftSchedule(newSchedule);
+        setDraftSchedule(prev => prev.map((day, i) => 
+            i === index ? { ...day, [field]: value } : day
+        ));
     };
 
     const applyToAll = () => {
@@ -163,7 +179,6 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
         if (!doctor?.id) return;
         setIsSaving(true);
         try {
-            // Map index back to day_of_week
             const payload = draftSchedule.map((day, idx) => {
                 const dow = idx === 6 ? 0 : idx + 1;
                 return {
@@ -176,7 +191,44 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
                 };
             });
 
-            await updateDoctorScheduleBulk(doctor.id, payload);
+            // === MASS OVERLAP DETECTION PHASE ===
+            const allAppointments = await fetchDoctorAppointments(doctor.id);
+            let overlapCount = 0;
+            
+            allAppointments.forEach(appt => {
+                if (['CANCELLED', 'LATE_CANCEL', 'NO_SHOW', 'COMPLETED', 'RESCHEDULED'].includes((appt.status || '').toUpperCase())) return;
+                
+                const [y, m, d] = (appt.date || '').split('-');
+                const jsDow = new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getDay(); 
+                const draftDay = payload.find(d => d.day_of_week === jsDow);
+                
+                if (!draftDay || !draftDay.is_working) {
+                    overlapCount++;
+                } else {
+                    const ast = (appt.start_time || '').substring(0, 5);
+                    const aet = (appt.end_time || '').substring(0, 5);
+                    
+                    if (ast < draftDay.start_time || aet > draftDay.end_time) {
+                        overlapCount++;
+                    } else if (draftDay.break_start_time && draftDay.break_end_time) {
+                        if (ast < draftDay.break_end_time && aet > draftDay.break_start_time) {
+                            overlapCount++;
+                        }
+                    }
+                }
+            });
+
+            let overwrite = false;
+            if (overlapCount > 0) {
+                const confirmed = window.confirm(`Warning: Altering your Master Weekly Routine will displace ${overlapCount} existing appointment(s).\n\nThey will permanently fall into the Secretary Displaced Queue.\n\nContinue with mass displacement?`);
+                if (!confirmed) {
+                    setIsSaving(false);
+                    return;
+                }
+                overwrite = true;
+            }
+
+            await updateDoctorScheduleBulk(doctor.id, payload, overwrite);
             await loadData();
             if (onScheduleUpdate) {
                 onScheduleUpdate();
@@ -257,6 +309,9 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
 
             // 3. Reload everything to be sync with DB
             await loadData();
+            if (onScheduleUpdate) {
+                onScheduleUpdate();
+            }
             
             setIsSaving(false);
             setIsBlockModalOpen(false);
@@ -269,21 +324,7 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
     };
 
     const openEditModal = () => {
-        const newDraft = [...schedule];
-        setDraftSchedule(newDraft);
-        
-        // Infer global break from first working day with a break, else check false
-        const workingDayWithBreak = newDraft.find(d => d.isWorking && d.break_start_time);
-        if (workingDayWithBreak) {
-            setGlobalBreakEnabled(true);
-            setGlobalBreakStart(workingDayWithBreak.break_start_time.substring(0, 5));
-            setGlobalBreakEnd(workingDayWithBreak.break_end_time.substring(0, 5));
-        } else {
-            setGlobalBreakEnabled(false);
-            setGlobalBreakStart('12:00');
-            setGlobalBreakEnd('13:00');
-        }
-        
+        syncDraftWithSchedule();
         setIsEditModalOpen(true);
     };
 

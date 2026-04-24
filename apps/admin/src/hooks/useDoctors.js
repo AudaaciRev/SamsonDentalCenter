@@ -101,9 +101,10 @@ export const useDoctors = (fetchOnMount = true) => {
         }
     }, [token]);
 
-    const updateDoctorScheduleBulk = useCallback(async (dentistId, schedules) => {
+    const updateDoctorScheduleBulk = useCallback(async (dentistId, schedules, overwrite = false) => {
         try {
-            const response = await api.post(`/admin/dentists/${dentistId}/schedule/bulk`, schedules, token);
+            const body = overwrite ? { schedules, overwrite: true } : schedules;
+            const response = await api.post(`/admin/dentists/${dentistId}/schedule/bulk`, body, token);
             return response;
         } catch (err) {
             console.error('Failed to update doctor schedule:', err);

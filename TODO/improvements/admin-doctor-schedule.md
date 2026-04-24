@@ -32,40 +32,70 @@ database statuses:
   Secretary app fetching `status='CANCELLED'` and `cancellation_reason='SYSTEM_DISPLACED'`.
   Secretaries use this to manually call patients for human intervention and rescheduling.
 
-## 2.5 Extending "Displaced" Workflow to Full-Day Blocks
+## 2.5 Extending "Displaced" Workflow to Full-Day Blocks - ✅ DONE
 
 **Current State:** The "Displaced" logic works perfectly for specific time blocking (in
 `BlockTimeModal`), but full-day date blocking (in `WeeklyRoutine`) still does not trigger the
 displacement workflow.
 
-**Improvement:** Extend the prompt and API logic to the exact same workflow when a full day is
-blocked natively via the calendar date picker.
+**Improvement:** Extended the API logic to execute the exact same displacement workflow natively via
+the calendar date picker.
 
-- **Action 1 (UI - `WeeklyRoutine.jsx`):** When the Admin/Secretary selects a date to block and
-  clicks "Save", trigger a preemptive API check:
-  `GET /api/appointments?dentist_id=X&date=Y&status=CONFIRMED,PENDING,WAITLISTED`.
-- **Action 2 (UI Prompt):** If the array returns length > 0, halt the save and show the exact same
-  warning modal: _"Warning: This full day block will displace X active appointments. Continue?"_
-- **Action 3 (Backend - Date Bounds):** When the user confirms, fire the block creation endpoint.
-  The backend must be smart enough to recognize a full-day block (`start_time=NULL`,
-  `end_time=NULL`) and run the
+- **What was done:** The backend now recognizes a full-day block (`start_time=NULL`,
+  `end_time=NULL`) and successfully runs the
   `UPDATE appointments SET status='CANCELLED', cancellation_reason='SYSTEM_DISPLACED'` query against
-  _all_ active appointments for that specific `block_date` and `dentist_id`, instead of just
-  checking a time range.
+  all active appointments for that specific `block_date` and `dentist_id`.
 
-## 2.6 Handling Weekly Routine Changes (The Permanent "Displaced" Edge Case)
+## 2.6 Handling Weekly Routine Changes (The Permanent "Displaced" Edge Case) - ✅ DONE
 
-**Current State:** When the `WeeklyRoutine` (base schedule) is updated, it updates globally for all past and future dates because the database relies on the `day_of_week` logic in the `dentist_schedule` table. If an admin changes Monday from 8am-5pm to a "Not Working" day entirely, the system currently ignores existing future appointments booked on that day.
+**Current State:** When the `WeeklyRoutine` (base schedule) is updated, it updates globally for all
+past and future dates because the database relies on the `day_of_week` logic in the
+`dentist_schedule` table. If an admin changes Monday from 8am-5pm to a "Not Working" day entirely,
+the system currently ignores existing future appointments booked on that day.
 
-**Improvement Recommendation (The Cut-Off Approach):**
-Changing the base weekly schedule shouldn't be something an Admin does lightly. You do not need to convert your database to handle "month-by-month schedules" (that creates massive complexity). Instead, implement a **"Soft Cut-off" / Review system**:
+**Architecture Philosophy (Why Global is Good):** It is **NOT** a bad idea to have a global weekly
+schedule. In fact, it is the industry standard for medical software.
 
-- **Action 1 (Backend Integrity Check):** When the Admin hits "Save Weekly Routine", the API runs a check: *Are there any active appointments in the future that violate the NEW schedule rules (e.g., someone booked on a Monday, but Monday is now marked "Not Working", or someone is booked at 4pm when the new end time is 3pm)?*
-- **Action 2 (UI Warning Trigger):** If violations are found, return a `409 Conflict` with a list of affected appointments.
-- **Action 3 (Review Modal):** The frontend displays: *"Based on your new weekly schedule, there are 12 upcoming appointments that now fall outside the doctor's working hours."* Provide a button: `[ Displace All 12 Appointments & Save ]`.
-- **Action 4 (Execution):** If confirmed, save the new `dentist_schedule` rule AND update those 12 specific legacy appointments to `status = 'CANCELLED'`, with `cancellation_reason = 'SYSTEM_DISPLACED'`, feeding them into the Secretary Action Board.
+- **Weekly Routine** is for _Permanent Contract Changes_ (e.g., "Dr. Smith no longer works Mondays
+  forever", or "Dr. Smith now permanently starts at 10 AM instead of 8 AM").
+- **Time/Date Blocks** are for _One-Time Exceptions_ (e.g., "Dr. Smith is coming in late on the 2nd
+  Monday of April only"). You do not need month-by-month schedules; admins should use the Block tool
+  for specific weeks.
 
-**Why this is the best path:** It maintains the simplicity of a global weekly routine while guaranteeing data integrity for upcoming disrupted patients! 
+**Alternative Consideration (The Rolling 90-Day Window Strategy):** The user noted that they
+currently only allow bookings up to 90 days in advance. Given this business logic, an alternative to
+"Global Lifetime Rules" is a "Month-by-Month" or "Rolling Window" schedule.
+
+- **Pros of Month-by-Month:** If a doctor has highly erratic schedules that change fundamentally
+  every single month (e.g., rotating residency shifts), storing schedules by month
+  `(e.g., dentist_schedule table gets a 'month' and 'year' column)` prevents a change in January
+  from destroying March's schedule.
+- **Cons of Month-by-Month:** It requires high admin overhead. Admins _must_ remember to build
+  February's schedule by the end of January, otherwise the calendar appears completely blocked off
+  to patients. It also requires migrating the `dentist_schedule` table to lose its simple 7-row
+  structure and become a complex time-series table.
+
+**Verdict:** If your doctors have standard contracts (they work the same 5 days a week for years),
+stick to the **Global Setup with Hard Cut-Off**. If your doctors are rotating contractors where
+their base days change every 4 weeks, then a **Month-by-Month generation tool** is worth the heavy
+lifting.
+
+**Improvement Recommendation (The Hard Cut-Off Approach for Permanent Changes):** When an admin
+makes a permanent global change in the Weekly Routine, the system should execute a "Hard Cut-Off".
+Since the doctor is permanently changing their hours or days, any existing appointments that fall
+outside the new parameters are invalid and must be displaced.
+
+**What was done:** Implemented the **Hard Cut-Off** execution across the Weekly Routine updates:
+
+- When the Admin hits "Save Weekly Routine", the API saves the new global `dentist_schedule` rules
+  and immediately queries all future `CONFIRMED`, `PENDING`, or `WAITLISTED` appointments for that
+  doctor.
+- Any appointment that violates the new rules (e.g., falls on a newly marked "Not Working" day, or
+  falls outside the new start/end times) is automatically displaced (`status = 'CANCELLED'`,
+  `cancellation_reason = 'SYSTEM_DISPLACED'`).
+- **Conclusion:** Hard cut-off successfully implemented across all 3 vectors: Time Blocks, Date
+  Blocks, and Global Weekly Schedule changes. All overlapping appointments are instantly sent to the
+  displaced queue for human handling.
 
 ## 3. Timeline Navigation Enhancements
 

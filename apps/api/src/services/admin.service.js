@@ -895,7 +895,7 @@ export const setDentistSchedule = async (dentistId, dayOfWeek, schedule) => {
  * @param {string} dentistId - Dentist UUID
  * @param {Array} schedules - Array of { day_of_week, is_working, start_time, end_time, break_start_time, break_end_time }
  */
-export const setBulkSchedule = async (dentistId, schedules) => {
+export const setBulkSchedule = async (dentistId, schedules, overwrite = false) => {
     const rows = schedules.map((s) => ({
         dentist_id: dentistId,
         day_of_week: s.day_of_week,
@@ -906,13 +906,62 @@ export const setBulkSchedule = async (dentistId, schedules) => {
         break_end_time: s.break_end_time || null,
     }));
 
-    const { data, error } = await supabaseAdmin
+    const { data: scheduleData, error } = await supabaseAdmin
         .from('dentist_schedule')
         .upsert(rows, { onConflict: 'dentist_id,day_of_week' })
         .select();
 
     if (error) throw new AppError(error.message, 500);
-    return data;
+
+    if (overwrite) {
+        // Query all active future appointments for this dentist
+        const today = new Date().toISOString().split('T')[0];
+        const { data: appointments, error: apptError } = await supabaseAdmin
+            .from('appointments')
+            .select('id, appointment_date, start_time, end_time')
+            .eq('dentist_id', dentistId)
+            .gte('appointment_date', today)
+            .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED},${APPOINTMENT_STATUS.COMPLETED})`);
+
+        if (!apptError && appointments && appointments.length > 0) {
+            const idsToCancel = [];
+
+            appointments.forEach(appt => {
+                const [y, m, d] = (appt.appointment_date || '').split('-');
+                const jsDow = new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getDay();
+                const rule = schedules.find(r => r.day_of_week === jsDow);
+
+                if (!rule || !rule.is_working) {
+                    idsToCancel.push(appt.id);
+                } else {
+                    const ast = appt.start_time.substring(0, 5);
+                    const aet = appt.end_time.substring(0, 5);
+                    const rst = rule.start_time;
+                    const ret = rule.end_time;
+                    
+                    if (ast < rst || aet > ret) {
+                        idsToCancel.push(appt.id);
+                    } else if (rule.break_start_time && rule.break_end_time) {
+                        if (ast < rule.break_end_time && aet > rule.break_start_time) {
+                            idsToCancel.push(appt.id);
+                        }
+                    }
+                }
+            });
+
+            if (idsToCancel.length > 0) {
+                await supabaseAdmin
+                    .from('appointments')
+                    .update({ 
+                        status: APPOINTMENT_STATUS.CANCELLED,
+                        cancellation_reason: 'SYSTEM_DISPLACED'
+                    })
+                    .in('id', idsToCancel);
+            }
+        }
+    }
+
+    return scheduleData;
 };
 
 /**

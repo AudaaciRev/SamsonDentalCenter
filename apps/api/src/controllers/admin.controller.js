@@ -642,8 +642,17 @@ export const updateDentistSchedule = async (req, res, next) => {
  */
 export const bulkUpdateSchedule = async (req, res, next) => {
     try {
-        const schedules = req.body;
-        await setBulkSchedule(req.params.id, schedules);
+        let schedules = [];
+        let overwrite = false;
+
+        if (Array.isArray(req.body)) {
+            schedules = req.body;
+        } else {
+            schedules = req.body.schedules || [];
+            overwrite = req.body.overwrite || false;
+        }
+
+        await setBulkSchedule(req.params.id, schedules, overwrite);
         res.json({ message: 'Dentist schedule updated for the week.' });
     } catch (err) {
         next(err);
