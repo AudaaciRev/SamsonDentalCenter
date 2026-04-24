@@ -155,6 +155,26 @@ export const useDoctors = (fetchOnMount = true) => {
         }
     }, [token]);
 
+    const fetchDoctorHistory = useCallback(async (dentistId, params = {}) => {
+        try {
+            const { page = 1, limit = 10, status = null } = params;
+            let url = `/admin/appointments?dentist_id=${dentistId}&page=${page}&limit=${limit}`;
+            
+            if (status && status !== 'all') {
+                url += `&status=${status.toUpperCase()}`;
+            }
+
+            const response = await api.get(url, token);
+            return {
+                appointments: response.appointments || [],
+                pagination: response.pagination || { total: 0, pages: 1, current_page: 1 }
+            };
+        } catch (err) {
+            console.error('Failed to fetch doctor history:', err);
+            throw err;
+        }
+    }, [token]);
+
     return {
         doctors,
         loading,
@@ -170,6 +190,7 @@ export const useDoctors = (fetchOnMount = true) => {
         fetchDoctorBlocks,
         addDoctorBlock,
         deleteDoctorBlock,
-        fetchDoctorAppointments
+        fetchDoctorAppointments,
+        fetchDoctorHistory
     };
 };

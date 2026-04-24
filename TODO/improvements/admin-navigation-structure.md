@@ -1,69 +1,106 @@
 # Admin Portal - Navigation & Structure Architecture
 
-Based on your ideas, your plan for the Admin Portal is heading in the exact right direction. An
-Admin portal should be the "God View" of the clinic.
-
-Here is a recommended, highly organized navigation structure for the Admin App, including your ideas
-and some best-practice additions for medical/dental software.
+_Implementation Note:_ For all items listed below that do not currently exist, the immediate goal is
+to **build the skeleton**. This means updating the Sidebar navigation with user-friendly names and
+linking them to bare **Placeholder Pages** (e.g., just returning
+`<div>Patients Area - Coming Soon</div>`). The actual logic will be filled in later.
 
 ---
 
-## Recommended Main Navigation Structure
+## 1. 📊 Dashboard
 
-### 1. 📊 Dashboard (Keep)
-
-- **Overview:** High-level metrics (Today's revenue, new patients, displaced appointments needing
+- **Type:** Main Sidebar Link
+- **Route:** `/admin/dashboard`
+- **What it is:** A standalone page.
+- **Contents:** High-level metrics (Today's revenue, new patients, displaced appointments needing
   attention, system alerts).
+- **Status:** Existing (Keep as is)
 
-### 2. 👨‍⚕️ Doctors (Keep)
+---
 
-- **Profile:** Basic info, specialization, bio.
-- **Schedule:** Global Weekly Routine & Exceptions (Time/Date Blocks).
-- **History/Activity:** Past appointments handled by this doctor.
-- **Security (New Sub-nav):** Account management specific to this doctor (e.g., Reset Password,
-  Disable Account, Change Role). _Keep account management tied to the specific user rather than a
-  global "Accounts" page._
+## 2. 👨‍⚕️ Doctors
 
-### 3. 👩‍💼 Staff / Secretaries (New)
+- **Type:** Main Sidebar Link (List Page) -> Leads to Detail Page with Sub-tabs
+- **Route:** `/admin/doctors` -> `/admin/doctors/:id`
+- **What it is:** The main page is a table/grid of doctors. Clicking a doctor opens their Detail
+  Page containing **Sub-Tabs**.
+- **Sub-Tabs within Doctor Detail:**
+    1. **Profile:** Basic info, specialization, bio.
+    2. **Schedule:** Global Weekly Routine & Exceptions (Time/Date Blocks).
+    3. **History:** Past appointments handled by this doctor.
+    4. **Security / Account (Suggestion):** dedicated sub-tab for password resets, disabling
+       account, or changing roles for this specific doctor.
+- **Status:** Mostly Existing. Just need to add the "Security/Account" sub-tab as a placeholder.
 
-_Instead of just "Secondary", call it "Staff" so you can manage Admin and Secretary accounts here._
+---
 
-- **Profile:** Basic info, contact details.
-- **Security / Access:** Reset password, activate/deactivate account.
-- **Audit / Activity (Replaces Schedule):** Secretaries don't have "schedules" like doctors, so
-  instead, show a log of their actions (e.g., "Booked 5 appointments today", "Cancelled Appointment
-  #1234").
+## 3. 👩‍💼 Staff & Reception _(Tentative)_
 
-### 4. 🫂 Patients / Users (New)
+- **Type:** Main Sidebar Link -> Leads to Detail Page with Sub-tabs
+- **Route:** `/admin/staff` -> `/admin/staff/:id`
+- **What it is:** The directory for Secretaries, Admins, and non-medical staff.
+- **Sub-Tabs within Staff Detail:**
+    1. **Profile:** Basic info, contact details.
+    2. **Activity Log:** A list of what they've been doing (e.g., "Booked 5 appointments today",
+       "Cancelled Appointment #1234").
+    3. **Security / Access:** Reset password, activate/deactivate account.
+- **Status:** Skeleton needed. Add to sidebar and make placeholders.
 
-- **Directory:** List of all registered patients and guests.
-- **Profile:** Patient details, contact info.
-- **Appointments (Schedule):** Upcoming bookings for this specific patient.
-- **History & Records:** Past appointments, no-show counts, cancellation counts.
-- **Restrictions Management:** Since your database has a `is_booking_restricted` flag for users with
-  too many no-shows, Admins need a place to manually lift or enforce these restrictions.
+---
 
-### 5. 🦷 Services (New)
+## 4. 🫂 Patients & Users _(Tentative)_
 
-- **Service Catalog:** Add/Edit/Delete services (e.g., "Teeth Cleaning", "Root Canal").
-- **Pricing & Duration:** Update costs and how long the appointment takes.
-- **Tier Management:** Mark services as `general` (requires approval) or `specialized` (requires
-  approval) as per your Two-Tier database schema.
+- **Type:** Main Sidebar Link -> Leads to Detail Page with Sub-tabs
+- **Route:** `/admin/patients` -> `/admin/patients/:id`
+- **What it is:** A global directory for all registered patients and guests.
+- **Sub-Tabs within Patient Detail:**
+    1. **Profile Details:** Contact info, demographic data.
+    2. **Upcoming Appointments:** Their schedule.
+    3. **History & Records:** Past appointments, no-show counts, cancellation counts.
+    4. **Restrictions Management:** A place to manually lift or enforce booking restrictions if they
+       have too many No-Shows.
+- **Status:** Skeleton needed. Add to sidebar and make placeholders.
 
-### 6. ⚙️ Clinic Settings (New)
+---
 
-- **General Info:** Update Clinic Name, Address, Contact details (powers the website).
-- **Global Constants:** Start/End hours for the clinic itself, deposit requirements.
-- **Clinic Holidays:** Add dates where the entire clinic is closed (e.g., Christmas).
-- **Health Check / System Status:** View database connection health, email service limits, etc.
+## 5. 🦷 Services Catalog _(Tentative)_
 
-### 7. 🛡️ System Audit Logs (Recommended Addition)
+- **Type:** Main Sidebar Link
+- **Route:** `/admin/services`
+- **What it is:** A standalone page containing a data table / list.
+- **Contents:**
+    - Add/Edit/Delete services (e.g., "Teeth Cleaning", "Root Canal").
+    - Update costs and durations.
+    - Tier Management: Mark services as `general` (auto-approve) or `specialized` (requires
+      approval).
+- **Status:** Skeleton needed. Add to sidebar and make a placeholder.
 
-_Since you have an `audit_log` table in your database schema, you should expose it to the Admin._
+---
 
-- **Global Activity Timeline:** A master list showing _everything_ that happens in the system (e.g.,
-  "Admin X changed Clinic settings", "Secretary Y displaced 5 appointments", "Patient Z cancelled
-  their booking"). This is crucial for HIPAA/Privacy compliance and debugging who made a mistake.
+## 6. ⚙️ Clinic Settings _(Tentative)_
+
+- **Type:** Main Sidebar Link -> Opens a Page with Internal Sub-tabs (Vertical or Horizontal)
+- **Route:** `/admin/settings`
+- **Sub-Tabs within Settings:**
+    1. **General Details:** Update Clinic Name, Address, Contact details (powers the patient-facing
+       website).
+    2. **Global Rules:** Start/End hours for the clinic itself, default deposit requirements.
+    3. **Clinic Holidays:** Add dates where the entire clinic is completely closed (e.g., Christmas,
+       New Years).
+    4. **System Health:** View database connection health, email service limits, etc.
+- **Status:** Skeleton needed. Add to sidebar and make placeholders.
+
+---
+
+## 7. 🛡️ System Audit Logs _(Tentative)_
+
+- **Type:** Main Sidebar Link
+- **Route:** `/admin/audit-logs`
+- **What it is:** A standalone page containing a massive, filterable data-table.
+- **Contents:** A master timeline showing _everything_ that happens in the system (e.g., "Admin X
+  changed Clinic settings", "Secretary Y displaced 5 appointments"). Crucial for fixing human errors
+  and security.
+- **Status:** Skeleton needed. Add to sidebar and make a placeholder.
 
 ---
 
