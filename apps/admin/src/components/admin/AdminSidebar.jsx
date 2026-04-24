@@ -75,6 +75,48 @@ const UserIcon = () => (
     </svg>
 );
 
+const StaffIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M23 21V19C23 17.9391 22.5786 16.9217 21.8284 16.1716C21.0783 15.4214 20.0609 15 19 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.1147 19.0078 7C19.0078 7.8853 18.7122 8.74608 18.1676 9.44768C17.623 10.1493 16.8604 10.6497 16 10.87" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const PatientsIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M5 19.5C5 19.5 7.5 17 12 17C16.5 17 19 19.5 19 19.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const ServicesIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14.7 6.3C15.1 5.9 15.1 5.2 14.7 4.8L13.2 3.3C12.8 2.9 12.1 2.9 11.7 3.3L10.2 4.8C9.8 5.2 9.8 5.9 10.2 6.3L14.7 6.3Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21 16.5C21 15.7 20.3 15 19.5 15H17V13.5C17 12.7 16.3 12 15.5 12H13.5C12.7 12 12 12.7 12 13.5V15H4.5C3.7 15 3 15.7 3 16.5V21H21V16.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 12V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const SettingsIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.22 2H11.78C11.37 2 11.08 2.29 11.05 2.7L10.89 4.31C10.5 4.45 10.14 4.64 9.8 4.88L8.27 4.19C7.89 4.02 7.42 4.09 7.11 4.4L6.8 4.71C6.49 5.02 6.42 5.49 6.59 5.86L7.28 7.39C7.04 7.73 6.85 8.1 6.71 8.49L5.1 8.65C4.69 8.68 4.4 8.97 4.4 9.38V9.82C4.4 10.23 4.69 10.52 5.1 10.55L6.71 10.71C6.85 11.1 7.04 11.47 7.28 11.81L6.59 13.34C6.42 13.71 6.49 14.18 6.8 14.49L7.11 14.8C7.42 15.11 7.89 15.18 8.27 15.01L9.8 14.32C10.14 14.56 10.5 14.75 10.89 14.89L11.05 16.5C11.08 16.91 11.37 17.2 11.78 17.2H12.22C12.63 17.2 12.92 16.91 12.95 16.5L13.11 14.89C13.5 14.75 13.86 14.56 14.2 14.32L15.73 15.01C16.11 15.18 16.58 15.11 16.89 14.8L17.2 14.49C17.51 14.18 17.58 13.71 17.41 13.34L16.72 11.81C16.96 11.47 17.15 11.1 17.29 10.71L18.9 10.55C19.31 10.52 19.6 10.23 19.6 9.82V9.38C19.6 8.97 19.31 8.68 18.9 8.65L17.29 8.49C17.15 8.1 16.96 7.73 16.72 7.39L17.41 5.86C17.58 5.49 17.51 5.02 17.2 4.71L16.89 4.4C16.58 4.09 16.11 4.02 15.73 4.19L14.2 4.88C13.86 4.64 13.5 4.45 13.11 4.31L12.95 2.7C12.92 2.29 12.63 2 12.22 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="12" cy="9.6" r="2.45" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const AuditIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 8V12L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3.05 11C3.2428 9.07663 4.0762 7.28315 5.4243 5.89796C6.77241 4.51276 8.5587 3.59379 10.5134 3.28014C12.4682 2.96649 14.4795 3.27557 16.2413 4.16112C18.0032 5.04666 19.4184 6.45863 20.269 8.18182" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M20.95 13C20.7572 14.9234 19.9238 16.7169 18.5757 18.102C17.2276 19.4872 15.4413 20.4062 13.4866 20.7199C11.5318 21.0335 9.52055 20.7244 7.7587 19.8389C5.99684 18.9533 4.58162 17.5414 3.73102 15.8182" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M21 8H16V3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3 16H8V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
 const navItems = [
     {
         icon: <GridIcon />,
@@ -92,8 +134,50 @@ const navItems = [
         ],
     },
     {
+        icon: <StaffIcon />,
+        name: 'Staff & Reception',
+        path: '/staff',
+        subItems: [
+            { name: 'Profile', path: '/staff/profile' },
+            { name: 'Activity Log', path: '/staff/activity' },
+            { name: 'Security / Access', path: '/staff/security' },
+        ],
+    },
+    {
+        icon: <PatientsIcon />,
+        name: 'Patients & Users',
+        path: '/patients',
+        subItems: [
+            { name: 'Profile Details', path: '/patients/profile' },
+            { name: 'Upcoming', path: '/patients/upcoming' },
+            { name: 'History', path: '/patients/history' },
+            { name: 'Restrictions', path: '/patients/restrictions' },
+        ],
+    },
+    {
+        icon: <ServicesIcon />,
+        name: 'Services Catalog',
+        path: '/services',
+    },
+    {
+        icon: <SettingsIcon />,
+        name: 'Clinic Settings',
+        path: '/settings',
+        subItems: [
+            { name: 'General Details', path: '/settings/general' },
+            { name: 'Global Rules', path: '/settings/rules' },
+            { name: 'Clinic Holidays', path: '/settings/holidays' },
+            { name: 'System Health', path: '/settings/health' },
+        ],
+    },
+    {
+        icon: <AuditIcon />,
+        name: 'Audit Logs',
+        path: '/audit-logs',
+    },
+    {
         icon: <UserIcon />,
-        name: 'Profile',
+        name: 'My Profile',
         path: '/profile',
     },
 ];
