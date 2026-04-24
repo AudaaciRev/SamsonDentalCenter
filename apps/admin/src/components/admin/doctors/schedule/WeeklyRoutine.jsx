@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format, isSameDay, isSameMonth } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CalendarOff, CheckSquare } from 'lucide-react';
 import { Switch, Input, Button, Modal } from '../../../ui';
 import { useToast } from '../../../../context/ToastContext.jsx';
+import { useDoctors } from '../../../../hooks/useDoctors';
 
-const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) => {
+const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOpen }) => {
     const { showToast } = useToast();
+    const { fetchDoctorSchedule, updateDoctorScheduleBulk, fetchDoctorBlocks, addDoctorBlock, deleteDoctorBlock } = useDoctors(false);
+
     const initialDays = [
-        { id: 'Monday', isWorking: true, start: '08:00', end: '17:00' },
-        { id: 'Tuesday', isWorking: true, start: '08:00', end: '17:00' },
-        { id: 'Wednesday', isWorking: true, start: '08:00', end: '17:00' },
-        { id: 'Thursday', isWorking: true, start: '08:00', end: '17:00' },
-        { id: 'Friday', isWorking: true, start: '08:00', end: '17:00' },
+        { id: 'Monday', isWorking: false, start: '08:00', end: '17:00' },
+        { id: 'Tuesday', isWorking: false, start: '08:00', end: '17:00' },
+        { id: 'Wednesday', isWorking: false, start: '08:00', end: '17:00' },
+        { id: 'Thursday', isWorking: false, start: '08:00', end: '17:00' },
+        { id: 'Friday', isWorking: false, start: '08:00', end: '17:00' },
         { id: 'Saturday', isWorking: false, start: '08:00', end: '12:00' },
         { id: 'Sunday', isWorking: false, start: '08:00', end: '12:00' }
     ];
@@ -19,7 +22,11 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
     const [schedule, setSchedule] = useState(initialDays);
     const [draftSchedule, setDraftSchedule] = useState(initialDays);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     
+    // Track DB block IDs for deletion logic
+    const [dbBlocks, setDbBlocks] = useState({}); // { dateKey: blockId }
+
     // Modal States
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     
@@ -44,6 +51,66 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
 
     // Block Modal Calendar State
     const [blockCalDate, setBlockCalDate] = useState(new Date());
+
+    const loadData = useCallback(async () => {
+        if (!doctor?.id) return;
+        try {
+            setIsLoading(true);
+            const [fetchedSchedule, fetchedBlocks] = await Promise.all([
+                fetchDoctorSchedule(doctor.id),
+                fetchDoctorBlocks(doctor.id)
+            ]);
+
+            // Map Schedule
+            if (fetchedSchedule && fetchedSchedule.length > 0) {
+                // Ensure we start with a fresh DEEP copy of initialDays
+                const newSchedule = initialDays.map(day => ({ ...day }));
+
+                fetchedSchedule.forEach(item => {
+                    // Map 0 (Sun) -> 6, 1 (Mon) -> 0, etc.
+                    const idx = item.day_of_week === 0 ? 6 : item.day_of_week - 1;
+                    if (newSchedule[idx]) {
+                        newSchedule[idx] = {
+                            ...newSchedule[idx],
+                            isWorking: item.is_working ?? item.is_available ?? newSchedule[idx].isWorking,
+                            start: (item.start_time || item.start)?.substring(0, 5) || newSchedule[idx].start,
+                            end: (item.end_time || item.end)?.substring(0, 5) || newSchedule[idx].end
+                        };
+                    }
+                });
+                setSchedule(newSchedule);
+                setDraftSchedule(newSchedule);
+            }
+
+            // Map Blocks
+            const blockSet = new Set();
+            const blockMap = {};
+            fetchedBlocks.forEach(b => {
+                const dateKey = b.block_date.substring(0, 10);
+                blockSet.add(dateKey);
+                blockMap[dateKey] = b.id;
+            });
+            setBlockedDates(blockSet);
+            setDbBlocks(blockMap);
+
+        } catch (err) {
+            console.error('Failed to load doctor schedule:', err);
+            showToast('Failed to load doctor schedule.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [doctor?.id, fetchDoctorSchedule, fetchDoctorBlocks]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Keep draft schedule in sync with fetched schedule when modal is not open
+    useEffect(() => {
+        if (!isEditModalOpen) {
+            setDraftSchedule(schedule);
+        }
+    }, [schedule, isEditModalOpen]);
 
     const navMonth = (setter, date, offset) => {
         setter(new Date(date.getFullYear(), date.getMonth() + offset, 1));
@@ -85,14 +152,30 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
         showToast('Monday\'s hours applied to all working days.', 'success');
     };
 
-    const saveWeekly = () => {
+    const saveWeekly = async () => {
+        if (!doctor?.id) return;
         setIsSaving(true);
-        setTimeout(() => {
+        try {
+            // Map index back to day_of_week
+            const payload = draftSchedule.map((day, idx) => {
+                const dow = idx === 6 ? 0 : idx + 1;
+                return {
+                    day_of_week: dow,
+                    is_working: day.isWorking,
+                    start_time: day.start,
+                    end_time: day.end
+                };
+            });
+
+            await updateDoctorScheduleBulk(doctor.id, payload);
             setSchedule([...draftSchedule]);
-            setIsSaving(false);
             setIsEditModalOpen(false);
-            showToast('Weekly routine updated.', 'success');
-        }, 800);
+            showToast('Weekly routine updated and saved to database.', 'success');
+        } catch (err) {
+            showToast('Failed to save weekly routine.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // --- Block Date Actions ---
@@ -110,19 +193,42 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
         }
     };
 
-    const saveBlocks = () => {
+    const saveBlocks = async () => {
+        if (!doctor?.id) return;
         setIsSaving(true);
-        setTimeout(() => {
-            setBlockedDates(prev => {
-                const next = new Set(prev);
-                draftUnblockedDates.forEach(d => next.delete(d));
-                draftBlockedDates.forEach(d => next.add(d));
-                return next;
+        try {
+            // 1. Process Deletions (Unblocks)
+            const deletionPromises = Array.from(draftUnblockedDates).map(dateKey => {
+                const blockId = dbBlocks[dateKey];
+                if (blockId) {
+                    return deleteDoctorBlock(doctor.id, blockId);
+                }
+                return Promise.resolve();
             });
+
+            // 2. Process Additions (Blocks)
+            const additionPromises = Array.from(draftBlockedDates).map(dateKey => {
+                return addDoctorBlock(doctor.id, {
+                    block_date: dateKey,
+                    reason: blockReason,
+                    notes: blockReason === 'other' ? otherReason : '',
+                    cancel_appointments: false
+                });
+            });
+
+            await Promise.all([...deletionPromises, ...additionPromises]);
+
+            // 3. Reload everything to be sync with DB
+            await loadData();
+            
             setIsSaving(false);
             setIsBlockModalOpen(false);
-            showToast('Blocked dates updated.', 'success');
-        }, 800);
+            showToast('Blocked dates successfully updated.', 'success');
+        } catch (err) {
+            console.error('Save blocks error:', err);
+            showToast('Error updating blocked dates.', 'error');
+            setIsSaving(false);
+        }
     };
 
     const openEditModal = () => {
@@ -131,11 +237,11 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
     };
 
     const openBlockModal = () => {
-        setDraftBlockedDates(new Set()); // Only track *new* selections in this session
+        setDraftBlockedDates(new Set()); 
         setDraftUnblockedDates(new Set());
         setBlockReason('leave');
         setOtherReason('');
-        setBlockCalDate(new Date()); // reset to current month
+        setBlockCalDate(new Date()); 
         setIsBlockModalOpen(true);
     };
 
@@ -195,7 +301,15 @@ const WeeklyRoutine = ({ externalBlockModalOpen, setExternalBlockModalOpen }) =>
             </div>
 
             {/* Main Read-only Display view: Full Calendar */}
-            <div className='overflow-hidden bg-white dark:bg-transparent'>
+            <div className={`overflow-hidden bg-white dark:bg-transparent transition-opacity duration-300 ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                {isLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-8 h-8 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Syncing Routine...</span>
+                        </div>
+                    </div>
+                )}
                 <div className='flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-white/[0.01] gap-2'>
                     <div>
                         <h3 className='text-sm sm:text-lg font-bold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none'>{monthName} {year}</h3>

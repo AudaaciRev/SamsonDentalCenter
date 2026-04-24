@@ -32,7 +32,7 @@ export const useDoctors = (fetchOnMount = true) => {
     }, [fetchDoctors, fetchOnMount, token]);
 
     // Update Profile (bio, photo, active status, name parts)
-    const updateDoctorProfile = async (id, profileData) => {
+    const updateDoctorProfile = useCallback(async (id, profileData) => {
         try {
             const response = await api.patch(`/admin/dentists/${id}/profile`, profileData, token);
             // Re-fetch to guarantee sync with DB
@@ -42,15 +42,15 @@ export const useDoctors = (fetchOnMount = true) => {
             console.error('Failed to update doctor profile:', err);
             throw err;
         }
-    };
+    }, [token, fetchDoctors]);
 
     // Update Contact is just a subset of profile updating
-    const updateDoctorContact = async (id, contactData) => {
+    const updateDoctorContact = useCallback(async (id, contactData) => {
         return updateDoctorProfile(id, contactData);
-    };
+    }, [updateDoctorProfile]);
 
     // Update Services (replace all assigned services)
-    const updateDoctorServices = async (id, serviceIds) => {
+    const updateDoctorServices = useCallback(async (id, serviceIds) => {
         try {
             const response = await api.patch(`/admin/dentists/${id}/services`, {
                 service_ids: serviceIds,
@@ -61,9 +61,9 @@ export const useDoctors = (fetchOnMount = true) => {
             console.error('Error updating doctor services:', err);
             throw err;
         }
-    };
+    }, [token, fetchDoctors]);
 
-    const onboardDoctor = async (doctorData) => {
+    const onboardDoctor = useCallback(async (doctorData) => {
         try {
             const token = localStorage.getItem('token');
             const response = await api.post('/admin/dentists', doctorData, token);
@@ -73,10 +73,10 @@ export const useDoctors = (fetchOnMount = true) => {
             console.error('Error onboarding doctor:', err);
             throw err;
         }
-    };
+    }, [fetchDoctors]);
 
     // Refresh exactly one doctor (useful if we don't want to reload the whole list)
-    const fetchSingleDoctor = async (id) => {
+    const fetchSingleDoctor = useCallback(async (id) => {
         try {
             const response = await api.get(`/admin/dentists/${id}`, token);
             const updatedDoctor = response.doctor;
@@ -87,7 +87,69 @@ export const useDoctors = (fetchOnMount = true) => {
             console.error(`Failed to fetch doctor ${id}:`, err);
             throw err;
         }
-    };
+    }, [token]);
+
+    // --- Schedule & Blocks ---
+
+    const fetchDoctorSchedule = useCallback(async (dentistId) => {
+        try {
+            const response = await api.get(`/admin/dentists/${dentistId}/schedule`, token);
+            return response.schedule;
+        } catch (err) {
+            console.error('Failed to fetch doctor schedule:', err);
+            throw err;
+        }
+    }, [token]);
+
+    const updateDoctorScheduleBulk = useCallback(async (dentistId, schedules) => {
+        try {
+            const response = await api.post(`/admin/dentists/${dentistId}/schedule/bulk`, schedules, token);
+            return response;
+        } catch (err) {
+            console.error('Failed to update doctor schedule:', err);
+            throw err;
+        }
+    }, [token]);
+
+    const fetchDoctorBlocks = useCallback(async (dentistId) => {
+        try {
+            const response = await api.get(`/admin/dentists/${dentistId}/blocks`, token);
+            return response.blocks;
+        } catch (err) {
+            console.error('Failed to fetch doctor blocks:', err);
+            throw err;
+        }
+    }, [token]);
+
+    const addDoctorBlock = useCallback(async (dentistId, blockData) => {
+        try {
+            const response = await api.post(`/admin/dentists/${dentistId}/block`, blockData, token);
+            return response;
+        } catch (err) {
+            console.error('Failed to add doctor block:', err);
+            throw err;
+        }
+    }, [token]);
+
+    const deleteDoctorBlock = useCallback(async (dentistId, blockId) => {
+        try {
+            const response = await api.delete(`/admin/dentists/${dentistId}/block/${blockId}`, token);
+            return response;
+        } catch (err) {
+            console.error('Failed to remove doctor block:', err);
+            throw err;
+        }
+    }, [token]);
+
+    const fetchDoctorAppointments = useCallback(async (dentistId) => {
+        try {
+            const response = await api.get(`/admin/appointments?dentist_id=${dentistId}`, token);
+            return response.appointments;
+        } catch (err) {
+            console.error('Failed to fetch doctor appointments:', err);
+            throw err;
+        }
+    }, [token]);
 
     return {
         doctors,
@@ -98,6 +160,12 @@ export const useDoctors = (fetchOnMount = true) => {
         updateDoctorContact,
         updateDoctorServices,
         onboardDoctor,
-        fetchSingleDoctor
+        fetchSingleDoctor,
+        fetchDoctorSchedule,
+        updateDoctorScheduleBulk,
+        fetchDoctorBlocks,
+        addDoctorBlock,
+        deleteDoctorBlock,
+        fetchDoctorAppointments
     };
 };

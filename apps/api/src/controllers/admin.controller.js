@@ -693,8 +693,7 @@ export const blockDentistAvailability = async (req, res, next) => {
  */
 export const viewDentistBlocks = async (req, res, next) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const blocks = await getBlocks(req.params.id, today);
+        const blocks = await getBlocks(req.params.id);
         res.json({ dentist_id: req.params.id, blocks });
     } catch (err) {
         next(err);

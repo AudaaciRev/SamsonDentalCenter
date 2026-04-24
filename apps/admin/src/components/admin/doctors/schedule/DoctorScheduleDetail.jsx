@@ -1,69 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { format, addDays } from 'date-fns';
 import WeeklyRoutine from './WeeklyRoutine';
 import WeeklyTimeline from './WeeklyTimeline';
 import BlockTimeModal from './BlockTimeModal';
 import { useToast } from '../../../../context/ToastContext.jsx';
+import { useDoctors } from '../../../../hooks/useDoctors';
 
 const DoctorScheduleDetail = ({ doctor }) => {
     const { showToast } = useToast();
+    const { fetchDoctorAppointments, fetchDoctorBlocks } = useDoctors(false);
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
     const [isTimeBlockModalOpen, setIsTimeBlockModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Initial Sample Data (Synced across UI)
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-    const dayAfterStr = format(addDays(new Date(), 2), 'yyyy-MM-dd');
+    const [events, setEvents] = useState([]);
 
-    const [events, setEvents] = useState([
-        { date: todayStr, start: '09:30', duration: 45, service: 'Dental Cleaning', patient: 'John Doe', type: 'appointment' },
-        { date: todayStr, start: '12:00', duration: 60, service: 'Lunch Break', patient: 'Staff', type: 'blocked' },
-        { date: todayStr, start: '14:30', duration: 30, service: 'Quick Consult', patient: 'Liza Soberano', type: 'appointment' },
-        { date: tomorrowStr, start: '10:00', duration: 90, service: 'Root Canal', patient: 'Jane Smith', type: 'appointment' },
-        { date: tomorrowStr, start: '13:00', duration: 45, service: 'Audit Meeting', patient: 'Clinical Staff', type: 'blocked' },
-        { date: tomorrowStr, start: '14:00', duration: 45, service: 'Checkup', patient: 'Mike Ross', type: 'appointment' },
-        { date: dayAfterStr, start: '08:00', duration: 120, service: 'Surgery Prep', patient: 'Clinical Staff', type: 'blocked' },
-        { date: dayAfterStr, start: '11:00', duration: 30, service: 'Quick Consult', patient: 'Harvey Specter', type: 'appointment' },
-        { date: dayAfterStr, start: '15:30', duration: 60, service: 'Teeth Whitening', patient: 'Piolo Pascual', type: 'appointment' },
-    ]);
+    const loadCalendarData = useCallback(async () => {
+        if (!doctor?.id) return;
+        try {
+            setIsLoading(true);
+            const [fetchedAppointments, fetchedBlocks] = await Promise.all([
+                fetchDoctorAppointments(doctor.id),
+                fetchDoctorBlocks(doctor.id)
+            ]);
 
-    const handleApplyTimeBlocks = (date, blockedSlots, unblockedSlots, reason) => {
-        setEvents(prev => {
-            // 1. Remove unblocked slots
-            let filtered = prev.filter(e => {
-                const isTargetDate = e.date === date && e.type === 'blocked';
-                if (!isTargetDate) return true;
-                return !unblockedSlots.has(format(new Date().setHours(...e.start.split(':').map(Number)), 'h:mm a'));
+            const newEvents = [];
+
+            // 1. Map Appointments
+            fetchedAppointments.forEach(appt => {
+                // Calculate duration in minutes
+                const start = new Date(`1970-01-01T${appt.start_time}`);
+                const end = new Date(`1970-01-01T${appt.end_time}`);
+                const duration = (end - start) / (1000 * 60);
+
+                newEvents.push({
+                    id: appt.id,
+                    date: appt.appointment_date,
+                    start: appt.start_time.substring(0, 5),
+                    duration: duration,
+                    service: appt.service?.name || 'Dental Service',
+                    patient: appt.patient?.full_name || 'Guest Patient',
+                    type: 'appointment',
+                    status: appt.status
+                });
             });
 
-            // 2. Add new blocked slots
-            const newBlocks = Array.from(blockedSlots).map(slot => {
-                // Convert "8:00 AM" to "08:00"
-                const [time, ampm] = slot.split(' ');
-                let [h, m] = time.split(':').map(Number);
-                if (ampm === 'PM' && h !== 12) h += 12;
-                if (ampm === 'AM' && h === 12) h = 0;
-                const paddedH = String(h).padStart(2, '0');
-                const paddedM = String(m).padStart(2, '0');
+            // 2. Mapping Blocks
+            fetchedBlocks.forEach(block => {
+                const dateKey = block.block_date.substring(0, 10);
+                
+                // If no times specified, it's a full day block. 
+                // We map it to fit the visible timeline (08:00 - 18:00) to ensure visibility.
+                const isFullDay = !block.start_time;
+                const startTime = isFullDay ? '08:00' : block.start_time.substring(0, 5);
+                const endTime = isFullDay ? '18:00' : (block.end_time ? block.end_time.substring(0, 5) : '18:00');
+                
+                const startObj = new Date(`1970-01-01T${startTime}`);
+                const endObj = new Date(`1970-01-01T${endTime}`);
+                const duration = (endObj - startObj) / (1000 * 60);
 
-                return {
-                    date,
-                    start: `${paddedH}:${paddedM}`,
-                    duration: 30, // Default to 30 for now or pass from modal
-                    service: reason || 'Manual Block',
+                newEvents.push({
+                    id: block.id,
+                    date: dateKey,
+                    start: startTime,
+                    duration: duration,
+                    service: block.reason || 'Blocked',
                     patient: 'Clinical Staff',
                     type: 'blocked'
-                };
+                });
             });
 
-            return [...filtered, ...newBlocks];
-        });
+            setEvents(newEvents);
+        } catch (err) {
+            console.error('Failed to load calendar events:', err);
+            showToast('Could not load calendar events.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [doctor?.id, fetchDoctorAppointments, fetchDoctorBlocks]);
 
-        showToast('Schedule updated successfully.', 'success', 'Updated');
+    useEffect(() => {
+        loadCalendarData();
+    }, [loadCalendarData]);
+
+    const handleApplyTimeBlocks = (date, blockedSlots, unblockedSlots, reason) => {
+        // Since we are now dynamic, we refresh the calendar after save
+        // The saving itself is handled in WeeklyRoutine for date blocks, 
+        // or a separate modal for time blocks.
+        loadCalendarData();
     };
 
     return (
-        <div className='flex flex-col gap-6'>
+        <div className={`flex flex-col gap-6 transition-opacity duration-300 ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            {isLoading && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/20 dark:bg-gray-900/20 backdrop-blur-[2px]">
+                    <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700">
+                        <div className="w-10 h-10 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Syncing Schedule...</span>
+                    </div>
+                </div>
+            )}
             {/* Top row: The main weekly form */}
             <div className='w-full'>
                 <WeeklyRoutine 

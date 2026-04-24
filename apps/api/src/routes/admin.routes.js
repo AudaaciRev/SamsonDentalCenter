@@ -61,6 +61,7 @@ import {
     reassignAppointment,
     getAvailableDentistsForReassignment,
     onboardDoctor,
+    bulkUpdateSchedule,
 } from '../controllers/admin.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requireAdmin, requireAdminOrSecretary } from '../middleware/admin.middleware.js'; // UPDATED
@@ -120,6 +121,7 @@ router.patch('/dentists/:id/profile', updateDentistProfileHandler); // NEW
 router.patch('/dentists/:id/services', updateDentistServicesHandler); // NEW
 router.get('/dentists/:id/schedule', viewDentistSchedule);
 router.put('/dentists/:id/schedule', updateDentistSchedule);
+router.post('/dentists/:id/schedule/bulk', bulkUpdateSchedule); // NEW: Bulk update
 router.post('/dentists/:id/block', blockDentistAvailability);
 router.get('/dentists/:id/blocks', viewDentistBlocks);
 router.delete('/dentists/:id/block/:blockId', removeDentistBlock);

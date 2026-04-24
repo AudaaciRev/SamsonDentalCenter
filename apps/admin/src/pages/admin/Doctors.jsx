@@ -26,8 +26,6 @@ const Doctors = () => {
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    console.log("=== DOCTORS FETCHED ===", doctors);
-
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
 
