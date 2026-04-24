@@ -60,6 +60,7 @@ import {
     // Reassignment
     reassignAppointment,
     getAvailableDentistsForReassignment,
+    onboardDoctor,
 } from '../controllers/admin.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { requireAdmin, requireAdminOrSecretary } from '../middleware/admin.middleware.js'; // UPDATED
@@ -112,6 +113,7 @@ router.post('/holidays', createHolidayHandler);
 
 // ── Schedule Management ──
 router.get('/dentists', getDentists);
+router.post('/dentists', requireAdmin, onboardDoctor); // NEW
 router.get('/dentists/available', getAvailableDentistsForReassignment); // NEW
 router.get('/dentists/:id', getDentistByIdHandler); // NEW
 router.patch('/dentists/:id/profile', updateDentistProfileHandler); // NEW

@@ -53,6 +53,7 @@ import {
     quickRegisterPatient,
     getAvailableDentistsForSlot,
     reassignAppointmentToDentist,
+    onboardDentistProfile,
 } from '../services/admin.service.js';
 import {
     sendApprovalNotice,
@@ -567,6 +568,22 @@ export const updateDentistServicesHandler = async (req, res, next) => {
         }
         const updated = await replaceDentistServices(req.params.id, service_ids);
         res.json({ message: 'Doctor services updated.', doctor: formatDoctorResponse(updated) });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * Create/Onboard a new doctor.
+ * POST /api/admin/dentists
+ */
+export const createDentistHandler = async (req, res, next) => {
+    try {
+        const result = await onboardDentistProfile(req.body);
+        res.status(201).json({
+            message: 'Doctor invitation sent successfully.',
+            user: result.user
+        });
     } catch (err) {
         next(err);
     }
@@ -1169,6 +1186,24 @@ export const getSystemHealthHandler = async (req, res, next) => {
     try {
         const health = await getSystemHealth();
         res.json(health);
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/admin/dentists
+ * 
+ * Onboard a brand new doctor (Profile + Dentist record).
+ */
+export const onboardDoctor = async (req, res, next) => {
+    try {
+        const dentist = await onboardDentistProfile(req.body);
+        res.status(201).json({
+            message: 'Doctor onboarded successfully.',
+            user: dentist.user, 
+            message_detail: dentist.message
+        });
     } catch (err) {
         next(err);
     }

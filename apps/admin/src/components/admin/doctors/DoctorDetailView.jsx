@@ -9,19 +9,12 @@ import { useToast } from '../../../context/ToastContext.jsx';
 const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab, updateDoctorProfile, updateDoctorContact, updateDoctorServices }) => {
     if (!initialDoctor) return null;
 
-    // Parse Full Name for initial state
-    // Format assumed: Dr. First Middle Last Suffix (simplistic parse)
-    const parseName = (name) => {
-        const parts = (name || '').replace('Dr. ', '').split(' ');
-        return {
-            first: parts[0] || '',
-            last: parts[parts.length - 1] || '',
-            middle: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
-            suffix: '' // Hard to guess suffix from full string reliably
-        };
+    const initialNames = {
+        first: initialDoctor.first_name || '',
+        last: initialDoctor.last_name || '',
+        middle: initialDoctor.middle_name || '',
+        suffix: initialDoctor.suffix || ''
     };
-
-    const initialNames = parseName(initialDoctor.first_name ? `${initialDoctor.first_name} ${initialDoctor.last_name}` : initialDoctor.full_name);
 
     const [doctor, setDoctor] = useState(initialDoctor);
     const [formNames, setFormNames] = useState(initialNames);
@@ -30,7 +23,12 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab, updateDoct
     React.useEffect(() => {
         if (!initialDoctor) return;
         setDoctor(initialDoctor);
-        setFormNames(parseName(initialDoctor.first_name ? `${initialDoctor.first_name} ${initialDoctor.last_name}` : initialDoctor.full_name));
+        setFormNames({
+            first: initialDoctor.first_name || '',
+            last: initialDoctor.last_name || '',
+            middle: initialDoctor.middle_name || '',
+            suffix: initialDoctor.suffix || ''
+        });
     }, [initialDoctor]);
     const [isSaving, setIsSaving] = useState(false);
     const [selectedAvatar, setSelectedAvatar] = useState(doctor.photo_url);

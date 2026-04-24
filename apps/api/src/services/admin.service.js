@@ -1358,6 +1358,53 @@ export const getDentistById = async (dentistId) => {
 };
 
 /**
+ * Onboard a new dentist (Creates auth user + sends invitation + triggers profile).
+ * 
+ * @param {object} dentistData - { email, first_name, last_name, middle_name?, suffix?, phone? }
+ * @returns {object} Invitation result
+ */
+export const onboardDentistProfile = async (dentistData) => {
+    const { email, first_name, last_name, middle_name, suffix, phone } = dentistData;
+    
+    // 1. Validation
+    if (!email || !first_name || !last_name) {
+        throw new AppError('Incomplete doctor identity data (First Name, Last Name, Email).', 400);
+    }
+
+    // 2. Metadata construction - Strictly following trigger expectations
+    // d:\webApp\BLUEPRINT\BACKEND\MIGRATIONS\20260424213800_update_handle_new_user_trigger.sql
+    const metadata = {
+        full_name: `${first_name} ${last_name}`.trim(),
+        first_name: first_name,
+        last_name: last_name,
+        middle_name: middle_name || '',
+        suffix: suffix || '',
+        phone: phone || '',
+        role: 'dentist'
+    };
+
+    // 3. User Invitation — redirect to doctor portal password setup
+    const doctorPortalUrl = process.env.DOCTOR_URL || 'http://localhost:5176';
+    const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+            data: metadata,
+            redirectTo: `${doctorPortalUrl}/set-password`
+        }
+    );
+
+    if (inviteErr) {
+        console.error(' [ONBOARD_ERROR] Details:', inviteErr);
+        throw new AppError(`Supabase Invitation Error: ${inviteErr.message}`, 500);
+    }
+
+    return {
+        user: inviteData.user,
+        message: 'A secure registration link has been dispatched to the doctor.'
+    };
+};
+
+/**
  * Update a dentist's profile fields.
  * Updates both `dentists` table (bio, photo_url, is_active, license_number)
  * and `profiles` table (name fields, email, phone).
@@ -1409,6 +1456,7 @@ export const updateDentistProfileData = async (dentistId, fields) => {
     if (suffix !== undefined) profileUpdates.suffix = suffix;
     if (email !== undefined) profileUpdates.email = email;
     if (phone !== undefined) profileUpdates.phone = phone;
+    if (photo_url !== undefined) profileUpdates.avatar_url = photo_url; // Map photo_url to profiles.avatar_url
 
     // Rebuild full_name if any name parts changed
     if (

@@ -8,20 +8,14 @@ import { useAuth } from '../context/AuthContext';
 export const useDoctors = (fetchOnMount = true) => {
     const { token } = useAuth();
     const [doctors, setDoctors] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchDoctors = useCallback(async () => {
         try {
-            if (!token) return;
             setLoading(true);
             setError(null);
-            
-            // Assuming /admin/dentists returns { dentists: [...] }
             const response = await api.get('/admin/dentists', token);
-            
-            // Re-shape logic is handled backend-side in the updated getDentists controller.
-            // The object matches frontend expectations: id, full_name, email, phone, tier, etc.
             setDoctors(response.dentists || []);
         } catch (err) {
             console.error('Failed to fetch doctors:', err);
@@ -29,7 +23,7 @@ export const useDoctors = (fetchOnMount = true) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [token]);
 
     useEffect(() => {
         if (fetchOnMount && token) {
@@ -64,7 +58,19 @@ export const useDoctors = (fetchOnMount = true) => {
             await fetchDoctors();
             return response.doctor;
         } catch (err) {
-            console.error('Failed to update doctor services:', err);
+            console.error('Error updating doctor services:', err);
+            throw err;
+        }
+    };
+
+    const onboardDoctor = async (doctorData) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await api.post('/admin/dentists', doctorData, token);
+            await fetchDoctors();
+            return response.user;
+        } catch (err) {
+            console.error('Error onboarding doctor:', err);
             throw err;
         }
     };
@@ -91,6 +97,7 @@ export const useDoctors = (fetchOnMount = true) => {
         updateDoctorProfile,
         updateDoctorContact,
         updateDoctorServices,
+        onboardDoctor,
         fetchSingleDoctor
     };
 };

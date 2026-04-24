@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import DoctorInbox from '../../components/admin/doctors/DoctorInbox';
+import AddDoctorModal from '../../components/admin/doctors/AddDoctorModal';
 import DoctorDetailView from '../../components/admin/doctors/DoctorDetailView';
 import { useSidebar } from '../../context/SidebarContext';
 import { UserPlus } from 'lucide-react';
@@ -19,8 +20,11 @@ const Doctors = () => {
         error, 
         updateDoctorProfile, 
         updateDoctorContact, 
-        updateDoctorServices 
+        updateDoctorServices,
+        onboardDoctor
     } = useDoctors();
+
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     console.log("=== DOCTORS FETCHED ===", doctors);
 
@@ -93,21 +97,15 @@ const Doctors = () => {
                             onSearchChange={setSearchQuery}
                             activeFilter={activeFilter}
                             onFilterChange={setActiveFilter}
+                            onAddClick={() => {}} // temporarily disabled
                         />
                     )}
                 </div>
             </div>
 
-            {/* Floating Action Button - Mobile Only (Hidden when sidebar is open) */}
-            {!selectedDoctorId && !isMobileOpen && (
-                <button
-                    className='fixed bottom-20 right-5 sm:hidden z-50 flex items-center gap-2 px-5 py-3 bg-brand-500 text-white rounded-xl shadow-2xl shadow-brand-500/40 active:scale-95 transition-all outline-none border border-white/20'
-                    onClick={() => console.log('Add Doctor')}
-                >
-                    <UserPlus size={18} strokeWidth={2.5} />
-                    <span className='text-xs font-black uppercase tracking-wider'>Add Doctor</span>
-                </button>
-            )}
+            {/* Floating Action Button - Mobile Only - TEMPORARILY DISABLED */}
+
+            {/* AddDoctorModal temporarily disabled */}
         </>
     );
 };
