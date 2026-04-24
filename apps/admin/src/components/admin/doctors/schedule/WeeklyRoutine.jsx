@@ -242,6 +242,7 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
         setBlockReason('leave');
         setOtherReason('');
         setBlockCalDate(new Date()); 
+        setBlockModalMode('view');
         setIsBlockModalOpen(true);
     };
 

@@ -8,7 +8,7 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
     const { addDoctorBlock, deleteDoctorBlock } = useDoctors(false);
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [slotGap, setSlotGap] = useState(30); // 30 or 60
-    const [blockModalMode, setBlockModalMode] = useState('block'); // 'block' or 'unblock'
+    const [blockModalMode, setBlockModalMode] = useState('view'); // 'view', 'block' or 'unblock'
     const [draftBlockedSlots, setDraftBlockedSlots] = useState(new Set());
     const [draftUnblockedSlots, setDraftUnblockedSlots] = useState(new Set());
     const [blockReason, setBlockReason] = useState('leave');
@@ -26,6 +26,16 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
             TIMES.push(`${hour}:30 ${ampm}`);
         }
     }
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setBlockModalMode('view');
+            setDraftBlockedSlots(new Set());
+            setDraftUnblockedSlots(new Set());
+            setBlockReason('leave');
+            setOtherReason('');
+        }
+    }, [isOpen]);
 
     const toggleSlot = (time) => {
         const rawTime = convertTo24h(time);
@@ -228,6 +238,18 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                             dotClass = "bg-brand-500";
                                         }
 
+                                        if (blockModalMode === 'view') {
+                                            if (occupied) {
+                                                pillClass = isAppointment
+                                                    ? "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-900/30 text-blue-700 dark:text-blue-200 cursor-not-allowed opacity-80"
+                                                    : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 cursor-not-allowed shadow-theme-xs";
+                                                dotClass = isAppointment ? "bg-blue-500" : "bg-red-500";
+                                            } else {
+                                                pillClass = "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 cursor-not-allowed opacity-60";
+                                                dotClass = "bg-gray-200 dark:bg-gray-700 opacity-60";
+                                            }
+                                        }
+
                                         return (
                                             <button
                                                 key={time}
@@ -255,10 +277,12 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                                                 {isAppointment ? 'BOOKED' : 'BLOCKED'}
                                                             </span>
                                                         )
+                                                    ) : blockModalMode === 'view' ? (
+                                                        <span className="opacity-0"></span> // Hide checkbox in view mode
                                                     ) : isPendingBlock ? (
                                                         <input type="checkbox" readOnly checked className="w-3 h-3 accent-brand-500 translate-y-[-0.5px]" />
                                                     ) : (
-                                                        <input type="checkbox" readOnly checked={false} className="w-3 h-3 opacity-10" />
+                                                        <input type="checkbox" readOnly checked={false} className="w-3 h-3 opacity-10 cursor-pointer" />
                                                     )}
                                                 </div>
                                             </button>
@@ -278,8 +302,11 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                     variant={blockModalMode === 'block' ? 'primary' : 'outline'} 
                                     className="justify-between w-full h-11 font-bold font-outfit"
                                     onClick={() => {
-                                        setBlockModalMode('block');
-                                        setDraftUnblockedSlots(new Set());
+                                        if (blockModalMode === 'block') setBlockModalMode('view');
+                                        else {
+                                            setBlockModalMode('block');
+                                            setDraftUnblockedSlots(new Set());
+                                        }
                                     }}
                                 >
                                     <span>Add Blocked Time</span>
@@ -289,8 +316,11 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                     variant={blockModalMode === 'unblock' ? 'primary' : 'outline'} 
                                     className={`justify-between w-full h-11 font-bold font-outfit ${blockModalMode === 'unblock' ? '!bg-red-500 hover:!bg-red-600' : ''}`}
                                     onClick={() => {
-                                        setBlockModalMode('unblock');
-                                        setDraftBlockedSlots(new Set());
+                                        if (blockModalMode === 'unblock') setBlockModalMode('view');
+                                        else {
+                                            setBlockModalMode('unblock');
+                                            setDraftBlockedSlots(new Set());
+                                        }
                                     }}
                                 >
                                     <span>Remove Blocked Time</span>
