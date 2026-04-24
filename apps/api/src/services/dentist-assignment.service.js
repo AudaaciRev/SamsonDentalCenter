@@ -97,15 +97,30 @@ export const assignDentist = async (date, startTime, endTime, serviceTier = 'gen
     // Check dentist availability blocks (leave, sick, etc.)
     const { data: blocks } = await supabaseAdmin
         .from('dentist_availability_blocks')
-        .select('dentist_id')
+        .select('dentist_id, start_time, end_time')
         .eq('block_date', date)
         .in('dentist_id', eligibleDentistIds);
 
-    const blockedIds = (blocks || []).map((b) => b.dentist_id);
-    const unblockedDentistIds = eligibleDentistIds.filter((id) => !blockedIds.includes(id));
+    const dentistBlockMap = (blocks || []).reduce((acc, b) => {
+        if (!acc[b.dentist_id]) acc[b.dentist_id] = [];
+        acc[b.dentist_id].push(b);
+        return acc;
+    }, {});
+
+    const unblockedDentistIds = eligibleDentistIds.filter((id) => {
+        const dBlocks = dentistBlockMap[id] || [];
+        // A dentist is blocked if they have a block spanning THIS specific requested time
+        const hasConflict = dBlocks.some(b => {
+            const bStart = (b.start_time || '00:00').slice(0, 5);
+            const bEnd = (b.end_time || '23:59').slice(0, 5);
+            // Start1 < End2 && Start2 < End1
+            return startTime < bEnd && bStart < endTime;
+        });
+        return !hasConflict;
+    });
 
     if (unblockedDentistIds.length === 0) {
-        return null; // All are blocked/on leave
+        return null; // All matching dentists working this day are blocked at this specific time
     }
 
     const { data: conflictingAppointments } = await supabaseAdmin

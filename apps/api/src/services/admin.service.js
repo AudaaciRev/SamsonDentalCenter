@@ -615,6 +615,28 @@ export const approveRequest = async (appointmentId, supervisorId, dentistId = nu
         if (conflict) {
             throw new AppError(`Selected dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`, 409);
         }
+
+        // ── CHECK FOR AVAILABILITY BLOCKS ──
+        const { data: blocks, error: blockErr } = await supabaseAdmin
+            .from('dentist_availability_blocks')
+            .select('start_time, end_time')
+            .eq('dentist_id', assignedDentistId)
+            .eq('block_date', appointment.appointment_date);
+
+        if (blockErr) throw new AppError(blockErr.message, 500);
+
+        const startTime = appointment.start_time.slice(0, 5);
+        const endTime = appointment.end_time.slice(0, 5);
+
+        const hasBlockConflict = (blocks || []).some(b => {
+            const bStart = (b.start_time || '00:00').slice(0, 5);
+            const bEnd = (b.end_time || '23:59').slice(0, 5);
+            return startTime < bEnd && bStart < endTime;
+        });
+
+        if (hasBlockConflict) {
+            throw new AppError(`Selected dentist has an availability block during this time (${appointment.start_time} - ${appointment.end_time}).`, 409);
+        }
     }
 
     // ── 3. Update the appointment ──
@@ -1610,13 +1632,21 @@ export const getAvailableDentistsForSlot = async (
     // ── Check for availability blocks ──
     const { data: blocks, error: blockErr } = await supabaseAdmin
         .from('dentist_availability_blocks')
-        .select('dentist_id')
+        .select('dentist_id, start_time, end_time')
         .eq('block_date', appointmentDate)
         .in('dentist_id', dentistIds);
 
     if (blockErr) throw new AppError(blockErr.message, 500);
 
-    const blockedDentistIds = new Set(blocks?.map((b) => b.dentist_id) || []);
+    const blockedDentistIds = new Set();
+    (blocks || []).forEach(b => {
+        const bStart = (b.start_time || '00:00').slice(0, 5);
+        const bEnd = (b.end_time || '23:59').slice(0, 5);
+        // Overlap: appt.start < block.end && block.start < appt.end
+        if (startTime < bEnd && bStart < endTime) {
+            blockedDentistIds.add(b.dentist_id);
+        }
+    });
 
     // ── Check for existing appointments (time conflicts) ──
     const { data: conflicts, error: conflictErr } = await supabaseAdmin
@@ -1705,6 +1735,28 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
 
     if (conflict) {
         throw new AppError(`Target dentist is already booked at ${appointment.start_time} on ${appointment.appointment_date}.`, 409);
+    }
+
+    // ── Check for availability blocks ──
+    const { data: blocks, error: blockErr } = await supabaseAdmin
+        .from('dentist_availability_blocks')
+        .select('start_time, end_time')
+        .eq('dentist_id', newDentistId)
+        .eq('block_date', appointment.appointment_date);
+
+    if (blockErr) throw new AppError(blockErr.message, 500);
+
+    const startTime = appointment.start_time.slice(0, 5);
+    const endTime = appointment.end_time.slice(0, 5);
+
+    const hasBlockConflict = (blocks || []).some(b => {
+        const bStart = (b.start_time || '00:00').slice(0, 5);
+        const bEnd = (b.end_time || '23:59').slice(0, 5);
+        return startTime < bEnd && bStart < endTime;
+    });
+
+    if (hasBlockConflict) {
+        throw new AppError(`Target dentist has an availability block during this time (${appointment.start_time} - ${appointment.end_time}).`, 409);
     }
 
     // ── Update the appointment ──
