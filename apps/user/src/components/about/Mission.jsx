@@ -56,7 +56,7 @@ const Mission = () => {
 
     // Reference-inspired content (update anytime)
     const image = {
-        src: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?auto=format&fit=crop&q=80&w=1600',
+        src: '/images/about/mission-staff.jpg',
         alt: 'Dentist providing care to a patient',
     };
 
@@ -91,14 +91,14 @@ const Mission = () => {
                             <img
                                 src={image.src}
                                 alt={image.alt}
-                                className='h-full w-full object-cover'
+                                className='absolute inset-0 h-full w-full object-cover'
                                 loading='lazy'
                             />
 
                             {/* light dark overlay for readability (matches reference) */}
                             <div className='absolute inset-0 bg-slate-950/50' />
 
-                            <div className='absolute inset-0 p-8 sm:p-10 flex flex-col'>
+                            <div className='relative p-8 sm:p-10 flex flex-col h-full min-h-[400px]'>
                                 <div className='grow'>
                                     <p className='text-xs font-semibold tracking-widest text-white/90 uppercase'>
                                         Our Services

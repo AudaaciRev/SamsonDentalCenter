@@ -86,25 +86,25 @@ const TeamGrid = () => {
             id: 1,
             name: 'Dr. Mae Angelica Garcellano',
             role: 'Lead Dentist',
-            image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=800&auto=format&fit=crop',
+            image: '/images/about/team-dr-samson.jpg',
         },
         {
             id: 2,
             name: 'Dr Maria Cheyenne Deniece Marasigan',
             role: 'Dentist',
-            image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=800&auto=format&fit=crop',
+            image: '/images/about/team-staff.jpg',
         },
         {
             id: 3,
             name: 'Dr. Sarah Samson',
             role: 'Dentist',
-            image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=800&auto=format&fit=crop',
+            image: '/images/about/team-technicians.jpg',
         },
         {
             id: 4,
             name: 'Dr. Silvestre Samson',
             role: 'Dental Hygienist',
-            image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=800&auto=format&fit=crop',
+            image: '/images/about/team-founders.jpg',
         },
     ];
 

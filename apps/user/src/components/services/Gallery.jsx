@@ -8,70 +8,70 @@ gsap.registerPlugin(ScrollTrigger);
 const SMILE_GALLERY = [
   {
     image:
-      "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800",
+      "/images/services/gallery-chairs-row.jpg",
     tags: ["DENTAL IMPLANTS", "VENEERS"],
     classes:
       "md:col-start-1 md:row-start-1 md:row-span-2 col-start-1 row-start-1 row-span-2 aspect-[1/2] md:aspect-auto",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800",
+      "/images/services/gallery-chair-red.jpg",
     tags: ["VENEERS"],
     classes:
       "md:col-start-2 md:row-start-1 col-start-2 row-start-1 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800",
+      "/images/services/gallery-equipment.jpg",
     tags: ["VENEERS"],
     classes:
       "md:col-start-3 md:row-start-1 col-start-2 row-start-2 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=800",
+      "/images/services/gallery-consultation.jpg",
     tags: ["ALL-ON-X"],
     classes:
       "md:col-start-2 md:row-start-2 col-start-1 row-start-3 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
+      "/images/services/service-chair-close.jpg",
     tags: ["ALL-ON-X"],
     classes:
       "md:col-start-3 md:row-start-2 col-start-2 row-start-3 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800",
+      "/images/services/service-chair-tree.jpg",
     tags: ["ENDODONTICS", "VENEERS"],
     classes:
       "md:col-start-1 md:row-start-3 col-start-1 row-start-4 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=800",
+      "/images/services/service-chair-scenic.jpg",
     tags: ["VENEERS"],
     classes:
       "md:col-start-2 md:row-start-3 col-start-2 row-start-4 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&q=80&w=800",
+      "/images/services/service-lab-work.jpg",
     tags: ["ENDODONTICS", "DENTAL IMPLANTS"],
     classes:
       "md:col-start-1 md:row-start-4 col-start-1 row-start-5 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1624727828489-a1e03b79bba8?auto=format&fit=crop&q=80&w=800",
+      "/images/services/service-exam.jpg",
     tags: ["PROFESSIONAL WHITENING", "VENEERS"],
     classes:
       "md:col-start-2 md:row-start-4 col-start-1 row-start-6 aspect-square",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&q=80&w=800",
+      "/images/services/gallery-chairs-row.jpg",
     tags: ["VENEERS", "THERAPY"],
     classes:
       "md:col-start-3 md:row-start-3 md:row-span-2 col-start-2 row-start-5 row-span-2 aspect-[1/2] md:aspect-auto",

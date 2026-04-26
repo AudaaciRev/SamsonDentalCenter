@@ -98,11 +98,11 @@ const HomeServices = ({ variant = 'light' }) => {
 
     // Mapping services to include images if they don't have them
     const serviceImages = [
-        'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200',
-        'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800',
-        'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800',
-        'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&q=80&w=800',
-        'https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=800',
+        '/images/services/service-chair-close.jpg',
+        '/images/services/service-chair-tree.jpg',
+        '/images/services/service-chair-scenic.jpg',
+        '/images/services/service-lab-work.jpg',
+        '/images/services/service-exam.jpg',
     ];
 
     const gridItems = services.slice(0, 5).map((s, idx) => ({ ...s, image: serviceImages[idx] }));
