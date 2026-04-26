@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone, Calendar, Activity, ShieldCheck, Key } from 'lucide-react';
-import { Button, Modal, Input, Label } from '../../ui';
+import { Button, Modal, Input, Label } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 
 const StaffDetailView = ({ staffMember: initialStaff, onBack, activeTab }) => {

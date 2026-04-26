@@ -22,7 +22,8 @@
 
 ## Database, Security & Backend Guidelines
 
-- **The Single Source of Truth & Migrations:** `FINAL-COMPLETE-SCHEMA.sql` is the absolute authority for the database. If we make a new migration, you must update the final schema file also.
+- **The Single Source of Truth & Migrations:** `FINAL-COMPLETE-SCHEMA.sql` is the absolute authority
+  for the database. If we make a new migration, you must update the final schema file also.
     1. Output a standalone SQL migration script in `BLUEPRINT/BACKEND/MIGRATIONS`.
     2. Simultaneously update `FINAL-COMPLETE-SCHEMA.sql` to reflect the final state.
     - You are responsible for keeping both in sync. Do not hallucinate database logic.
@@ -44,6 +45,17 @@
 - **Data-Driven UI:** I do not care about heavy UI scaffolding. Your primary directive for UI
   generation is to ensure that the interface perfectly matches and can be fully supported by the
   current database schema. Do not design frontend inputs for data we do not track in the backend.
+- **Laws of UX Abidance:** When generating or suggesting frontend layouts, you must implicitly
+  leverage the Laws of UX. Specifically:
+    - **Jakob’s Law:** Avoid reinventing the wheel. Use standard, familiar web patterns (like
+      standard sidebar navigation or top-right profile menus) so users don't have to learn a new
+      interface.
+    - **Fitts’s Law:** Ensure actionable elements (buttons, links) are easily accessible and
+      appropriately sized, specially on mobile.
+    - **Hick’s Law:** Minimize cognitive load. Break complex forms into manageable steps and do not
+      overwhelm the user with too many choices on a single screen.
+    - **Miller’s Law:** Group related information logically into clusters (cards, sections) to aid
+      user memory.
 - **Uncodixfy UI Skills:** STRICTLY adhere to the UI rules defined in `Uncodixfy/Uncodixfy.md`.
   Avoid default AI aesthetic patterns (e.g., oversized rounded corners, floating panels, soft
   gradients). Stick to standard, functional components that feel human-designed and honest (e.g.,

@@ -4,7 +4,7 @@ import DoctorProfileDetail from './profile/DoctorProfileDetail';
 import DoctorScheduleDetail from './schedule/DoctorScheduleDetail';
 import DoctorHistoryDetail from './history/DoctorHistoryDetail';
 import DoctorSecurityDetail from './DoctorSecurityDetail';
-import { Button, Modal, Input, Label, Switch } from '../../ui';
+import { Button, Modal, Input, Label, Switch } from '../../../ui';
 import { useToast } from '../../../context/ToastContext.jsx';
 import { useNavigate } from 'react-router-dom';
 

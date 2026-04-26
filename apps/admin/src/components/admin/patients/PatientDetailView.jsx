@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone, Calendar, History, ShieldAlert, CreditCard, User, History as HistoryIcon } from 'lucide-react';
-import { Button, Modal, Input, Label, Switch } from '../../ui';
+import { Button, Modal, Input, Label, Switch } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
 
 const PatientDetailView = ({ patientId, onBack, activeTab }) => {
