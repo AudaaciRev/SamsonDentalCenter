@@ -191,7 +191,7 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab, updateDoct
                                         {doctor.photo_url ? (
                                             <img src={doctor.photo_url} alt={doctor.full_name} className="w-full h-full object-cover" />
                                         ) : (
-                                            doctor.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                                            (doctor.full_name || '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
                                         )}
                                     </div>
                                 </div>
@@ -309,7 +309,7 @@ const DoctorDetailView = ({ doctor: initialDoctor, onBack, activeTab, updateDoct
                                             <img src={selectedAvatar} alt="Profile" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-3xl font-bold">
-                                                {doctor.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                                {(doctor.full_name || '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                                             </div>
                                         )}
                                     </div>
