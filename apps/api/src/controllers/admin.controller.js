@@ -58,6 +58,7 @@ import {
 import {
     sendApprovalNotice,
     sendRejectionNotice,
+    sendCancellationNotice,
 } from '../services/notification.service.js';
 
 // ═══════════════════════════════════════════════
@@ -605,7 +606,7 @@ export const updateDentistServicesHandler = async (req, res, next) => {
             .select('service_id')
             .eq('dentist_id', req.params.id);
 
-        const updated = await replaceDentistServices(req.params.id, service_ids);
+        const { doctor, displacedAppointments } = await replaceDentistServices(req.params.id, service_ids);
 
         // Audit Log: UPDATE_DOCTOR_SERVICES
         try {
@@ -617,14 +618,37 @@ export const updateDentistServicesHandler = async (req, res, next) => {
                 target_id: req.params.id,
                 resource_type: 'dentist_services',
                 resource_id: req.params.id,
-                old_values: { service_ids: (oldServices || []).map(s => s.service_id) },
-                new_values: { service_ids }
+                old_values: { service_ids: (oldServices || []).map((s) => s.service_id) },
+                new_values: { service_ids },
             });
         } catch (auditErr) {
             console.error('Audit Log failed (updateDentistServices):', auditErr.message);
         }
 
-        res.json({ message: 'Doctor services updated.', doctor: formatDoctorResponse(updated) });
+        // ── Notify displaced patients ──
+        if (displacedAppointments.length > 0) {
+            for (const appt of displacedAppointments) {
+                try {
+                    await sendCancellationNotice(appt.patient_id, {
+                        date: appt.appointment_date,
+                        start_time: appt.start_time,
+                        end_time: appt.end_time,
+                        service: appt.service?.name || 'Dental appointment',
+                    });
+                } catch (err) {
+                    console.warn(
+                        `[Realtime] Failed to notify patient ${appt.patient_id} of displacement:`,
+                        err.message,
+                    );
+                }
+            }
+        }
+
+        res.json({
+            message: 'Doctor services updated.',
+            displaced_count: displacedAppointments.length,
+            doctor: formatDoctorResponse(doctor),
+        });
     } catch (err) {
         next(err);
     }

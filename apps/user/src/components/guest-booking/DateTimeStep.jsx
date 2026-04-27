@@ -23,6 +23,8 @@ const DateTimeStep = ({
     const [specialists, setSpecialists] = useState([]);
     const [specialistsLoading, setSpecialistsLoading] = useState(true);
     const [specialistsError, setSpecialistsError] = useState(null);
+    const [availabilityStatus, setAvailabilityStatus] = useState(null);
+    const [statusLoading, setStatusLoading] = useState(true);
     const [pendingDate, setPendingDate] = useState(null);
     const dentistId = formData?.dentist_id || null;
     const [isDoctorDropdownOpen, setIsDoctorDropdownOpen] = useState(false);
@@ -83,8 +85,26 @@ const DateTimeStep = ({
                 }
             };
             fetchSpecialists();
+
+            // ✅ Check overall availability status (slots for next 90 days)
+            const checkStatus = async () => {
+                setStatusLoading(true);
+                try {
+                    let url = `/slots/service-status/${serviceId}`;
+                    if (dentistId) {
+                        url += `?dentistId=${dentistId}`;
+                    }
+                    const data = await api.get(url);
+                    setAvailabilityStatus(data);
+                } catch (err) {
+                    console.error('Failed to check service status:', err);
+                } finally {
+                    setStatusLoading(false);
+                }
+            };
+            checkStatus();
         }
-    }, [serviceId]);
+    }, [serviceId, dentistId]);
 
     const {
         slots,
@@ -144,6 +164,10 @@ const DateTimeStep = ({
 
     const handleTimeClick = async (slotData) => {
         if (!serviceId || !selectedDate) return;
+        
+        // ✅ Guest Booking: Strictly prevent booking if slot is full (no waitlist)
+        if (slotData.available <= 0) return;
+
         const isCurrentlySelected = selectedTime === slotData.rawTime;
         setPendingSlot(slotData.rawTime);
         try {
@@ -205,18 +229,11 @@ const DateTimeStep = ({
     // Filtered Slots for "Load More"
     const visibleSlots = useMemo(() => {
         if (!slots) return [];
-        return slots
-            .filter(slot => {
-                const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
-                return slot.available > 0 || isHeldByMe;
-            })
-            .slice(0, visibleCount);
-    }, [slots, visibleCount, activeHold, selectedDate]);
+        // ✅ Guest Booking: Show ALL slots (including full ones) as disabled, similar to User Booking
+        return slots.slice(0, visibleCount);
+    }, [slots, visibleCount]);
 
-    const hasMoreSlots = slots && slots.filter(slot => {
-        const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
-        return slot.available > 0 || isHeldByMe;
-    }).length > visibleCount;
+    const hasMoreSlots = slots && slots.length > visibleCount;
 
     // Custom Premium Doctor Dropdown Component
     const DoctorDropdown = () => {
@@ -329,9 +346,14 @@ const DateTimeStep = ({
     };
 
     const hasNoSpecialists = !specialistsLoading && specialists.length === 0;
+    // If availabilityStatus is null AFTER loading finishes, it means the API crashed or failed. 
+    // In strict mode, we should treat that as NO slots.
+    const hasStatusError = !statusLoading && availabilityStatus === null;
+    const hasNoSlots = (!statusLoading && availabilityStatus?.is_bookable === false) || hasStatusError;
+    const showNoAppointments = hasNoSpecialists || hasNoSlots;
 
     // ✅ Initial Loading State: Prevent flicker by showing a high-fidelity pulse skeleton
-    if (specialistsLoading && specialists.length === 0) {
+    if ((specialistsLoading || statusLoading) && (specialists.length === 0 || !availabilityStatus)) {
         return (
             <div className="flex flex-col gap-10 animate-pulse py-2">
                 {/* Header Skeleton */}
@@ -430,8 +452,7 @@ const DateTimeStep = ({
                 </div>
             ) : (
                 <>
-                    {/* FALLBACK: No Specialists Available for this Service */}
-                    {hasNoSpecialists && (
+                    {showNoAppointments ? (
                         <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 bg-white dark:bg-white/[0.02] border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[40px] shadow-theme-sm my-10">
                             <div className="w-24 h-24 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mb-8">
                                 <CalendarX size={44} className="text-brand-500" />
@@ -442,20 +463,18 @@ const DateTimeStep = ({
                             </h3>
                             
                             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed mb-10 text-sm md:text-base font-medium">
-                                There are no available appointments for this service right now. Please try selecting another service or contact us for assistance.
+                                {availabilityStatus?.message || "There are no available appointments for this service right now. Please try selecting another service or contact us for assistance."}
                             </p>
                             
                             <button 
                                 onClick={onBack}
                                 className="flex items-center justify-center gap-3 px-10 py-5 bg-brand-500 hover:bg-brand-600 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 active:scale-95 text-xs uppercase tracking-widest"
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronRight size={18} className="rotate-180" />
                                 Choose Another Service
                             </button>
                         </div>
-                    )}
-
-                    {!hasNoSpecialists && (
+                    ) : (
                         <>
                             {/* FULL WIDTH DENTIST SELECTION */}
                             <DoctorDropdown />
@@ -487,10 +506,23 @@ const DateTimeStep = ({
                                                 const isPast = date < today;
                                                 const isToday = date.getTime() === today.getTime();
                                                 const isSelected = key === selectedDate;
-                                                const isDisabled = isPast || isToday || date.getDay() === 0 || date > maxDate;
+                                                
+                                                // ✅ Disable dates outside of the 90 day limit or in the past
+                                                let isDisabled = isPast || isToday || date > maxDate;
+                                                
+                                                // ✅ Disable dates that are not in the working days array
+                                                if (availabilityStatus?.working_days?.length > 0) {
+                                                    if (!availabilityStatus.working_days.includes(date.getDay())) {
+                                                        isDisabled = true;
+                                                    }
+                                                } else {
+                                                    // Fallback check if working_days isn't loaded: disable Sunday
+                                                    if (date.getDay() === 0) isDisabled = true;
+                                                }
+
                                                 if (!isCurrentMonth) return <div key={idx} className="aspect-square" />;
                                                 return (
-                                                    <button key={idx} onClick={() => !isDisabled && handleDateClick(date)} disabled={isDisabled} className={`relative flex flex-col items-center justify-center aspect-square rounded-xl transition-all duration-300 ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-105 z-10' : isDisabled ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-30 shadow-none bg-transparent' : 'bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 text-gray-700 dark:text-gray-300 shadow-theme-xs'}`}>
+                                                    <button key={idx} onClick={() => !isDisabled && handleDateClick(date)} disabled={isDisabled} className={`relative flex flex-col items-center justify-center aspect-square rounded-xl transition-all duration-300 ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-105 z-10' : isDisabled ? 'text-gray-300 dark:text-gray-600/50 cursor-not-allowed opacity-30 shadow-none bg-transparent' : 'bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 text-gray-700 dark:text-gray-300 shadow-theme-xs'}`}>
                                                         <span className={`text-[13px] sm:text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
                                                             {pendingDate === key ? (
                                                                 <Loader2 size={16} className={`animate-spin ${isSelected ? 'text-white' : 'text-brand-500'}`} />
@@ -538,9 +570,34 @@ const DateTimeStep = ({
                                                                 const isHeldByMe = activeHold?.time === slot.rawTime && selectedDate === activeHold.date;
                                                                 const isSelected = selectedTime === slot.rawTime && !pendingSlot;
                                                                 const isPending = pendingSlot === slot.rawTime;
+                                                                const isAvailable = slot.available > 0 || isHeldByMe;
+                                                                
                                                                 return (
-                                                                    <button key={slot.rawTime} onClick={() => handleTimeClick(slot)} disabled={holdLoading} title={`${slot.available} slots available`} className={`py-3 rounded-xl text-[12px] font-bold transition-all relative flex items-center justify-center ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10' : isHeldByMe ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400' : 'bg-white dark:bg-white/[0.03] border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-theme-sm'}`}>
-                                                                        {isPending ? <Loader2 size={16} className="animate-spin text-brand-500" /> : <>{slot.displayTime}{isHeldByMe && <Lock size={10} className='absolute top-2 right-2' />}</>}
+                                                                    <button 
+                                                                        key={slot.rawTime} 
+                                                                        onClick={() => isAvailable && handleTimeClick(slot)} 
+                                                                        disabled={holdLoading || (!isAvailable && !isHeldByMe)} 
+                                                                        title={isAvailable ? `${slot.available} slots available` : 'Fully booked'} 
+                                                                        className={`py-3 rounded-xl text-[12px] font-bold transition-all relative flex items-center justify-center ${
+                                                                            isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-500/10' 
+                                                                            : isHeldByMe ? 'bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-200 text-brand-700 dark:text-brand-400' 
+                                                                            : isAvailable ? 'bg-white dark:bg-white/[0.03] border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-theme-sm'
+                                                                            : 'bg-transparent dark:bg-transparent border-2 border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed'
+                                                                        }`}
+                                                                    >
+                                                                        {isPending ? (
+                                                                            <Loader2 size={16} className="animate-spin text-brand-500" />
+                                                                        ) : (
+                                                                            <>
+                                                                                {slot.displayTime}
+                                                                                {(isHeldByMe || !isAvailable) && (
+                                                                                    <Lock 
+                                                                                        size={10} 
+                                                                                        className={`absolute top-2 right-2 ${isHeldByMe ? 'text-brand-500' : 'text-gray-400 dark:text-gray-600'}`} 
+                                                                                    />
+                                                                                )}
+                                                                            </>
+                                                                        )}
                                                                     </button>
                                                                 );
                                                             })}

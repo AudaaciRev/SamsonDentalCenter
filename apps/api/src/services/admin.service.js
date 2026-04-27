@@ -1579,7 +1579,16 @@ export const updateDentistProfileData = async (dentistId, fields) => {
  * @returns {object} Updated dentist with new services
  */
 export const replaceDentistServices = async (dentistId, serviceIds) => {
-    // 1. Delete existing service mappings
+    // 1. Fetch current services to identify what is being removed
+    const { data: oldServices } = await supabaseAdmin
+        .from('dentist_services')
+        .select('service_id')
+        .eq('dentist_id', dentistId);
+
+    const oldServiceIds = (oldServices || []).map((s) => s.service_id);
+    const removedServiceIds = oldServiceIds.filter((id) => !serviceIds.includes(id));
+
+    // 2. Delete existing service mappings
     const { error: deleteErr } = await supabaseAdmin
         .from('dentist_services')
         .delete()
@@ -1587,17 +1596,50 @@ export const replaceDentistServices = async (dentistId, serviceIds) => {
 
     if (deleteErr) throw new AppError(deleteErr.message, 500);
 
-    // 2. Insert new mappings (skip if empty array)
+    // 3. Insert new mappings (skip if empty array)
     if (Array.isArray(serviceIds) && serviceIds.length > 0) {
         const rows = serviceIds.map((sid) => ({ dentist_id: dentistId, service_id: sid }));
-        const { error: insertErr } = await supabaseAdmin
-            .from('dentist_services')
-            .insert(rows);
+        const { error: insertErr } = await supabaseAdmin.from('dentist_services').insert(rows);
         if (insertErr) throw new AppError(insertErr.message, 500);
     }
 
-    // 3. Return fresh data
-    return getDentistById(dentistId);
+    // 4. Handle displacement if services were removed
+    let displacedAppointments = [];
+    if (removedServiceIds.length > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: affected, error: apptError } = await supabaseAdmin
+            .from('appointments')
+            .select(
+                `
+                *,
+                patient: profiles!appointments_patient_id_fkey(id, full_name, email),
+                service: services(id, name)
+            `,
+            )
+            .eq('dentist_id', dentistId)
+            .in('service_id', removedServiceIds)
+            .gte('appointment_date', today)
+            .in('status', [APPOINTMENT_STATUS.PENDING, APPOINTMENT_STATUS.CONFIRMED]);
+
+        if (!apptError && affected && affected.length > 0) {
+            displacedAppointments = affected;
+            const affectedIds = affected.map((a) => a.id);
+
+            await supabaseAdmin
+                .from('appointments')
+                .update({
+                    status: APPOINTMENT_STATUS.CANCELLED,
+                    cancellation_reason: 'SYSTEM_DISPLACED: Service no longer offered by doctor',
+                    cancelled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .in('id', affectedIds);
+        }
+    }
+
+    // 5. Return fresh data and displaced list
+    const updatedDoctor = await getDentistById(dentistId);
+    return { doctor: updatedDoctor, displacedAppointments };
 };
 
 // ═══════════════════════════════════════════════

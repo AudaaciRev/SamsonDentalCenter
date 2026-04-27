@@ -105,7 +105,17 @@ export const resendConfirmation = async (req, res) => {
  */
 export const bookUser = async (req, res, next) => {
     try {
-        const { service_id, date, time, booked_for_name_parts, user_session_id, dentist_id } = req.body;
+        const { 
+            service_id, 
+            date, 
+            time, 
+            booked_for_name_parts, 
+            user_session_id, 
+            dentist_id,
+            patient_profile_id,
+            booked_for_birthday,
+            booked_for_relationship
+        } = req.body;
 
         // Check date is in the future (using Philippine Time)
         const todayPH = getTodayPH();
@@ -124,6 +134,11 @@ export const bookUser = async (req, res, next) => {
             APPOINTMENT_SOURCE.USER_BOOKING, // source
             user_session_id,                 // user_session_id
             dentist_id,                      // preferredDentistId
+            0,                               // rescheduleCount
+            null,                            // isPreferred
+            patient_profile_id,              // patientProfileId
+            booked_for_birthday,
+            booked_for_relationship
         );
 
         if (result.booked) {
@@ -167,6 +182,11 @@ export const submitWizard = async (req, res, next) => {
                     APPOINTMENT_SOURCE.USER_BOOKING, // source
                     booking.user_session_id,         // user_session_id
                     booking.dentist_id,              // preferredDentistId
+                    0,                               // rescheduleCount
+                    null,                            // isPreferred
+                    booking.patient_profile_id,      // ✅ patientProfileId
+                    booking.booked_for_name_parts?.birthday || null,
+                    booking.booked_for_name_parts?.relationship || null
                 );
             } catch (err) {
                 // If booking fails, return error and stop.
@@ -187,7 +207,10 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.priority || 0,
                     waitlist.booked_for_name_parts || booking?.booked_for_name_parts || null,
                     waitlist.dentist_id || null,
-                    results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
+                    results.booking?.appointment?.id || null, // ✅ link the bundled appointment
+                    waitlist.patient_profile_id || booking?.patient_profile_id || null, // ✅ patientProfileId
+                    waitlist.booked_for_name_parts?.birthday || booking?.booked_for_name_parts?.birthday || null,
+                    waitlist.booked_for_name_parts?.relationship || booking?.booked_for_name_parts?.relationship || null
                 );
             } catch (err) {
                 // ── ATOMICITY ROLLBACK: If waitlist fails, cancel the backup booking ──

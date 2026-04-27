@@ -4,7 +4,7 @@ import useServices from '../../hooks/useServices';
 import SpecializedServiceModal from './SpecializedServiceModal';
 
 const ServiceStep = ({ selectedServiceId, onSelect, onNext, allowSpecialized = false }) => {
-    const { services, loading, error } = useServices();
+    const { services, loading, error: fetchError } = useServices();
     const [specializedService, setSpecializedService] = useState(null);
     const [category, setCategory] = useState('All');
 
@@ -15,7 +15,7 @@ const ServiceStep = ({ selectedServiceId, onSelect, onNext, allowSpecialized = f
 
     const handleServiceSelect = (service) => {
         const isSpecialized = service.tier?.toLowerCase() === 'specialized';
-        
+
         if (isSpecialized && !allowSpecialized) {
             setSpecializedService(service);
         } else {
@@ -59,14 +59,14 @@ const ServiceStep = ({ selectedServiceId, onSelect, onNext, allowSpecialized = f
                 </div>
             )}
 
-            {error && (
+            {fetchError && (
                 <div className='bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-2xl text-center'>
                     <p className='font-bold mb-2 uppercase tracking-widest text-xs'>Failed to load services</p>
-                    <p className='text-sm opacity-80'>{error}</p>
+                    <p className='text-sm opacity-80'>{fetchError}</p>
                 </div>
             )}
 
-            {!loading && !error && filteredServices && (
+            {!loading && !fetchError && filteredServices && (
                 <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
                     {filteredServices.map((service) => (
                         <button
@@ -113,7 +113,7 @@ const ServiceStep = ({ selectedServiceId, onSelect, onNext, allowSpecialized = f
                 </div>
             )}
 
-            {!loading && !error && (!services || services.length === 0) && (
+            {!loading && !fetchError && (!services || services.length === 0) && (
                 <div className='text-center text-gray-400 py-20'>
                     <p className='font-medium'>No services available at the moment.</p>
                 </div>

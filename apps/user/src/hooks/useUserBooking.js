@@ -63,11 +63,15 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
         booked_for_last_name: '',
         booked_for_middle_name: '',
         booked_for_suffix_name: '',
+        booked_for_birthday: '',
+        booked_for_relationship: '',
+        booked_for_phone: '',
         dentist_id: '', // ✅ NEW: Preferred dentist (null = any available)
         // ✅ NEW: Deferred Waitlist Fields
         waitlist_date: '', // Selected full slot date
         waitlist_time: '', // Selected full slot time
         service_tier: '', // ✅ NEW: Track tier
+        patient_profile_id: '', // ✅ NEW: Selected dependent profile ID
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -147,6 +151,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                 booked_for_last_name: '',
                 booked_for_middle_name: '',
                 booked_for_suffix_name: '',
+                patient_profile_id: '', // Clear profile link
             }));
         }
     };
@@ -227,8 +232,11 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                         last: formData.booked_for_last_name,
                         middle: formData.booked_for_middle_name,
                         suffix: formData.booked_for_suffix_name,
+                        birthday: formData.booked_for_birthday,
+                        relationship: formData.booked_for_relationship,
                     } : null,
                     user_session_id: sessionId,
+                    patient_profile_id: formData.patient_profile_id === 'new' ? null : (formData.patient_profile_id || null),
                 } : null,
                 waitlist: formData.waitlist_time ? {
                     date: formData.waitlist_date,
@@ -240,7 +248,10 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
                         last: formData.booked_for_last_name,
                         middle: formData.booked_for_middle_name,
                         suffix: formData.booked_for_suffix_name,
+                        birthday: formData.booked_for_birthday,
+                        relationship: formData.booked_for_relationship,
                     } : null,
+                    patient_profile_id: formData.patient_profile_id === 'new' ? null : (formData.patient_profile_id || null),
                 } : null
             };
 
@@ -314,6 +325,7 @@ const useUserBooking = (initialServiceId = null, initialServiceName = null) => {
             waitlist_date: '',
             waitlist_time: '',
             service_tier: '', // Reset
+            patient_profile_id: '', // Clear
         });
         setError(null);
         setSubmitting(false); // ✅ Safety reset

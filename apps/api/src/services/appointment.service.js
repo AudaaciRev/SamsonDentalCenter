@@ -207,7 +207,10 @@ export const bookAppointment = async (
     userSessionId = null,
     preferredDentistId = null,
     rescheduleCount = 0,
-    isPreferred = null, // ✅ Can be explicitly passed or calculated
+    isPreferred = null,
+    patientProfileId = null, // ✅ NEW: Link to a saved patient profile
+    bookedForBirthday = null,
+    bookedForRelationship = null,
 ) => {
     const finalIsPreferred = isPreferred !== null ? isPreferred : !!preferredDentistId;
     let bookedForName = null;
@@ -215,17 +218,42 @@ export const bookAppointment = async (
     let lastName = null;
     let middleName = null;
     let suffix = null;
+    let finalBookedForBirthday = null;
+    let finalBookedForRelationship = null;
 
-    if (bookedForNameParts) {
-        if (typeof bookedForNameParts === 'object') {
-            const { first, last, middle, suffix: sfx } = bookedForNameParts;
-            firstName = first;
-            lastName = last;
-            middleName = middle;
-            suffix = sfx;
-            bookedForName = `${last}, ${first} ${middle || ''} ${sfx || ''}`.replace(/\s+/g, ' ').trim();
-        } else {
-            bookedForName = bookedForNameParts;
+    if (patientProfileId) {
+        // ── A. Fetch from saved patient profile ──
+        const { data: pProfile } = await supabaseAdmin
+            .from('patient_profiles')
+            .select('*')
+            .eq('id', patientProfileId)
+            .eq('profile_id', patientId) // Ownership check
+            .single();
+
+        if (pProfile) {
+            firstName = pProfile.first_name;
+            lastName = pProfile.last_name;
+            middleName = pProfile.middle_name;
+            suffix = pProfile.suffix;
+            finalBookedForBirthday = pProfile.date_of_birth;
+            finalBookedForRelationship = pProfile.relationship;
+            bookedForName = `${lastName}, ${firstName} ${middleName || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+        }
+    } else {
+        finalBookedForBirthday = bookedForBirthday;
+        finalBookedForRelationship = bookedForRelationship;
+
+        if (bookedForNameParts) {
+            // ── B. Fallback to manual entry (Legacy/Manual) ──
+            if (typeof bookedForNameParts === 'object') {
+                firstName = bookedForNameParts.first;
+                lastName = bookedForNameParts.last;
+                middleName = bookedForNameParts.middle;
+                suffix = bookedForNameParts.suffix;
+                bookedForName = `${lastName}, ${firstName} ${middleName || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+            } else {
+                bookedForName = bookedForNameParts;
+            }
         }
     }
     // ── 0. Check if patient is restricted (3+ no-shows or 3+ cancellations) ──
@@ -265,6 +293,8 @@ export const bookAppointment = async (
         lastName = lastName || patient.last_name;
         middleName = middleName || patient.middle_name;
         suffix = suffix || patient.suffix;
+        finalBookedForBirthday = finalBookedForBirthday || patient.date_of_birth;
+        finalBookedForRelationship = finalBookedForRelationship || 'Self';
         bookedForName = bookedForName || patient.full_name;
     }
 
@@ -354,6 +384,9 @@ export const bookAppointment = async (
                 last_name: lastName,
                 middle_name: middleName,
                 suffix: suffix,
+                patient_profile_id: patientProfileId, // ✅ Store the linked profile ID
+                patient_birthday: finalBookedForBirthday,
+                patient_relationship: finalBookedForRelationship,
                 // ✅ User is booking from their own account, auto-confirm their intent
                 patient_confirmed: true,
                 confirmed_at: new Date().toISOString(),
@@ -485,6 +518,9 @@ export const bookAppointment = async (
             last_name: lastName,
             middle_name: middleName,
             suffix: suffix,
+            patient_profile_id: patientProfileId, // ✅ Store the linked profile ID
+            patient_birthday: finalBookedForBirthday,
+            patient_relationship: finalBookedForRelationship,
             // ✅ User is booking from their own account, auto-confirm their intent
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
