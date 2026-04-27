@@ -150,53 +150,58 @@ const DoctorDetailView = ({
     const isSidebarOpen = isExpanded || isHovered;
 
     return (
-        <div className='flex flex-col grow min-h-0 bg-transparent no-scrollbar'>
-            {/* Top Navigation */}
-            <div className='sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800'>
-                <div className='px-4 sm:px-6 py-4 flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                        <button
-                            onClick={onBack}
-                            className='p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 transition-colors'
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
+        <div className='bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-200 dark:border-gray-800 transition-all duration-300'>
+            {/* A. Identity Section — Now part of normal flow */}
+            <div className='bg-white dark:bg-white/[0.03] border-b border-gray-200 dark:border-gray-800'>
+                <div className='px-4 sm:px-6 py-4 sm:py-7 flex items-center justify-between'>
+                    <div className='flex items-center gap-4'>
+                        <div className='bg-gray-100 dark:bg-white/5 p-1.5 rounded-xl'>
+                            <button
+                                onClick={onBack}
+                                className='p-2 rounded-lg hover:bg-white dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-all active:scale-95 shadow-sm sm:shadow-none'
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                        </div>
                         <div>
-                            <h3 className={`text-[clamp(12px,1.2vw,14px)] font-bold text-gray-900 dark:text-white uppercase tracking-tight font-outfit transition-all duration-300 ease-in-out`}>
+                            <h3 className='text-[clamp(14px,1.5vw,18px)] font-black text-gray-900 dark:text-white uppercase tracking-tight font-outfit leading-tight'>
                                 {doctor.full_name}
                             </h3>
-                            <p className={`text-[clamp(9px,1vw,10px)] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1 transition-all duration-300 ease-in-out`}>
-                                Detail Profile
+                            <p className='text-[clamp(9px,1vw,10px)] font-black text-brand-500 dark:text-brand-400 uppercase tracking-[0.15em] mt-1'>
+                                {(activeTab || 'profile')} Profile Registry
                             </p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Sub-navigation Tabs */}
-                <div className='px-4 sm:px-6 flex items-center gap-6'>
+            {/* B. Navigation Tabs Section — Sticky with header offset to browser viewport */}
+            <div className='sticky top-[68px] lg:top-[76px] z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-none'>
+                <div className='bg-white dark:bg-white/[0.03] px-4 sm:px-6 flex items-center gap-[clamp(20px,3vw,32px)] overflow-x-auto no-scrollbar'>
                     {tabs.map((t) => (
                         <button
                             key={t.id}
                             onClick={() => navigate(`/doctors/${t.id}/${doctor.id}`)}
-                            className={`pb-[clamp(8px,1vw,12px)] text-[clamp(9px,1.1vw,11px)] font-bold uppercase tracking-widest transition-all relative ${activeTab === t.id
+                            className={`pt-4 pb-3 text-[clamp(9px,1.1vw,11px)] font-black uppercase tracking-[0.1em] transition-all relative whitespace-nowrap ${activeTab === t.id
                                     ? 'text-brand-500'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
                                 }`}
                         >
                             {t.label}
                             {activeTab === t.id && (
-                                <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-brand-500 rounded-full' />
+                                <div className='absolute bottom-0 left-0 right-0 h-1 bg-brand-500 rounded-full' />
                             )}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className='grow overflow-y-auto no-scrollbar'>
-                <div className='p-4 sm:p-0 space-y-4 sm:space-y-6'>
-                    {/* A. Header / Profile Section - Only visible on Profile Tab */}
+            {/* C. Content Body */}
+            <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
+
+                    {/* A. Profile Header Card — only on Profile tab */}
                     {(!activeTab || activeTab === 'profile') && (
-                        <div className='p-[clamp(16px,2.5vw,28px)] border border-gray-200 rounded-[clamp(12px,2vw,16px)] dark:border-gray-800 bg-white dark:bg-white/[0.03] shadow-sm'>
+                        <div className='p-[clamp(16px,2.5vw,28px)] border border-gray-200 rounded-xl dark:border-gray-800 bg-white dark:bg-white/[0.03] shadow-sm'>
                         <div className='flex flex-col gap-[clamp(16px,2vw,24px)] xl:flex-row xl:items-start xl:justify-between'>
                             <div className='flex flex-col items-center w-full gap-[clamp(16px,2vw,24px)] xl:flex-row xl:items-center'>
                                 <div className='relative shrink-0'>
@@ -213,14 +218,12 @@ const DoctorDetailView = ({
                                     </div>
                                 </div>
                                 <div className='order-3 xl:order-2 text-center xl:text-left'>
-                                    <h4 className={`mb-1 text-[clamp(16px,2vw,24px)] font-bold text-gray-900 dark:text-white font-outfit uppercase tracking-tight transition-all duration-300 ease-in-out`}>
+                                    <h4 className='mb-1 text-[clamp(16px,2vw,24px)] font-bold text-gray-900 dark:text-white font-outfit uppercase tracking-tight transition-all duration-300 ease-in-out'>
                                         {doctor.full_name}
                                     </h4>
                                     <div className='flex flex-col items-center gap-[clamp(6px,1vw,8px)] text-center xl:flex-row xl:gap-[clamp(8px,1vw,12px)] xl:text-left'>
-                                        <p className={`text-[clamp(10px,1.2vw,11px)] text-brand-600 dark:text-brand-400 font-bold uppercase tracking-widest transition-all duration-300 ease-in-out`}>
-                                            {doctor.tier === 'general'
-                                                ? 'General Dentist'
-                                                : 'Specialized Dentist'}
+                                        <p className='text-[clamp(10px,1.2vw,11px)] text-brand-600 dark:text-brand-400 font-bold uppercase tracking-widest transition-all duration-300 ease-in-out'>
+                                            {doctor.tier === 'general' ? 'General Dentist' : 'Specialized Dentist'}
                                         </p>
                                         <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
                                         <div className='text-[clamp(10px,1.1vw,11px)] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-2 transition-all duration-300 ease-in-out'>
@@ -231,109 +234,69 @@ const DoctorDetailView = ({
                                                 </span>
                                             </span>
                                             <div className='h-3.5 w-px bg-gray-300 dark:bg-gray-700 mx-1'></div>
-                                            <span
-                                                className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider ${doctor.is_active
-                                                        ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400'
-                                                        : 'bg-gray-100 text-gray-500'
-                                                    }`}
-                                            >
+                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider ${doctor.is_active ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-gray-100 text-gray-500'}`}>
                                                 Status : {doctor.is_active ? 'Active' : 'Inactive'}
                                             </span>
                                         </div>
                                     </div>
-                                    {(!activeTab || activeTab === 'profile') && (
-                                        <p className={`text-[clamp(12px,1.2vw,14px)] text-gray-500 dark:text-gray-400 mt-[clamp(12px,1.5vw,16px)] max-w-2xl font-medium leading-relaxed transition-all duration-300 ease-in-out`}>
-                                            {doctor.bio}
-                                        </p>
-                                    )}
+                                    <p className='text-[clamp(12px,1.2vw,14px)] text-gray-500 dark:text-gray-400 mt-[clamp(12px,1.5vw,16px)] max-w-2xl font-medium leading-relaxed transition-all duration-300 ease-in-out'>
+                                        {doctor.bio}
+                                    </p>
                                 </div>
                             </div>
-                            {(!activeTab || activeTab === 'profile') && (
-                                <div className='flex flex-col sm:flex-row xl:flex-col gap-2 shrink-0'>
-                                    <Button
-                                        variant='outline'
-                                        onClick={() => {
-                                            setSelectedAvatar(doctor.photo_url);
-                                            setIsEditModalOpen(true);
-                                        }}
-                                        className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold w-full sm:w-[160px] hover:border-brand-500 hover:text-brand-500 transition-all font-outfit shadow-sm'
-                                    >
-                                        <svg
-                                            className='fill-current'
-                                            width='18'
-                                            height='18'
-                                            viewBox='0 0 18 18'
-                                            fill='none'
-                                            xmlns='http://www.w3.org/2000/svg'
-                                        >
-                                            <path
-                                                fillRule='evenodd'
-                                                clipRule='evenodd'
-                                                d='M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z'
-                                                fill='currentColor'
-                                            />
-                                        </svg>
-                                        Edit Profile
-                                    </Button>
-                                </div>
-                            )}
+                            <div className='flex flex-col sm:flex-row xl:flex-col gap-2 shrink-0'>
+                                <Button
+                                    variant='outline'
+                                    onClick={() => { setSelectedAvatar(doctor.photo_url); setIsEditModalOpen(true); }}
+                                    className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold w-full sm:w-[160px] hover:border-brand-500 hover:text-brand-500 transition-all font-outfit shadow-sm'
+                                >
+                                    <svg className='fill-current' width='18' height='18' viewBox='0 0 18 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                                        <path fillRule='evenodd' clipRule='evenodd' d='M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z' fill='currentColor' />
+                                    </svg>
+                                    Edit Profile
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* Contact & Meta footer within Header Card */}
-                        {(!activeTab || activeTab === 'profile') && (
-                            <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-                                <div className='flex flex-wrap gap-6'>
-                                    <div className='flex items-center gap-2 text-[13px] sm:text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                        <Mail
-                                            size={14}
-                                            className='text-gray-400'
-                                        />{' '}
-                                        {doctor.email}
-                                    </div>
-                                    <div className='flex items-center gap-2 text-[13px] sm:text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                        <Phone
-                                            size={14}
-                                            className='text-gray-400'
-                                        />{' '}
-                                        {doctor.phone}
-                                    </div>
+                        {/* Contact footer */}
+                        <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+                            <div className='flex flex-wrap gap-6'>
+                                <div className='flex items-center gap-2 text-[13px] sm:text-sm text-gray-600 dark:text-gray-300 font-medium'>
+                                    <Mail size={14} className='text-gray-400' />
+                                    {doctor.email}
                                 </div>
-                                <div className='flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0'>
-                                    <Button
-                                        variant='outline'
-                                        onClick={() => setIsEditContactModalOpen(true)}
-                                        className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold hover:border-brand-500 hover:text-brand-500 transition-all shadow-sm w-full sm:w-[160px] font-outfit'
-                                    >
-                                        <Mail size={16} />
-                                        Edit Contact
-                                    </Button>
+                                <div className='flex items-center gap-2 text-[13px] sm:text-sm text-gray-600 dark:text-gray-300 font-medium'>
+                                    <Phone size={14} className='text-gray-400' />
+                                    {doctor.phone}
                                 </div>
                             </div>
-                        )}
-                    </div>
-                    )}
-
-                    {/* Dynamic Child Content */}
-                    <div className='min-h-120 md:min-h-140'>
-                        <div className='animate-in fade-in slide-in-from-bottom-2 duration-300'>
-                            {activeTab === 'profile' || !activeTab ? (
-                                <DoctorProfileDetail
-                                    doctor={doctor}
-                                />
-                            ) : activeTab === 'services' ? (
-                                <DoctorServicesDetail
-                                    doctor={doctor}
-                                    updateDoctorServices={updateDoctorServices}
-                                />
-                            ) : activeTab === 'schedule' ? (
-                                <DoctorScheduleDetail doctor={doctor} />
-                            ) : activeTab === 'history' ? (
-                                <DoctorHistoryDetail doctor={doctor} />
-                            ) : activeTab === 'security' ? (
-                                <DoctorSecurityDetail doctor={doctor} />
-                            ) : null}
+                            <div className='flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0'>
+                                <Button
+                                    variant='outline'
+                                    onClick={() => setIsEditContactModalOpen(true)}
+                                    className='flex items-center justify-center gap-2 rounded-lg px-4 h-11 text-sm font-bold hover:border-brand-500 hover:text-brand-500 transition-all shadow-sm w-full sm:w-[160px] font-outfit'
+                                >
+                                    <Mail size={16} />
+                                    Edit Contact
+                                </Button>
+                            </div>
                         </div>
                     </div>
+                )}
+
+                {/* B. Dynamic Tab Content */}
+                <div className='animate-in fade-in slide-in-from-bottom-2 duration-300'>
+                    {activeTab === 'profile' || !activeTab ? (
+                        <DoctorProfileDetail doctor={doctor} />
+                    ) : activeTab === 'services' ? (
+                        <DoctorServicesDetail doctor={doctor} updateDoctorServices={updateDoctorServices} />
+                    ) : activeTab === 'schedule' ? (
+                        <DoctorScheduleDetail doctor={doctor} />
+                    ) : activeTab === 'history' ? (
+                        <DoctorHistoryDetail doctor={doctor} />
+                    ) : activeTab === 'security' ? (
+                        <DoctorSecurityDetail doctor={doctor} />
+                    ) : null}
                 </div>
             </div>
 
@@ -384,7 +347,7 @@ const DoctorDetailView = ({
                                                 key={i}
                                                 type='button'
                                                 onClick={() => setSelectedAvatar(url)}
-                                                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all p-1 group active:scale-95 ${selectedAvatar === url ? 'border-brand-500 bg-brand-50' : 'border-gray-100 hover:border-gray-200'}`}
+                                                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all p-1 group active:scale-95 ${selectedAvatar === url ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-200'}`}
                                             >
                                                 <img
                                                     src={url}
@@ -503,7 +466,7 @@ const DoctorDetailView = ({
                                             <Label className='text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 block'>
                                                 Doctor Status
                                             </Label>
-                                            <div className='h-10 px-4 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between'>
+                                            <div className='h-10 px-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between'>
                                                 <span
                                                     className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-brand-500' : 'text-gray-400'}`}
                                                 >
@@ -533,7 +496,7 @@ const DoctorDetailView = ({
                         </div>
 
                         {/* Footer Actions */}
-                        <div className='flex items-center gap-3 mt-2 pt-6 border-t border-gray-100 dark:border-gray-800 sm:justify-end'>
+                        <div className='flex items-center gap-3 mt-2 pt-6 border-t border-gray-200 dark:border-gray-800 sm:justify-end'>
                             <Button
                                 variant='outline'
                                 type='button'
@@ -610,7 +573,7 @@ const DoctorDetailView = ({
                         </div>
 
                         {/* Footer Actions */}
-                        <div className='flex items-center gap-3 mt-2 pt-6 border-t border-gray-100 dark:border-gray-800 sm:justify-end'>
+                        <div className='flex items-center gap-3 mt-2 pt-6 border-t border-gray-200 dark:border-gray-800 sm:justify-end'>
                             <Button
                                 variant='outline'
                                 type='button'

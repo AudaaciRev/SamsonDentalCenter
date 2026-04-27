@@ -44,7 +44,7 @@ const DoctorServicesDetail = ({ doctor, updateDoctorServices }) => {
                 className={`h-full flex items-center justify-between p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer group overflow-hidden ${
                     isChecked 
                         ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-500/10' 
-                        : 'border-gray-100 dark:border-gray-800/80 hover:border-brand-500/50 hover:bg-white dark:hover:bg-white/[0.03] bg-gray-50/30 dark:bg-white/[0.01]'
+                        : 'border-gray-200 dark:border-gray-800/80 hover:border-brand-500/50 hover:bg-white dark:hover:bg-white/[0.03] bg-gray-50/30 dark:bg-white/[0.01]'
                 }`}
             >
                 <div className='flex items-center gap-2 sm:gap-3 min-w-0'>
@@ -148,7 +148,7 @@ const DoctorServicesDetail = ({ doctor, updateDoctorServices }) => {
                         {categorizedServices.specialized.map(renderServiceCheckbox)}
                     </div>
                     
-                    <div className='flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800'>
+                    <div className='flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800'>
                         <button onClick={handleCancel} className='px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all'>Cancel</button>
                         <button onClick={handleSave} disabled={isSaving} className='px-6 py-2 text-[9px] font-bold uppercase tracking-widest bg-brand-500 text-white rounded-lg shadow-lg shadow-brand-500/20 active:scale-95 transition-all'>
                             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -158,7 +158,7 @@ const DoctorServicesDetail = ({ doctor, updateDoctorServices }) => {
             ) : (
                 <div className='grid grid-cols-2 lg:grid-cols-3 gap-[clamp(8px,1vw,12px)] auto-rows-fr'>
                     {selectedServices.length > 0 ? selectedServices.map((service, i) => (
-                        <div key={i} className='h-full flex items-center justify-between p-[clamp(10px,1.5vw,14px)] rounded-[clamp(8px,1vw,12px)] border border-gray-100 dark:border-gray-800/80 bg-gray-50/30 dark:bg-white/[0.01] transition-all duration-300'>
+                        <div key={i} className='h-full flex items-center justify-between p-[clamp(10px,1.5vw,14px)] rounded-[clamp(8px,1vw,12px)] border border-gray-200 dark:border-gray-800/80 bg-gray-50/30 dark:bg-white/[0.01] transition-all duration-300'>
                             <div className='flex items-center gap-[clamp(6px,1vw,10px)] min-w-0'>
                                 <div className='w-4 h-4 rounded bg-brand-500 flex items-center justify-center text-white shrink-0'>
                                     <CheckCircle2 size={10} strokeWidth={3} />
@@ -170,7 +170,7 @@ const DoctorServicesDetail = ({ doctor, updateDoctorServices }) => {
                             </div>
                         </div>
                     )) : (
-                        <div className='col-span-full py-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl'>
+                        <div className='col-span-full py-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl'>
                             <AlertCircle size={24} className='text-gray-300 mb-2' />
                             <p className='text-[11px] text-gray-400 font-bold uppercase tracking-widest'>No services configured</p>
                         </div>

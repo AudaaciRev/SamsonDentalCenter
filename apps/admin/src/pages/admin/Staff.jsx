@@ -18,22 +18,22 @@ const Staff = () => {
 
     return (
         <div className='flex flex-col h-full'>
-            <PageBreadcrumb 
-                pageTitle={breadcrumbTitle} 
+            <PageBreadcrumb
+                pageTitle={breadcrumbTitle}
                 parentName={id ? "Staff & Reception" : null}
                 parentPath={id ? "/staff" : null}
-                className='mb-4' 
+                className='mb-4'
             />
-            
+
             <div className='grow flex flex-col'>
                 {id ? (
-                    <StaffDetailView 
+                    <StaffDetailView
                         id={id}
                         activeTab={activeTab}
                         onBack={() => navigate('/staff')}
                     />
                 ) : (
-                    <StaffInbox 
+                    <StaffInbox
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         activeFilter={activeFilter}

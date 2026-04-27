@@ -57,7 +57,7 @@ const DoctorCard = ({ doctor, onClick }) => {
                     <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[clamp(9px,1vw,11px)] font-bold uppercase tracking-wider transition-all duration-300 ease-in-out ${
                         is_active 
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
-                            : 'bg-gray-50 text-gray-500 border-gray-100 dark:bg-white/5 dark:text-gray-400 dark:border-white/10'
+                            : 'bg-gray-50 text-gray-500 border-gray-200 dark:bg-white/5 dark:text-gray-400 dark:border-white/10'
                     }`}>
                         {is_active ? 'Active' : 'Inactive'}
                     </div>
@@ -76,7 +76,7 @@ const DoctorCard = ({ doctor, onClick }) => {
                 </div>
 
                 {/* Actions (Custom for Admin) */}
-                <div className='mt-auto pt-6 border-t border-gray-100 dark:border-gray-800 flex items-center gap-3 transition-all duration-300 ease-in-out'>
+                <div className='mt-auto pt-6 border-t border-gray-200 dark:border-gray-800 flex items-center gap-3 transition-all duration-300 ease-in-out'>
                     <button className={`flex-grow flex items-center justify-center gap-2 py-3 px-4 bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 rounded-xl text-[clamp(9px,1.1vw,11px)] font-bold text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-all active:scale-95 uppercase tracking-widest`}>
                         <Calendar size={14} className='text-brand-500/70 dark:text-brand-400/70' />
                         <span>Schedule</span>
@@ -90,7 +90,7 @@ const DoctorCard = ({ doctor, onClick }) => {
             {/* Mobile View (Horizontal - maintained from previous feedback) */}
             <div className='flex sm:hidden w-full gap-4 items-center'>
                 <div className='relative shrink-0'>
-                    <div className='w-14 h-14 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-100 dark:border-gray-800'>
+                    <div className='w-14 h-14 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800'>
                         {photo_url ? (
                             <img src={photo_url} alt={full_name} className='w-full h-full object-cover' />
                         ) : (

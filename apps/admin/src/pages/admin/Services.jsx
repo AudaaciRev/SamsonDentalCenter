@@ -47,8 +47,8 @@ const Services = () => {
 
     return (
         <div className='flex flex-col h-full'>
-            <PageBreadcrumb 
-                pageTitle='Services Catalog' 
+            <PageBreadcrumb
+                pageTitle='Services Catalog'
                 className='mb-4'
             />
 
@@ -70,7 +70,7 @@ const Services = () => {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
                                 </div>
-                                <button 
+                                <button
                                     className='hidden sm:flex items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-lg text-xs font-bold hover:bg-brand-600 transition-all active:scale-95 shrink-0'
                                 >
                                     <Plus size={16} />
@@ -84,11 +84,10 @@ const Services = () => {
                                     <button
                                         key={filter.id}
                                         onClick={() => setActiveTier(filter.id)}
-                                        className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-                                            activeTier === filter.id
+                                        className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${activeTier === filter.id
                                                 ? 'bg-brand-500 text-white'
                                                 : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                        }`}
+                                            }`}
                                     >
                                         {filter.label}
                                     </button>
@@ -139,9 +138,9 @@ const Services = () => {
             </div>
 
             {/* Mobile Floating Action Button (Extended) */}
-            <button 
+            <button
                 className='sm:hidden fixed bottom-6 right-6 h-11 px-5 bg-brand-500 text-white rounded-xl shadow-2xl flex items-center gap-2 active:scale-95 transition-all z-30 group'
-                onClick={() => {/* Trigger Add Service Modal */}}
+                onClick={() => {/* Trigger Add Service Modal */ }}
             >
                 <Plus size={18} strokeWidth={3} />
                 <span className='font-black uppercase tracking-widest text-[10px]'>Add Service</span>

@@ -6,7 +6,7 @@ const DoctorProfileDetail = ({ doctor }) => {
         <div className='space-y-[clamp(12px,2vw,16px)]'>
             {/* Quick Stats Grid */}
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[clamp(12px,2vw,16px)]'>
-                <div className='p-[clamp(12px,2vw,16px)] border border-gray-100 dark:border-gray-800 rounded-[clamp(10px,1.5vw,16px)] bg-white dark:bg-white/[0.02] transition-all duration-300'>
+                <div className='p-[clamp(12px,2vw,16px)] border border-gray-200 dark:border-gray-800 rounded-[clamp(10px,1.5vw,16px)] bg-white dark:bg-white/[0.02] transition-all duration-300'>
                     <div className='flex items-center gap-[clamp(8px,1vw,12px)] mb-[clamp(6px,1vw,8px)]'>
                         <div className='w-[clamp(28px,3vw,32px)] h-[clamp(28px,3vw,32px)] rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500'>
                             <ShieldCheck size={16} />
@@ -16,7 +16,7 @@ const DoctorProfileDetail = ({ doctor }) => {
                     <p className='text-[clamp(11px,1.2vw,12px)] font-bold text-gray-900 dark:text-white uppercase transition-all duration-300'>Licensed Dental Pro</p>
                 </div>
 
-                <div className='p-[clamp(12px,2vw,16px)] border border-gray-100 dark:border-gray-800 rounded-[clamp(10px,1.5vw,16px)] bg-white dark:bg-white/[0.02] transition-all duration-300'>
+                <div className='p-[clamp(12px,2vw,16px)] border border-gray-200 dark:border-gray-800 rounded-[clamp(10px,1.5vw,16px)] bg-white dark:bg-white/[0.02] transition-all duration-300'>
                     <div className='flex items-center gap-[clamp(8px,1vw,12px)] mb-[clamp(6px,1vw,8px)]'>
                         <div className='w-[clamp(28px,3vw,32px)] h-[clamp(28px,3vw,32px)] rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500'>
                             <Calendar size={16} />

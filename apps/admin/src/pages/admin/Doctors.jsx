@@ -14,12 +14,12 @@ const Doctors = () => {
     const navigate = useNavigate();
     const activeTab = tab || 'profile';
 
-    const { 
-        doctors, 
-        loading, 
-        error, 
-        updateDoctorProfile, 
-        updateDoctorContact, 
+    const {
+        doctors,
+        loading,
+        error,
+        updateDoctorProfile,
+        updateDoctorContact,
         updateDoctorServices,
         onboardDoctor
     } = useDoctors();
@@ -36,9 +36,9 @@ const Doctors = () => {
     const filteredDoctors = doctors.filter(d => {
         const name = d.full_name || '';
         const license = d.license_number || '';
-        const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             license.toLowerCase().includes(searchQuery.toLowerCase());
-        
+        const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            license.toLowerCase().includes(searchQuery.toLowerCase());
+
         if (!matchesSearch) return false;
 
         if (activeFilter === 'all') return true;
@@ -69,8 +69,8 @@ const Doctors = () => {
     return (
         <>
             <div className='flex flex-col h-full'>
-                <PageBreadcrumb 
-                    pageTitle={breadcrumbTitle} 
+                <PageBreadcrumb
+                    pageTitle={breadcrumbTitle}
                     parentName={parentName}
                     parentPath={parentPath}
                     className='mb-4'
@@ -78,17 +78,17 @@ const Doctors = () => {
 
                 <div className='flex flex-col grow'>
                     {selectedDoctorId ? (
-                        <DoctorDetailView 
+                        <DoctorDetailView
                             key={selectedDoctorId}
-                            doctor={selectedDoctor} 
-                            onBack={() => navigate(`/doctors/${activeTab}`)} 
+                            doctor={selectedDoctor}
+                            onBack={() => navigate(`/doctors/${activeTab}`)}
                             activeTab={activeTab}
                             updateDoctorProfile={updateDoctorProfile}
                             updateDoctorContact={updateDoctorContact}
                             updateDoctorServices={updateDoctorServices}
                         />
                     ) : (
-                        <DoctorInbox 
+                        <DoctorInbox
                             doctors={filteredDoctors}
                             onDoctorClick={(id) => navigate(`/doctors/${activeTab}/${id}`)}
                             searchQuery={searchQuery}
@@ -103,9 +103,9 @@ const Doctors = () => {
 
             {/* Floating Action Button - Mobile Only - TEMPORARILY DISABLED */}
 
-            <AddDoctorModal 
-                isOpen={isAddModalOpen} 
-                onClose={() => setIsAddModalOpen(false)} 
+            <AddDoctorModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
                 onSubmit={onboardDoctor}
             />
         </>
