@@ -24,17 +24,35 @@ Modals feature a high-fidelity "native app" aesthetic with smooth backdrop trans
 - **Backdrop**: `bg-black/60` with `backdrop-blur-md` to focus attention on the form.
 - **Positioning**: Perfectly centered within the viewport.
 
-## 3. Mobile Standards
-- **Width**: `w-[95%]` to ensure it never touches the screen edges.
-- **Safety Gutters**: The outermost parent container MUST have `p-4` globally. This ensures there is always a visible gap between the modal and the phone's bezel.
-- **Height Logic**: Use `max-h-[90vh]` and `overflow-y-auto` with `no-scrollbar` to handle long forms on small devices.
-- **Fluid Typography**: Use `clamp()` for titles (e.g., `text-[clamp(18px,2.5vw,22px)]`) to ensure headers fit perfectly without wrapping aggressively.
+## 3. Mobile Standards (iOS Bottom Sheet)
+To provide a more native mobile experience, modals on small screens transition from centered dialogs to **Bottom Sheets**.
 
-## 4. Tactile Interactions
+- **Positioning**: Use `items-end` to anchor the modal to the bottom of the viewport.
+- **Shape**: Use `rounded-t-3xl` and `rounded-b-none` to create the sheet look.
+- **Safety Gutters**: Mobile sheets are typically full-width (`w-full`) with `p-0` container padding.
+- **Grab Handle**: Include a centered "Grab Handle" (`w-12 h-1.5 bg-gray-200 rounded-full`) at the top of the sheet to indicate dragability/dismissibility.
+- **Animation**: Modals should animate using `slide-in-from-bottom` on mobile and `slide-in-from-top` or `zoom-in` on desktop.
+
+## 4. Tactile Interactions & Typography
 - **Z-Index**: Resides at `z-[999999]`.
-- **Button Sizing**: Footer buttons should be `py-3.5` with `text-[14px] font-black`.
+- **Fluid Buttons**: Footer buttons must use fluid font sizes to maintain readability: `text-[10px] sm:text-xs font-black`.
+- **Button Sizing**: Footer buttons should be `h-10` on mobile and `h-12` on desktop with `rounded-lg` to `rounded-xl` scaling.
 - **Mobile Buttons**: Use `flex-1` for buttons on mobile to occupy the full width of the row, and `sm:flex-none` on desktop for a compact alignment.
 - **Feedback**: Implement `active:scale-95` on all primary interactive elements for a physical response.
 
+## 5. Sticky Action Footers
+To ensure primary actions (Save Changes, Cancel) are always accessible, use the **Sticky Footer** pattern in the `Modal` component.
+
+- **Implementation**: Pass buttons into the `footer` prop of the `Modal`.
+- **Logic**: Use the HTML `form` attribute on the submit button (e.g., `form="target-form-id"`) to allow submission from outside the scrolling body.
+- **Styling**: `p-6 sm:p-8` padding with a `gray-100` top border and a subtle `gray-50/50` background to distinguish from the body.
+
+## 6. Compact Media Management
+For internal administrative file/photo updates, keep UI elements compact to focus on the action.
+
+- **Image Preview**: Fixed height `h-40` with `rounded-2xl` corners.
+- **Upload Area**: Fixed height `h-32` border-dashed dropzone.
+- **Iconography**: Scaled down icons (`size={32}` for previews, `size={8}` for dropzone SVGs) to maintain an understated, professional feel.
+
 ---
-*Note: This architecture ensures total layout parity between the Patient and Admin portals.*
+*Note: These patterns ensure UX consistency and action visibility across all Admin portals.*

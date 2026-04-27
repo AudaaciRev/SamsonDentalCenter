@@ -41,17 +41,17 @@ const ServiceDetail = () => {
 
     return (
         <div className='flex flex-col h-full bg-gray-50/50 dark:bg-gray-900'>
-            <div className='mb-4'>
-                <PageBreadcrumb 
-                    pageTitle={service.name} 
+            <div className='border-b border-gray-200 dark:border-gray-800 sm:border-none mb-0 sm:mb-4'>
+                <PageBreadcrumb
+                    pageTitle={service.name}
                     parentName='Services Catalog'
                     parentPath='/services'
                 />
             </div>
-            
-            <ServiceDetailView 
-                service={service} 
-                onBack={() => navigate('/services')} 
+
+            <ServiceDetailView
+                service={service}
+                onBack={() => navigate('/services')}
             />
         </div>
     );
