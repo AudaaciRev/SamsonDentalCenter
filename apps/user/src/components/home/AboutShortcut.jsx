@@ -13,12 +13,12 @@ const CASES = [
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?q=80&w=600&auto=format&fit=crop", // Another smile
+    image: "https://images.unsplash.com/photo-1654373535457-383a0a4d00f9?q=80&w=600&auto=format&fit=crop", // Teeth whitening case
     title: "Veneers"
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=600&auto=format&fit=crop", // Another
+    image: "https://images.unsplash.com/photo-1660300110427-c4a6efdf18b5?q=80&w=600&auto=format&fit=crop", // Dental close up
     title: "Restoration"
   }
 ];

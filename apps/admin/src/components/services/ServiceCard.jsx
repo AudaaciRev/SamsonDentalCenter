@@ -1,106 +1,71 @@
-import React, { useState } from 'react';
-import {
-    Clock,
-    ShieldCheck,
-    ShieldAlert,
-    Image as ImageIcon,
-    PhilippinePeso,
-    ChevronRight,
-} from 'lucide-react';
-import { Badge } from '../ui';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PhilippinePeso, Clock, ChevronRight } from 'lucide-react';
 
-const ServiceCard = ({ service, onClick }) => {
-    const [imgError, setImgError] = useState(false);
+const ServiceCard = ({ service }) => {
+    const navigate = useNavigate();
+
+    const handleNavigate = (e) => {
+        e.stopPropagation();
+        navigate(`/services/${service.id}`);
+    };
 
     return (
-        <div
-            onClick={() => onClick(service)}
-            role='button'
-            tabIndex={0}
-            className='group relative bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-brand-200 hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-1 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all duration-300 flex flex-col h-full text-left'
+        <div 
+            onClick={handleNavigate}
+            className='group relative flex flex-col bg-white dark:bg-white/5 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 cursor-pointer'
         >
-            {/* Image Section */}
-            <div className='relative h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0'>
-                {service.image_url && !imgError ? (
+            {/* Image Container */}
+            <div className='relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-800'>
+                {service.image_url ? (
                     <img
                         src={service.image_url}
                         alt={service.name}
-                        className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-110'
-                        onError={() => setImgError(true)}
+                        className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out flex'
                     />
                 ) : (
-                    <div className='flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-gray-800/80 w-full h-full'>
-                        <ImageIcon
-                            size={48}
-                            strokeWidth={1}
-                        />
-                        <span className='mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400'>
-                            No Photo
+                    <div className='w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-white/5 dark:to-white/[0.02]'>
+                        <span className='text-gray-300 dark:text-gray-700 font-black uppercase tracking-widest text-[10px]'>
+                            No Image
                         </span>
                     </div>
                 )}
-
-                {/* Tier Badge overlay */}
-                <div className='absolute top-4 right-4 z-10'>
-                    <Badge
-                        variant={service.tier === 'specialized' ? 'purple' : 'blue'}
-                        className='backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-sm border-0'
-                    >
-                        {service.tier}
-                    </Badge>
-                </div>
-                {/* Gradient Overlay for seamless text transition */}
-                <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none' />
+                
+                {/* Gradient Overlay */}
+                <div className='absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500' />
             </div>
 
-            {/* Content Section */}
+            {/* Content Container */}
             <div className='p-6 flex flex-col grow bg-white dark:bg-gray-900'>
-                <div className='flex justify-between items-start gap-3 mb-4'>
-                    <h4 className='text-base font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight font-outfit line-clamp-2'>
-                        {service.name}
-                    </h4>
+                <div className='flex items-start justify-between mb-4'>
+                    <div className='flex flex-col'>
+                        <span className='text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-1.5'>
+                            {service.tier}
+                        </span>
+                        <h4 className='text-lg font-black text-gray-900 dark:text-white font-outfit leading-tight group-hover:text-brand-500 transition-colors uppercase tracking-tight'>
+                            {service.name}
+                        </h4>
+                    </div>
                 </div>
 
-                <div className='space-y-4 mt-auto'>
-                    <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-1.5 text-brand-600 dark:text-brand-400'>
-                            <PhilippinePeso
-                                size={16}
-                                strokeWidth={2.5}
-                            />
-                            <span className='text-xl font-black font-outfit'>{service.cost}</span>
-                        </div>
-                        <div className='flex items-center justify-center min-w-[70px] h-8 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700'>
-                            <Clock
-                                size={12}
-                                className='text-gray-400 mr-1.5'
-                            />
-                            <span className='text-[11px] font-bold text-gray-600 dark:text-gray-300'>
-                                {service.duration}
-                            </span>
-                        </div>
+                {/* Meta details */}
+                <div className='mt-auto pt-5 border-t border-gray-100 dark:border-white/5 flex items-center justify-between'>
+                    <div className='flex items-center gap-1.5'>
+                        <PhilippinePeso size={16} className='text-brand-600 dark:text-brand-400' />
+                        <span className='text-xl font-black text-gray-900 dark:text-white font-outfit'>
+                            {Number(service.cost).toLocaleString()}
+                        </span>
                     </div>
-
-                    <div className='pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between h-10'>
-                        <div className='flex items-center gap-1.5'>
-                            {service.auto_approve ? (
-                                <div className='flex items-center gap-1.5 text-[10px] font-black text-success-600 uppercase tracking-widest bg-success-50 dark:bg-success-500/10 px-2 py-1 rounded-md'>
-                                    <ShieldCheck size={12} />
-                                    <span>Auto-Approve</span>
-                                </div>
-                            ) : (
-                                <div className='flex items-center gap-1.5 text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md'>
-                                    <ShieldAlert size={12} />
-                                    <span>Approval Req.</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Jakob's Law / Zeigarnik Effect: Show clear progression state on hover */}
-                        <div className='opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand-500'>
-                            Edit <ChevronRight size={14} />
-                        </div>
+                    <div className='flex items-center gap-1.5 text-gray-400'>
+                        <Clock size={14} />
+                        <span className='text-xs font-bold'>
+                            {service.duration}
+                        </span>
                     </div>
+                </div>
+                
+                <div className='mt-4 flex items-center justify-end text-[10px] font-black uppercase tracking-widest text-brand-500 hover:text-brand-600 transition-colors'>
+                    View Detail <ChevronRight size={14} />
                 </div>
             </div>
         </div>

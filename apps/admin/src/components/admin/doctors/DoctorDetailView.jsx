@@ -172,11 +172,10 @@ const DoctorDetailView = ({
                         <button
                             key={t.id}
                             onClick={() => navigate(`/doctors/${t.id}/${doctor.id}`)}
-                            className={`pb-3 text-xs font-bold uppercase tracking-widest transition-all relative ${
-                                activeTab === t.id
+                            className={`pb-3 text-xs font-bold uppercase tracking-widest transition-all relative ${activeTab === t.id
                                     ? 'text-brand-500'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                            }`}
+                                }`}
                         >
                             {t.label}
                             {activeTab === t.id && (
@@ -202,12 +201,7 @@ const DoctorDetailView = ({
                                                 className='w-full h-full object-cover'
                                             />
                                         ) : (
-                                            doctor.full_name
-                                                .split(' ')
-                                                .map((n) => n[0])
-                                                .join('')
-                                                .substring(0, 2)
-                                                .toUpperCase()
+                                            doctor.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
                                         )}
                                     </div>
                                 </div>
@@ -231,11 +225,10 @@ const DoctorDetailView = ({
                                             </span>
                                             <div className='h-3.5 w-px bg-gray-300 dark:bg-gray-700 mx-1'></div>
                                             <span
-                                                className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${
-                                                    doctor.is_active
+                                                className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${doctor.is_active
                                                         ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400'
                                                         : 'bg-gray-100 text-gray-500'
-                                                }`}
+                                                    }`}
                                             >
                                                 Status : {doctor.is_active ? 'Active' : 'Inactive'}
                                             </span>
@@ -358,13 +351,8 @@ const DoctorDetailView = ({
                                                 className='w-full h-full object-cover'
                                             />
                                         ) : (
-                                            <div className='w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-3xl font-bold'>
-                                                {doctor.full_name
-                                                    .split(' ')
-                                                    .map((n) => n[0])
-                                                    .join('')
-                                                    .substring(0, 2)
-                                                    .toUpperCase()}
+                                            <div className="w-full h-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-3xl font-bold">
+                                                {doctor.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                                             </div>
                                         )}
                                     </div>

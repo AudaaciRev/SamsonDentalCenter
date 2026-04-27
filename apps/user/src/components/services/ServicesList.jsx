@@ -10,154 +10,154 @@ export const SERVICES = [
     title: 'Complex diagnostics',
     category: 'General',
     desc: 'Advanced imaging and diagnostic procedures for precise treatment planning.',
-    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/services/gallery-consultation.jpg',
     details: 'Our complex diagnostics involve state-of-the-art 3D CBCT scanning, digital impressions, and AI-assisted analysis to create a comprehensive map of your oral health. This ensures every treatment is planned with micron-level precision.'
   },
   {
     title: 'Professional hygiene',
     category: 'General',
     desc: 'Deep cleaning and preventative care to maintain long-term oral health.',
-    image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-close.jpg',
     details: 'Experience a new standard of clean with our guided biofilm therapy. We use warm water and airflow technology to gently remove plaque and stains, followed by a remineralizing treatment to strengthen enamel.'
   },
   {
     title: 'Veneers',
     category: 'Specialized',
     desc: 'Ultra-thin porcelain shells for a flawless, natural-looking smile.',
-    image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-tree.jpg',
     details: 'Custom-crafted by master ceramists, our veneers are designed to complement your facial features. The process involves a digital smile design preview, minimal preparation, and a final bonding session for a life-changing transformation.'
   },
   {
     title: 'Dental implants',
     category: 'Specialized',
     desc: 'Permanent tooth replacement solutions that feel and look like natural teeth.',
-    image: 'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-scenic.jpg',
     details: 'We use premium titanium or zirconia implants to replace missing teeth. The procedure is minimally invasive, often performed under sedation, and results in a stable, lifelong foundation for your smile.'
   },
   {
     title: 'ALL-ON-X',
     category: 'Specialized',
     desc: 'Full-arch restoration for immediate, transformative results.',
-    image: 'https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-lab-work.jpg',
     details: 'Regain full function in a single day. This revolutionary technique supports an entire arch of teeth on just 4 or 6 implants, providing immediate stability and aesthetics without the need for bone grafting in many cases.'
   },
   {
     title: 'Sedation and anaesthesia',
     category: 'General',
     desc: 'Comfortable treatments with advanced sedation options.',
-    image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-exam.jpg',
     details: 'Anxiety-free dentistry is our promise. From nitrous oxide (laughing gas) to IV sedation administered by a board-certified anesthesiologist, we ensure your comfort and safety throughout any procedure.'
   },
   {
     title: 'Simple Extraction',
     category: 'General',
     desc: 'Safe and painless removal of problematic teeth.',
-    image: 'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-chairs-row.jpg',
     details: 'When a tooth cannot be saved, our expert surgeons perform simple extractions with maximum care, ensuring a clean process and rapid recovery.'
   },
   {
     title: 'Teeth Whitening',
     category: 'General',
     desc: 'Professional brightening for a radiant smile.',
-    image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-chair-red.jpg',
     details: 'Our advanced laser whitening treatments ensure significantly brighter teeth without sensitivity, utilizing premium whitening gels activated by specialized light.'
   },
   {
     title: 'Therapy',
     category: 'General',
     desc: 'General restorative treatments to bring back your smile.',
-    image: 'https://images.unsplash.com/photo-1445527697968-0174f0f2b5a3?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-equipment.jpg',
     details: 'From composite bonding to fluoride treatments, our therapeutic services focus on arresting decay, repairing damage, and restoring the natural function of your teeth using biomimetic materials.'
   },
   {
     title: 'Endodontics',
     category: 'Specialized',
     desc: 'Specialized root canal treatments to save natural teeth.',
-    image: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-consultation.jpg',
     details: 'Using microscopic magnification, we remove infection from within the tooth with extreme precision. This painless procedure saves your natural tooth, preventing the need for extraction and implants.'
   },
   {
     title: 'Surgery',
     category: 'Specialized',
     desc: 'Expert surgical care for complex oral conditions.',
-    image: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-close.jpg',
     details: 'Our oral surgery capabilities range from wisdom tooth removal to corrective jaw surgery. We prioritize minimally invasive techniques and accelerated healing protocols to get you back to your life faster.'
   },
   {
     title: 'Smile Design',
     category: 'Specialized',
     desc: 'Digital smile planning for predictable aesthetic results.',
-    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-tree.jpg',
     details: 'Using advanced digital imaging and facial analysis, we design your perfect smile before any treatment begins. See your future smile and participate in the design process.'
   },
   {
     title: 'Orthodontics',
     category: 'General',
     desc: 'Clear aligners and traditional braces for a perfectly straight smile.',
-    image: 'https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-scenic.jpg',
     details: 'Achieve the straight smile you\'ve always wanted. We offer both comprehensive traditional braces and virtually invisible clear aligner therapy customised to your unique bite.'
   },
   {
     title: 'Periodontal Care',
     category: 'General',
     desc: 'Specialized treatments for gum health and disease prevention.',
-    image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-lab-work.jpg',
     details: 'Healthy gums are the foundation of healthy teeth. Our periodontal therapies manage gum disease through deep scaling, root planing, and advanced laser treatments.'
   },
   {
     title: 'Pediatric Dentistry',
     category: 'General',
     desc: 'Gentle and comprehensive dental care for children of all ages.',
-    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/services/service-exam.jpg',
     details: 'We provide a welcoming, fear-free environment for our youngest patients, focusing on preventative care, education, and interceptive treatments as they grow.'
   },
   {
     title: 'Dental Crowns',
     category: 'General',
     desc: 'Custom-crafted restorations to protect and strengthen damaged teeth.',
-    image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-chairs-row.jpg',
     details: 'Our single-visit ceramic crowns perfectly match your natural teeth, restoring both the function and aesthetic appearance of teeth weakened by decay or trauma.'
   },
   {
     title: 'TMJ Therapy',
     category: 'General',
     desc: 'Relief from jaw pain, clicking, and related headaches.',
-    image: 'https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-chair-red.jpg',
     details: 'Using targeted diagnostics, custom night guards, and guided physiotherapy, we alleviate temporomandibular joint dysfunction to give you lasting comfort.'
   },
   {
     title: 'Bone Grafting',
     category: 'Specialized',
     desc: 'Advanced bone regeneration to build a solid foundation for implants.',
-    image: 'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-equipment.jpg',
     details: 'Using advanced biocompatible materials, we restore jawbone density lost to extractions or pathology, ensuring your dental implants have the robust support they need.'
   },
   {
     title: 'Sinus Lifts',
     category: 'Specialized',
     desc: 'Surgical elevation of the sinus cavity to allow for upper jaw implants.',
-    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/gallery-consultation.jpg',
     details: 'A highly specialized procedure that gently lifts the sinus membrane and adds bone graft material, safely opening the door for secure implants in the upper molar region.'
   },
   {
     title: 'Full Mouth Reconstruction',
     category: 'Specialized',
     desc: 'Comprehensive rehabilitation of your entire oral structure and aesthetic.',
-    image: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-close.jpg',
     details: 'For cases requiring extensive intervention, our specialists collaborate to rebuild your entire smile from the ground up, utilizing implants, crowns, and precise bite alignment.'
   },
   {
     title: 'Laser Gum Surgery',
     category: 'Specialized',
     desc: 'Minimally invasive laser therapy for periodontal disease and contouring.',
-    image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-tree.jpg',
     details: 'Experience scalpel-free gum surgery. Our targeted lasers vaporize infected tissue, stimulate cellular regeneration, and precisely reshape gummy smiles with minimal downtime.'
   },
   {
     title: 'Maxillofacial Prosthetics',
     category: 'Specialized',
     desc: 'Complex prosthetic rehabilitation for congenital or acquired defects.',
-    image: 'https://images.unsplash.com/photo-1445527697968-0174f0f2b5a3?auto=format&fit=crop&q=80&w=800',
+    image: '/images/services/service-chair-scenic.jpg',
     details: 'Our specialized prosthodontists design custom intraoral and extraoral prostheses to restore crucial oral function, swallowing, speech, and facial aesthetics.'
   }
 ];

@@ -106,7 +106,7 @@ const Hero = () => {
                 className='absolute inset-0 z-0 h-[125%] -top-[10%]'
             >
                 <img
-                    src='https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=1920&auto=format&fit=crop'
+                    src='/images/home/hero-bg.jpg'
                     alt='Dental Office'
                     className='w-full h-full object-cover object-center'
                 />

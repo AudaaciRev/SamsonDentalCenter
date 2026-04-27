@@ -25,7 +25,7 @@ const AdminHeader = () => {
     };
 
     return (
-        <header className='sticky top-0 flex w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 z-99999 lg:border-b transition-colors'>
+        <header className='sticky top-0 flex w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 z-40 lg:border-b transition-colors'>
             <div className='flex items-center justify-between w-full px-3 py-3 lg:px-6 lg:py-4'>
                 {/* Left: Toggle + Mobile Logo */}
                 <div className='flex items-center gap-3'>

@@ -54,7 +54,7 @@ const ClinicStory = () => {
     }, []);
     const image = {
         // Using a stable Unsplash image URL (direct link) to avoid loading issues.
-        src: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&q=80&w=1600',
+        src: '/images/about/clinic-exterior.jpeg',
         alt: 'Modern dental clinic equipment and chair',
     };
 
