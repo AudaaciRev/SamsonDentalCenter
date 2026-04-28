@@ -378,6 +378,9 @@ export const upgradeGuestToUser = async (req, res, next) => {
         });
 
         if (error) {
+            if (error.message.includes('already registered')) {
+                return res.status(409).json({ error: 'An account with this email already exists. Please log in to manage your appointments.' });
+            }
             return res.status(400).json({ error: error.message });
         }
 
@@ -386,7 +389,13 @@ export const upgradeGuestToUser = async (req, res, next) => {
             await supabaseAdmin.from('profiles').update({ phone }).eq('id', data.user.id);
         }
 
-        // 4. Log them in automatically
+        // 4. Link existing guest appointments to this new profile
+        await supabaseAdmin
+            .from('appointments')
+            .update({ patient_id: data.user.id })
+            .eq('guest_email', email.toLowerCase());
+
+        // 5. Log them in automatically
         const { data: loginData, error: loginErr } = await supabasePublic.auth.signInWithPassword({
             email,
             password,

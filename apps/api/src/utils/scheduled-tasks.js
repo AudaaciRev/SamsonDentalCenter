@@ -10,6 +10,7 @@ import {
 import { notifyWaitlist } from '../services/waitlist.service.js';
 import { supabaseAdmin } from '../config/supabase.js';
 import { WAITLIST_STATUS } from '../utils/constants.js';
+import { SMS_TEMPLATES, validateSmsLength } from './sms-templates.js';
 
 // 🧪 DEBUG MODE: Set to true to log emails instead of sending them
 const DEBUG_MODE = process.env.DEBUG_SCHEDULED_TASKS === 'true';
@@ -77,7 +78,7 @@ export const startScheduledTasks = () => {
 
                     const { data: patient } = await supabaseAdmin
                         .from('profiles')
-                        .select('email, phone_number, full_name, first_name, last_name, middle_name, suffix')
+                        .select('email, phone, full_name, first_name, last_name, middle_name, suffix')
                         .eq('id', appt.patient_id)
                         .single();
 
@@ -92,12 +93,11 @@ export const startScheduledTasks = () => {
                         });
                     }
 
-                    /*
-                    if (patient?.phone_number) {
-                        const smsMsg = `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appt.appointment_date} at ${timePretty}. Please confirm. Thank you!`;
-                        await sendSMS(patient.phone_number, smsMsg);
+                    
+                    if (patient?.phone) {
+                        const smsMsg = SMS_TEMPLATES.REMINDER_48H(appt.appointment_date, timePretty, serviceNameTruncated);
+                        await sendSMS(patient.phone, validateSmsLength(smsMsg));
                     }
-                    */
 
                 } else if (appt.guest_email || appt.guest_phone) {
                     // ── GUEST: email with links + SMS ──
@@ -424,7 +424,7 @@ export const testSend24hReminder = async (appointmentId, hours = 24) => {
         // Fetch patient email
         const { data: patient, error: patientError } = await supabaseAdmin
             .from('profiles')
-            .select('email, full_name, first_name, last_name, middle_name, suffix')
+            .select('email, phone, full_name, first_name, last_name, middle_name, suffix')
             .eq('id', appointment.patient_id)
             .single();
 
@@ -444,22 +444,18 @@ export const testSend24hReminder = async (appointmentId, hours = 24) => {
             hoursUntil: hours,
         });
 
-        /*
         // Send SMS if phone exists
         let smsResult = null;
-        if (patient.phone_number) {
-            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
+        if (patient.phone) {
             const formatTime = (t) => t ? t.substring(0, 5) : '';
-            const serviceNameTruncated = truncate(appointment.service?.name, 25);
             const timePretty = formatTime(appointment.start_time);
 
             const smsMsg = hours === 48 
-                ? `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appointment.appointment_date} at ${timePretty}. Please confirm. Thank you!`
-                : `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appointment.appointment_date} at ${timePretty}. See you soon!`;
+                ? SMS_TEMPLATES.REMINDER_48H(appointment.appointment_date, timePretty, appointment.service?.name || 'Dental appointment')
+                : SMS_TEMPLATES.REMINDER_24H(appointment.appointment_date, timePretty, appointment.service?.name || 'Dental appointment');
             
-            smsResult = await sendSMS(patient.phone_number, smsMsg);
+            smsResult = await sendSMS(patient.phone, validateSmsLength(smsMsg));
         }
-        */
 
         return {
             success: true,
@@ -468,7 +464,7 @@ export const testSend24hReminder = async (appointmentId, hours = 24) => {
                 appointmentId,
                 patientName: patientDisplayName,
                 patientEmail: patient.email,
-                patientPhone: patient.phone_number,
+                patientPhone: patient.phone,
                 smsResult,
                 appointmentDate: appointment.appointment_date,
                 appointmentTime: appointment.start_time,
@@ -602,22 +598,18 @@ export const testSendGuestReminder = async (appointmentId, hours = 24) => {
             hoursUntil: hours,
         });
 
-        /*
         // Send SMS if phone exists
         let smsResult = null;
         if (appointment.guest_phone) {
-            const truncate = (str, len) => (str && str.length > len) ? str.substring(0, len - 3) + '...' : (str || '');
             const formatTime = (t) => t ? t.substring(0, 5) : '';
-            const serviceNameTruncated = truncate(appointment.service?.name, 25);
             const timePretty = formatTime(appointment.start_time);
 
             const smsMsg = hours === 48 
-                ? `Samson Dental Center: Your ${serviceNameTruncated} appointment is in 2 days on ${appointment.appointment_date} at ${timePretty}. Please confirm. Thank you!`
-                : `Samson Dental Center: Friendly reminder of your ${serviceNameTruncated} appt tomorrow, ${appointment.appointment_date} at ${timePretty}. See you soon!`;
+                ? SMS_TEMPLATES.REMINDER_48H(appointment.appointment_date, timePretty, appointment.service?.name || 'Dental appointment')
+                : SMS_TEMPLATES.REMINDER_24H(appointment.appointment_date, timePretty, appointment.service?.name || 'Dental appointment');
             
-            smsResult = await sendSMS(appointment.guest_phone, smsMsg);
+            smsResult = await sendSMS(appointment.guest_phone, validateSmsLength(smsMsg));
         }
-        */
 
         return {
             success: true,
