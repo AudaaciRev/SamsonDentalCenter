@@ -141,6 +141,8 @@ export const bookAppointmentGuest = async (
             end_time: endTime,
             status: APPOINTMENT_STATUS.PENDING,
             approval_status: APPROVAL_STATUS.PENDING,
+            patient_confirmed: true, // Already verified via OTP
+            confirmed_at: new Date().toISOString(),
             source: APPOINTMENT_SOURCE.GUEST_BOOKING,
             reschedule_count: rescheduleCount,
         })
@@ -156,10 +158,9 @@ export const bookAppointmentGuest = async (
         throw new AppError(insertError.message, 500);
     }
 
-    // ── 5. Generate confirmation token & send email ──
-    const { token } = await createConfirmationToken(appointment.id);
-    await sendGuestConfirmationEmail(guestEmail, guestName, {
-        token,
+    // ── 5. Email verified via OTP already, so we can send the SUCCESS email immediately
+    // Note: We still stay PENDING for admin approval.
+    await sendBookingRequestReceivedEmail(guestEmail, guestName, {
         date: appointment.appointment_date,
         start_time: appointment.start_time,
         service: service.name,
@@ -168,7 +169,7 @@ export const bookAppointmentGuest = async (
     return {
         booked: true,
         status: 'PENDING',
-        message: 'Appointment reserved! Please check your email to confirm your booking.',
+        message: 'Appointment reserved! Since your email is verified, we have sent your request to our team for approval.',
         appointment: {
             id: appointment.id,
             date: appointment.appointment_date,

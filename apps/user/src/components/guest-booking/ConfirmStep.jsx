@@ -175,15 +175,15 @@ const ConfirmStep = ({ formData, onSubmit, onBack, onEdit, submitting, error }) 
                             <ul className="space-y-3 pt-2">
                                 <li className="flex items-start gap-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
-                                    <p>A verification link has been sent to <strong className="text-brand-600 dark:text-brand-400 break-all">{formData.email}</strong>.</p>
+                                    <p>Upon clicking "Confirm", a 6-digit verification code will be sent to <strong className="text-brand-600 dark:text-brand-400 break-all">{formData.email}</strong>.</p>
                                 </li>
                                 <li className="flex items-start gap-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
-                                    <p>Click the link within **15 minutes** to confirm your request, or it will expire automatically.</p>
+                                    <p>Enter the code on the next screen to verify your email and finalize your request.</p>
                                 </li>
                                 <li className="flex items-start gap-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0" />
-                                    <p>Once verified, our specialists will review your request. You'll receive a final approval email within 24 hours.</p>
+                                    <p>This verification protects your data and ensures clinic security.</p>
                                 </li>
                             </ul>
                         </div>

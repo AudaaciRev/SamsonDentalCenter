@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import useSlotHold from './useSlotHold';
 
-const STEPS = ['service', 'datetime', 'info', 'review'];
+const STEPS = ['service', 'datetime', 'info', 'review', 'verification'];
 
 // Session ID management (use sessionStorage so it clears when tab closes)
 const STORAGE_KEY = 'guest_session_id';
@@ -59,6 +59,8 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [result, setResult] = useState(null);
+    const [verificationToken, setVerificationToken] = useState(null);
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // ✅ Initialize slot hold hook at the wizard level to survive step changes
     const slotHold = useSlotHold(sessionId);
@@ -143,8 +145,57 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         }
     };
 
-    // Issue #7: Add timeout handling and network error detection
-    const submit = async () => {
+    /**
+     * Phase 1: Send OTP to the guest's email.
+     */
+    const sendGuestOTP = async () => {
+        setIsVerifying(true);
+        setError(null);
+        try {
+            await api.post('/auth/guest/send-otp', {
+                email: formData.email,
+                name: formData.first_name || formData.email,
+            });
+            return { success: true };
+        } catch (err) {
+            setError(err.message || 'Failed to send verification code.');
+            return { success: false };
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    /**
+     * Phase 1: Verify the 6-digit code.
+     */
+    const verifyGuestOTP = async (code) => {
+        setIsVerifying(true);
+        setError(null);
+        try {
+            const data = await api.post('/auth/guest/verify-otp', {
+                email: formData.email,
+                otp_code: code,
+            });
+            if (data.verification_token) {
+                setVerificationToken(data.verification_token);
+                return { success: true, token: data.verification_token };
+            }
+            throw new Error('Verification failed.');
+        } catch (err) {
+            setError(err.message || 'Invalid code. Please check your email and try again.');
+            return { success: false };
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const submit = async (passedToken = null) => {
+        const tokenToUse = passedToken || verificationToken;
+        if (!tokenToUse) {
+            setError('Please verify your email before booking.');
+            return;
+        }
+
         setSubmitting(true);
         setError(null);
 
@@ -160,7 +211,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                 date: formData.date,
                 time: formData.time,
                 email: formData.email,
-                phone: formData.phone.replace(/\D/g, ''), // ✅ Sanitize: remove non-digits
+                phone: formData.phone.replace(/\D/g, ''),
                 guestNameParts: {
                     first: formData.first_name,
                     last: formData.last_name,
@@ -168,6 +219,7 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
                     suffix: formData.suffix_name,
                 },
                 user_session_id: sessionId,
+                verification_token: tokenToUse,
             };
 
             const data = await api.post('/appointments/book-guest', body);
@@ -176,32 +228,40 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
 
             if (data.booked) {
                 setResult(data);
-                setSubmitting(false); // ✅ Clear submitting state on success
-                // Clean up the hold
+                setSubmitting(false);
                 slotHold.clearHold();
             } else {
                 setSubmitting(false);
-                setError(
-                    data.error ||
-                        'Booking failed. The slot may no longer be available. Please try a different time.',
-                );
+                setError(data.error || 'Booking failed. Slot may no longer be available.');
             }
         } catch (err) {
             clearTimeout(timeoutId);
             setSubmitting(false);
+            setError(err.message || 'Something went wrong. Please try again.');
+        }
+    };
 
-            // Provide specific error messages
-            if (err.status === 409) {
-                setError(
-                    'This slot was just booked by someone else. Please choose a different time.',
-                );
-            } else if (err.status === 400) {
-                setError('Please check your information and try again.');
-            } else if (err.status === 503) {
-                setError('Server is temporarily unavailable. Please try again later.');
-            } else {
-                setError(err.message || 'Something went wrong. Please try again.');
-            }
+    /**
+     * Phase 2: Frictionless Upgrade to User Account
+     */
+    const upgradeToUser = async (password) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const data = await api.post('/auth/guest-to-user', {
+                email: formData.email,
+                password,
+                verification_token: verificationToken,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                phone: formData.phone.replace(/\D/g, ''),
+            });
+            return { success: true, message: data.message };
+        } catch (err) {
+            setError(err.message || 'Account creation failed.');
+            return { success: false, message: err.message };
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -259,14 +319,19 @@ const useGuestBooking = (initialServiceId = null, initialServiceName = null) => 
         submitting,
         error,
         result,
-        slotHold, // pass the hold hook to children
+        slotHold,
+        verificationToken,
+        isVerifying,
         // Actions
         updateField,
         updateFields,
         nextStep,
         prevStep,
         goToStep,
+        sendGuestOTP,
+        verifyGuestOTP,
         submit,
+        upgradeToUser,
         resendVerification,
         reset,
     };

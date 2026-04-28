@@ -22,6 +22,7 @@ import { notifyWaitlist, joinWaitlist } from '../services/waitlist.service.js';
 import { getAvailableSlots } from '../services/slot.service.js';
 import { assignDentist } from '../services/dentist-assignment.service.js';
 import { holdSlot, releaseHold } from '../services/slot-hold.service.js';
+import * as guestAuthService from '../services/guest-auth.service.js';
 import { getTodayPH } from '../utils/timezone.js';
 import { addMinutesToTime } from '../utils/time.js';
 import { supabaseAdmin } from '../config/supabase.js';
@@ -41,7 +42,17 @@ import { APPOINTMENT_SOURCE } from '../utils/constants.js';
  */
 export const bookGuest = async (req, res, next) => {
     try {
-        const { service_id, date, time, email, phone, guestNameParts, user_session_id } = req.body;
+        const { service_id, date, time, email, phone, guestNameParts, user_session_id, verification_token } = req.body;
+
+        if (!verification_token) {
+            return res.status(403).json({ error: 'Email verification required to book as a guest.' });
+        }
+
+        // 1. Verify the token belongs to this email
+        const isVerified = await guestAuthService.validateGuestVerification(email, verification_token);
+        if (!isVerified) {
+            return res.status(403).json({ error: 'Invalid or expired verification session. Please verify your email again.' });
+        }
 
         const result = await bookAppointmentGuest(
             service_id,

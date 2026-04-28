@@ -6,6 +6,7 @@ import ServiceStep from './ServiceStep';
 import DateTimeStep from './DateTimeStep';
 import InfoStep from './InfoStep';
 import ConfirmStep from './ConfirmStep';
+import OTPStep from './OTPStep';
 import GuestBookingSuccess from './GuestBookingSuccess';
 
 const GuestBookingWizard = ({ booking }) => {
@@ -48,7 +49,7 @@ const GuestBookingWizard = ({ booking }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [step]);
 
-    const breadcrumbLabels = ['Service', 'Date & Time', 'Your Info', 'Review'];
+    const breadcrumbLabels = ['Service', 'Date & Time', 'Your Info', 'Review', 'Verify'];
 
     const handleExit = () => {
         if (window.confirm('Are you sure you want to exit? Your progress will be lost.')) {
@@ -149,11 +150,30 @@ const GuestBookingWizard = ({ booking }) => {
                     {currentStep === 'review' && (
                         <ConfirmStep
                             formData={formData}
-                            onSubmit={submit}
+                            onSubmit={async () => {
+                                const success = await booking.sendGuestOTP();
+                                if (success) nextStep();
+                            }}
                             onBack={prevStep}
                             onEdit={goToStep}
-                            submitting={submitting}
+                            submitting={booking.isVerifying}
                             error={error}
+                        />
+                    )}
+
+                    {currentStep === 'verification' && (
+                        <OTPStep
+                            email={formData.email}
+                            onVerify={async (code) => {
+                                const res = await booking.verifyGuestOTP(code);
+                                if (res.success) {
+                                    await submit(res.token);
+                                }
+                            }}
+                            onResend={booking.sendGuestOTP}
+                            isVerifying={submitting || booking.isVerifying}
+                            error={error}
+                            onBack={prevStep}
                         />
                     )}
                 </div>

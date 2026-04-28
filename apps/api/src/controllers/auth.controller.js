@@ -1,5 +1,6 @@
 import { supabaseAdmin, supabasePublic } from '../config/supabase.js';
 import { humanizeError } from '../utils/errorMapper.js';
+import * as guestAuthService from '../services/guest-auth.service.js';
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -306,6 +307,112 @@ export const logout = async (req, res, next) => {
         res.clearCookie('sb-access-token', COOKIE_OPTIONS);
         res.clearCookie('sb-refresh-token', COOKIE_OPTIONS);
         res.json({ message: 'Logged out successfully.' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/auth/guest/send-otp
+ */
+export const sendGuestOTP = async (req, res, next) => {
+    try {
+        const { email, name } = req.body;
+        if (!email || !name) {
+            return res.status(400).json({ error: 'Email and name are required.' });
+        }
+        const result = await guestAuthService.sendOTP(email, name);
+        res.json(result);
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/auth/guest/verify-otp
+ */
+export const verifyGuestOTP = async (req, res, next) => {
+    try {
+        const { email, otp_code } = req.body;
+        if (!email || !otp_code) {
+            return res.status(400).json({ error: 'Email and OTP code are required.' });
+        }
+        const result = await guestAuthService.verifyOTP(email, otp_code);
+        res.json(result);
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/auth/guest-to-user
+ * Frictionless upgrade from guest to registered patient.
+ */
+export const upgradeGuestToUser = async (req, res, next) => {
+    try {
+        const { email, password, verification_token, first_name, last_name, phone } = req.body;
+
+        if (!email || !password || !verification_token) {
+            return res.status(400).json({ error: 'Email, password, and verification token are required.' });
+        }
+
+        // 1. Verify the token was valid for this email
+        const isValid = await guestAuthService.validateGuestVerification(email, verification_token);
+        if (!isValid) {
+            return res.status(403).json({ error: 'Invalid or expired verification session.' });
+        }
+
+        // 2. Create the user via admin auth (bypasses email confirmation as they just verified via OTP)
+        // Note: Using concatenated full_name for profile consistency
+        const fullName = `${last_name}, ${first_name}`.trim();
+        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+                first_name,
+                last_name,
+                role: 'patient',
+                full_name: fullName,
+            }
+        });
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        // 3. Update profile with phone if provided
+        if (phone && data.user?.id) {
+            await supabaseAdmin.from('profiles').update({ phone }).eq('id', data.user.id);
+        }
+
+        // 4. Log them in automatically
+        const { data: loginData, error: loginErr } = await supabasePublic.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (loginErr) {
+            return res.status(201).json({ 
+                message: 'Account created successfully! Please log in manually.',
+                user: data.user
+            });
+        }
+
+        // 5. Set cookies and return
+        res.cookie('sb-access-token', loginData.session.access_token, COOKIE_OPTIONS);
+        res.cookie('sb-refresh-token', loginData.session.refresh_token, COOKIE_OPTIONS);
+
+        res.status(201).json({
+            message: 'Welcome to PrimeraDental! Your account is ready.',
+            token: loginData.session.access_token,
+            user: {
+                id: data.user.id,
+                email: data.user.email,
+                role: 'patient'
+            }
+        });
+
     } catch (err) {
         next(err);
     }

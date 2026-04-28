@@ -21,6 +21,33 @@ const getTemplate = (templateName, data) => {
 };
 
 /**
+ * Send an OTP code to a guest for pre-booking verification.
+ *
+ * @param {string} email - Guest email
+ * @param {string} name - Guest name
+ * @param {string} otpCode - 6-digit code
+ */
+export const sendOTPEmail = async (email, name, otpCode) => {
+    try {
+        const html = getTemplate('guest-otp.html', {
+            name,
+            otpCode,
+        });
+
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: `${otpCode} is your PrimeraDental verification code`,
+            html,
+        });
+        console.log(`📧 OTP email sent to ${email}`);
+    } catch (err) {
+        console.error('Failed to send OTP email:', err.message);
+        throw err; // Re-throw so the service can handle it
+    }
+};
+
+/**
  * Generate a secure confirmation token and save it to the database.
  *
  * @param {string} appointmentId - The appointment UUID
