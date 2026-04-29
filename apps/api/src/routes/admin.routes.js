@@ -33,7 +33,10 @@ import {
     getPatients,
     viewPatientHistory,
     toggleRestriction,
-    quickRegisterPatientHandler, // NEW
+    quickRegisterPatientHandler,
+    checkDuplicatesHandler, // NEW
+    mergePatientsHandler, // NEW
+    sendSetupLinkHandler, // NEW
     // User Management (Admin Only)
     getUsersHandler,
     createUserHandler,
@@ -61,6 +64,7 @@ import {
     reassignAppointment,
     getAvailableDentistsForReassignment,
     onboardDoctor,
+    getPatientHandler, // NEW
     bulkUpdateSchedule,
 } from '../controllers/admin.controller.js';
 import { 
@@ -104,7 +108,11 @@ router.post('/appointments/:id/comments', addAppointmentCommentHandler);
 
 // ── Walk-In & Patients ──
 router.post('/walk-in', addWalkIn);
-router.post('/walk-in/quick', quickRegisterPatientHandler); // NEW: create patient profile without full auth signup
+router.post('/walk-in/quick', quickRegisterPatientHandler);
+router.get('/patients/check-duplicates', checkDuplicatesHandler); // NEW
+router.post('/patients/merge', mergePatientsHandler); // NEW
+router.post('/patients/:id/send-setup-link', sendSetupLinkHandler); // NEW
+router.get('/patients/:id', getPatientHandler); // NEW
 router.get('/patients', getPatients);
 router.get('/patients/:id/history', viewPatientHistory);
 router.patch('/patients/:id/restriction', toggleRestriction);

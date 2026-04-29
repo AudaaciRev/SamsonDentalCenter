@@ -1,17 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import StaffInbox from '../../components/admin/staff/StaffInbox';
 import StaffDetailView from '../../components/admin/staff/StaffDetailView';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../utils/api';
 
 const Staff = () => {
     const { tab, id } = useParams();
     const navigate = useNavigate();
+    const { token } = useAuth();
     const activeTab = tab || 'profile';
 
-    // State for filtering (in real app, this would come from a hook like useStaff)
+    const [staffMembers, setStaffMembers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
+
+    useEffect(() => {
+        const fetchStaff = async () => {
+            if (!token) return;
+            try {
+                setLoading(true);
+                const data = await api.get('/admin/users', token);
+                // Filter out patients, show only system users
+                const filtered = (data.users || []).filter(u => 
+                    ['admin', 'secretary', 'receptionist', 'doctor'].includes(u.role)
+                );
+                setStaffMembers(filtered);
+            } catch (err) {
+                console.error('Failed to fetch staff:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStaff();
+    }, [token]);
 
     const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
     const breadcrumbTitle = id ? `Staff ${tabLabel}` : "Staff & Reception";
@@ -34,6 +61,9 @@ const Staff = () => {
                     />
                 ) : (
                     <StaffInbox
+                        staffMembers={staffMembers}
+                        loading={loading}
+                        error={error}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         activeFilter={activeFilter}

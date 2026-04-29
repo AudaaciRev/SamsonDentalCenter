@@ -1,26 +1,48 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Mail, Phone, Calendar, History, ShieldAlert, CreditCard, User, History as HistoryIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Mail, Phone, Calendar, History, ShieldAlert, CreditCard, User, History as HistoryIcon, Loader2 } from 'lucide-react';
 import { Button, Modal, Input, Label, Switch } from '../../../components/ui';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../../../utils/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const PatientDetailView = ({ patientId, onBack, activeTab }) => {
-    // Mock data
-    const patient = {
-        id: patientId || '1',
-        full_name: 'Maria Santos',
-        email: 'maria.santos@email.com',
-        phone: '+63 917 123 4567',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maria',
-        status: 'Regular',
-        next_appointment: 'May 05, 2026 @ 10:00 AM',
-        total_visits: 12,
-        balance: '₱ 0.00',
-        join_date: 'Sep 2023'
-    };
-
+    const { token } = useAuth();
     const navigate = useNavigate();
+    
+    const [patient, setPatient] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadingLink, setLoadingLink] = useState(false);
+    const [linkStatus, setLinkStatus] = useState(null);
+    
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchPatient = async () => {
+            try {
+                const data = await api.get(`/admin/patients/${patientId}`, token);
+                setPatient(data);
+            } catch (err) {
+                console.error('Failed to fetch patient:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (patientId) fetchPatient();
+    }, [patientId, token]);
+
+    const handleSendSetupLink = async () => {
+        setLoadingLink(true);
+        setLinkStatus(null);
+        try {
+            await api.post(`/admin/patients/${patientId}/send-setup-link`, {}, token);
+            setLinkStatus({ type: 'success', message: 'Setup link sent!' });
+        } catch (err) {
+            setLinkStatus({ type: 'error', message: err.message });
+        } finally {
+            setLoadingLink(false);
+        }
+    };
 
     const tabs = [
         { id: 'profile', label: 'Profile' },
@@ -28,6 +50,16 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
         { id: 'financial', label: 'Financial' },
         { id: 'security', label: 'Security' },
     ];
+
+    if (loading) {
+        return (
+            <div className='flex items-center justify-center grow bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800'>
+                <Loader2 className='animate-spin text-brand-500' size={40} />
+            </div>
+        );
+    }
+
+    if (!patient) return null;
 
     return (
         <div className='flex flex-col grow min-h-0 bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden no-scrollbar'>
@@ -97,8 +129,8 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                             {patient.status} Patient
                                         </p>
                                         <div className='hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block'></div>
-                                        <span className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400`}>
-                                            Verified Account
+                                        <span className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${patient.is_registered ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+                                            {patient.is_registered ? 'Verified Account' : 'Stub Profile'}
                                         </span>
                                     </div>
                                 </div>
@@ -197,14 +229,53 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
 
                         {activeTab === 'security' && (
                              <div className='space-y-6'>
+                                 {/* Account Portal Status */}
+                                 <div className='p-6 rounded-2xl bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/10'>
+                                     <h4 className='text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
+                                         <User size={14} /> Portal Access
+                                     </h4>
+                                     <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+                                         <div>
+                                             <p className='text-sm font-bold text-gray-900 dark:text-white'>
+                                                 {patient.is_registered ? 'Account Active' : 'Account Not Set Up'}
+                                             </p>
+                                             <p className='text-[11px] text-gray-500 dark:text-gray-400 mt-1 max-w-sm font-medium'>
+                                                 {patient.is_registered 
+                                                     ? 'This patient has registered an account and can book appointments online.' 
+                                                     : 'This is a stub profile. Send a setup link to allow the patient to access the portal.'}
+                                             </p>
+                                         </div>
+                                         {!patient.is_registered && (
+                                             <Button 
+                                                 onClick={handleSendSetupLink}
+                                                 disabled={loadingLink || !patient.email}
+                                                 className='bg-brand-500 text-white font-bold h-11 px-6 text-xs uppercase shadow-lg shadow-brand-500/20'
+                                             >
+                                                 {loadingLink ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} className='mr-2' />}
+                                                 Send Setup Link
+                                             </Button>
+                                         )}
+                                     </div>
+                                     {linkStatus && (
+                                         <p className={`text-[10px] font-bold mt-3 uppercase tracking-wider ${linkStatus.type === 'success' ? 'text-success-600' : 'text-red-500'}`}>
+                                             {linkStatus.message}
+                                         </p>
+                                     )}
+                                     {!patient.email && !patient.is_registered && (
+                                         <p className='text-[10px] text-red-500 font-bold mt-3 italic'>
+                                             * Email address required to send setup link. Update contact info to proceed.
+                                         </p>
+                                     )}
+                                 </div>
+
                                 <div className='p-6 rounded-2xl bg-red-50 dark:bg-red-500/5 border border-red-100 dark:border-red-500/10'>
-                                    <h4 className='text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
-                                        <ShieldAlert size={14} /> Account Restrictions
-                                    </h4>
-                                    <p className='text-[11px] text-red-700 dark:text-red-400 font-medium leading-relaxed mb-4'>
-                                        Setting a restriction will prevent this patient from booking appointments online.
-                                    </p>
-                                    <Button variant='outline' className='h-11 border-red-200 text-red-600 text-xs font-black uppercase hover:bg-red-50'>Restrict Online Booking</Button>
+                                     <h4 className='text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
+                                         <ShieldAlert size={14} /> Account Restrictions
+                                     </h4>
+                                     <p className='text-[11px] text-red-700 dark:text-red-400 font-medium leading-relaxed mb-4'>
+                                         Setting a restriction will prevent this patient from booking appointments online.
+                                     </p>
+                                     <Button variant='outline' className='h-11 border-red-200 text-red-600 text-xs font-black uppercase hover:bg-red-50'>Restrict Online Booking</Button>
                                 </div>
                              </div>
                         )}

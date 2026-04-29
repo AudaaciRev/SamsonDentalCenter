@@ -398,7 +398,7 @@ export const rejectScheduleRequest = async (requestId, supervisorId, reason) => 
 export const getAllUsers = async () => {
     const { data, error } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, email, role, is_active, created_at')
+        .select('id, full_name, email, role, created_at')
         .order('created_at', { ascending: false });
 
     if (error) throw new AppError(error.message, 500);
@@ -1647,45 +1647,172 @@ export const replaceDentistServices = async (dentistId, serviceIds) => {
 // ═══════════════════════════════════════════════
 
 /**
- * Quick register a patient without authentication.
+ * Quick register a patient without authentication (Stub profile).
  * Used for walk-in patients or emergency appointments.
  *
- * @param {object} patientData - { full_name, email, phone }
+ * @param {object} patientData - { full_name, email, phone, first_name, last_name, middle_name, suffix, date_of_birth }
  * @returns {object} Created patient profile
  */
 export const quickRegisterPatient = async (patientData) => {
-    const { full_name, email, phone } = patientData;
+    const { 
+        full_name, email, phone, 
+        first_name, last_name, middle_name, suffix, 
+        date_of_birth 
+    } = patientData;
 
-    if (!full_name || !phone) {
-        throw { status: 400, message: 'full_name and phone are required.' };
+    if (!full_name && (!first_name || !last_name)) {
+        throw new AppError('Patient name is required.', 400);
     }
 
-    // Check if patient already exists by email or phone
-    const { data: existing } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .or(`email.eq.${email},phone.eq.${phone}`)
-        .maybeSingle();
-
-    if (existing) {
-        throw { status: 409, message: 'A patient with this email or phone already exists.' };
+    // Check if patient already exists by email or phone (if provided)
+    // We use separate queries to avoid complex OR filter issues
+    if (email) {
+        const { data: byEmail, error: emailErr } = await supabaseAdmin.from('profiles').select('id, full_name, is_registered').eq('email', email).maybeSingle();
+        if (emailErr) {
+            console.error('Email check error:', emailErr);
+            throw new AppError('Error checking existing email.', 500);
+        }
+        if (byEmail) {
+            throw new AppError(`A patient with email ${email} already exists.`, 409);
+        }
     }
+
+    if (phone) {
+        const { data: byPhone, error: phoneErr } = await supabaseAdmin.from('profiles').select('id, full_name, is_registered').eq('phone', phone).maybeSingle();
+        if (phoneErr) {
+            console.error('Phone check error:', phoneErr);
+            throw new AppError('Error checking existing phone.', 500);
+        }
+        if (byPhone) {
+            throw new AppError(`A patient with phone ${phone} already exists.`, 409);
+        }
+    }
+
+    const finalFullName = full_name || `${first_name} ${last_name}`.trim();
+    console.log('Final Full Name:', finalFullName);
 
     const { data, error } = await supabaseAdmin
         .from('profiles')
         .insert({
-            full_name,
+            full_name: finalFullName,
+            first_name: first_name || null,
+            last_name: last_name || null,
+            middle_name: middle_name || null,
+            suffix: suffix || null,
+            date_of_birth: date_of_birth || null,
             email: email || null,
-            phone,
+            phone: phone || null,
             role: 'patient',
-            is_active: true,
+            // is_active: true, // Removed temporarily just in case
+            is_registered: false, // Default to false for quick registration
             created_at: new Date().toISOString(),
         })
         .select()
         .single();
 
-    if (error) throw new AppError(error.message, 500);
+    if (error) {
+        console.error('Quick registration insert failed:', error);
+        throw new AppError(error.message, 500);
+    }
     return data;
+};
+
+/**
+ * Check for duplicate patients based on name+DOB, phone, or email.
+ * 
+ * @param {object} criteria - { first_name, last_name, date_of_birth, phone, email }
+ * @returns {Array} List of potential duplicates
+ */
+export const checkDuplicatePatient = async (criteria) => {
+    const { first_name, last_name, date_of_birth, phone, email } = criteria;
+    
+    // We want to find matches for (First Name + Last Name + DOB) OR Phone OR Email
+    const conditions = [];
+    
+    if (first_name && last_name && date_of_birth) {
+        conditions.push(`and(first_name.ilike.${first_name},last_name.ilike.${last_name},date_of_birth.eq.${date_of_birth})`);
+    }
+    
+    if (phone) conditions.push(`phone.eq.${phone}`);
+    if (email) conditions.push(`email.eq.${email}`);
+    
+    if (conditions.length === 0) return [];
+
+    const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name, first_name, last_name, date_of_birth, phone, email, is_registered, role')
+        .eq('role', 'patient')
+        .or(conditions.join(','));
+
+    if (error) throw new AppError(error.message, 500);
+    return data || [];
+};
+
+/**
+ * Merge two patient records (Source -> Target).
+ * Migrates appointments, treatment notes, etc., and deletes source.
+ * 
+ * @param {string} sourceId - Profile UUID of the record to be removed
+ * @param {string} targetId - Profile UUID of the record to be kept
+ * @returns {object} { success: true }
+ */
+export const mergePatientRecords = async (sourceId, targetId) => {
+    if (sourceId === targetId) throw new AppError('Cannot merge a profile into itself.', 400);
+
+    // 1. Verify both exist
+    const { data: source } = await supabaseAdmin.from('profiles').select('id, is_registered').eq('id', sourceId).single();
+    const { data: target } = await supabaseAdmin.from('profiles').select('id, is_registered').eq('id', targetId).single();
+
+    if (!source || !target) throw new AppError('One or both profiles not found.', 404);
+
+    // 2. Perform merge in a transaction-like sequence
+    try {
+        // Update Appointments
+        const { error: apptErr } = await supabaseAdmin
+            .from('appointments')
+            .update({ patient_id: targetId })
+            .eq('patient_id', sourceId);
+        if (apptErr) throw apptErr;
+
+        // Update Treatment Notes
+        const { error: notesErr } = await supabaseAdmin
+            .from('treatment_notes')
+            .update({ patient_id: targetId })
+            .eq('patient_id', sourceId);
+        if (notesErr) throw notesErr;
+
+        // Update Follow-ups
+        const { error: fuErr } = await supabaseAdmin
+            .from('follow_ups')
+            .update({ patient_id: targetId })
+            .eq('patient_id', sourceId);
+        if (fuErr) throw fuErr;
+
+        // Update Waitlist
+        const { error: wlErr } = await supabaseAdmin
+            .from('waitlist')
+            .update({ patient_id: targetId })
+            .eq('patient_id', sourceId);
+        if (wlErr) throw wlErr;
+
+        // Update Notifications
+        const { error: notifErr } = await supabaseAdmin
+            .from('notifications')
+            .update({ user_id: targetId })
+            .eq('user_id', sourceId);
+        if (notifErr) throw notifErr;
+
+        // Delete Source Profile
+        const { error: delErr } = await supabaseAdmin
+            .from('profiles')
+            .delete()
+            .eq('id', sourceId);
+        if (delErr) throw delErr;
+
+        return { success: true };
+    } catch (err) {
+        throw new AppError(`Merge failed: ${err.message}`, 500);
+    }
 };
 
 // ═══════════════════════════════════════════════
@@ -1883,4 +2010,21 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
     if (updateErr) throw new AppError(updateErr.message, 500);
 
     return updated;
+};
+
+/**
+ * Get a single patient profile by ID.
+ * 
+ * @param {string} id - Profile UUID
+ * @returns {object} Profile data
+ */
+export const getPatientProfile = async (id) => {
+    const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) throw new AppError(error.message, 404);
+    return data;
 };

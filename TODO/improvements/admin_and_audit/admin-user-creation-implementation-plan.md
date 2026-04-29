@@ -1,0 +1,94 @@
+# Implementation Plan: Admin User Creation Strategy
+
+This document maps the planned "Admin User Creation Strategy" to the current codebase implementation and outlines the specific changes required to bridge the gap.
+
+## 1. Database Schema Changes (`d:\webApp\BLUEPRINT\BACKEND\FINAL-COMPLETE-SCHEMA.sql`)
+
+### Current State
+- `profiles` table has `id`, `email`, `full_name`, `phone`, `role`.
+- `appointments` table has `patient_id`, `dentist_id`, `service_id`, `guest_email`, `source`, etc.
+- No concept of "Stub" vs "Active" account status.
+- No `booked_by` field on `appointments` to track which staff member booked a walk-in/stub appointment.
+- No `account_setup_tokens` table for the 48-hour expiration logic.
+
+### Required Changes
+1. **[MODIFY] `profiles` Table:**
+   - Add `is_registered BOOLEAN DEFAULT false` (or an `account_status` enum).
+   - Make `email` nullable or provide a default if `is_registered` is false, to support purely stub profiles with no email.
+2. **[MODIFY] `appointments` Table:**
+   - Add `booked_by UUID REFERENCES profiles(id)` to audit which staff member created the appointment for a stub/walk-in.
+3. **[NEW] `account_setup_tokens` Table:**
+   - Create a table to store secure setup tokens: `id`, `profile_id`, `token`, `expires_at`, `used_at`, `created_at`.
+
+---
+
+## 2. API & Backend Services
+
+### Current State
+- `quickRegisterPatient` in `apps\api\src\services\admin.service.js` inserts a `patient` profile but enforces a unique check on email/phone and fails immediately. It does not handle Stubs vs Active.
+- No duplicate detection endpoint (`checkDuplicatePatient` is missing).
+- No auto-linking logic during self-registration in `auth.controller.js` or `auth.service.js`.
+
+### Required Changes
+
+#### [MODIFY] `apps\api\src\services\admin.service.js`
+- **Update `quickRegisterPatient`**:
+  - Support creating a "Stub" profile (`is_registered: false`).
+  - Allow omitting the `email`.
+- **Add `checkDuplicatePatient(firstName, lastName, dob, phone, email)`**:
+  - Implement a loose matching algorithm to flag potential duplicates and return them to the frontend before creation.
+- **Add `mergePatientRecords(sourceId, targetId)`**:
+  - Implement the utility to migrate appointments, notes, and delete the source profile.
+
+#### [MODIFY] `apps\api\src\controllers\admin.controller.js`
+- **Expose `checkDuplicatePatient` endpoint** to the frontend for the pre-creation warning modal.
+- **Expose `mergePatientRecords` endpoint**.
+- **Add `sendAccountSetupLink` endpoint** to generate a token, save it to `account_setup_tokens`, and trigger the setup email. Implement the 15-minute cooldown rate limit using Redis or DB checks.
+
+#### [MODIFY] `apps\api\src\services\auth.service.js` (or `auth.controller.js`)
+- **Implement Interception & Auto-Linking**:
+  - During standard patient registration (after OTP verify), check if the email belongs to a Stub profile (`is_registered: false`).
+  - If a Stub exists, return a specific status code (e.g., `409 Conflict - Verify Identity`) to trigger the "DOB/Phone Gate" on the frontend.
+- **Implement `verifyAndLinkStub` Endpoint**:
+  - Accept `email`, `dob`/`phone`, and attach the new `auth.uid` to the existing Stub record using a strict database transaction. Change `is_registered` to `true`.
+  - Log TOS/Privacy Policy consent during this transaction.
+
+---
+
+## 3. Frontend Implementation (Admin/Secretary & Patient Portal)
+
+### Current State
+- Admin/Secretary portal does not have a "Duplicate Warning Modal".
+- Security tab does not have the "Send Account Setup Link" flow or the "No email on file" validation.
+- Patient portal lacks the "Verify Identity" (DOB Gate) screen.
+
+### Required Changes
+
+#### [MODIFY] `apps/admin` & `apps/secretary`
+1. **Patient Creation Form (`AddPatientModal` or equivalent)**:
+   - Call the new `checkDuplicatePatient` API before submitting.
+   - If duplicates are found, display the "Duplicate Warning Modal" with options: [View Existing Record], [Create Anyway], and [Link as Dependent].
+2. **Patient Dashboard / Security Tab**:
+   - Show "Portal Access: Not Set Up" for Stub profiles.
+   - If no email exists, block the "Send Account Setup Link" button and show a prompt to add an email.
+   - Pre-Save "Email In-Use" Check: Before saving an email to a Stub, verify it doesn't belong to an active account.
+   - Implement the "Resend Setup Link" button with UI feedback for the 15-minute cooldown.
+3. **Merge Records Utility**:
+   - Build a new UI component to select a "Source" patient and a "Target" patient to merge.
+
+#### [MODIFY] `apps/user` (Patient Portal)
+1. **The "DOB Gate" (Account Setup Link Flow)**:
+   - Create a new route `/setup-account/:token`.
+   - Before showing the password creation form, demand the Date of Birth to verify identity against the Stub profile.
+2. **The "Claim Profile" Flow (Self-Registration Interception)**:
+   - Update the signup flow: if the backend responds with `409 Conflict - Verify Identity`, route the user to a verification screen asking for DOB or Phone.
+   - Call `verifyAndLinkStub` upon submission to claim the profile.
+3. **Expired Link Error Page**:
+   - Create a clean error page indicating the 48-hour expiration rule if an invalid/expired token is used.
+
+---
+
+## User Review Required
+
+- **Schema Alteration**: Modifying the `email` column in `profiles` to be nullable (or enforcing it only when `is_registered = true`) is a significant change since Supabase Auth `auth.users` requires an email. Stub users will ONLY exist in the `public.profiles` table and NOT in `auth.users` until they are claimed/activated. Is this the intended architectural separation?
+- **Auto-Linking Security**: The plan uses DOB/Phone as the secondary verification. If a staff member typos both the email AND the phone/DOB, a patient might get permanently locked out of auto-linking and require a manual Admin merge. Do you approve this strict fallback mechanism?

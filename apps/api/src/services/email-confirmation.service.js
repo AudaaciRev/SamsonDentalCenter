@@ -610,3 +610,33 @@ export const sendWaitlistOfferEmail = async (email, name, details) => {
         console.error('Failed to send waitlist offer email:', err.message);
     }
 };
+
+/**
+ * Send an account setup invitation email to a Stub patient.
+ * 
+ * @param {string} email - Patient email
+ * @param {string} name - Patient name
+ * @param {string} setupUrl - The secure link with setup token
+ */
+export const sendAccountSetupInviteEmail = async (email, name, setupUrl) => {
+    try {
+        const html = getTemplate('account-setup-invite.html', {
+            name,
+            setupUrl,
+            expiryHours: 48
+        });
+
+        const result = await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: 'Finish setting up your Samson Dental account',
+            html,
+        });
+        
+        console.log(`📧 Account setup invite sent to ${email}`);
+        return { success: true, result };
+    } catch (err) {
+        console.error('Failed to send account setup invite:', err.message);
+        return { success: false, error: err.message };
+    }
+};

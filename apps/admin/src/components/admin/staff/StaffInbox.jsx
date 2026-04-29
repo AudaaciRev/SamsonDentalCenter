@@ -17,16 +17,24 @@ const StaffInbox = ({
     activeFilter,
     onFilterChange,
     activeTab,
-    onAddClick
+    onAddClick,
+    loading,
+    error
 }) => {
-    // Mock data for skeleton
-    const MOCK_STAFF = [
-        { id: '1', full_name: 'Elena Rodriguez', email: 'elena.r@primeradental.com', role: 'Secretary', phone: '+63 921 123 4567', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena', is_active: true, join_date: 'Oct 2024' },
-        { id: '2', full_name: 'Julian Santiago', email: 'julian.s@primeradental.com', role: 'Staff Admin', phone: '+63 921 765 4321', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Julian', is_active: true, join_date: 'Nov 2024' },
-        { id: '3', full_name: 'Sophia Lim', email: 'sophia.l@primeradental.com', role: 'Receptionist', phone: '+63 921 555 1212', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophia', is_active: false, join_date: 'Jan 2025' },
-    ];
+    // Filter logic
+    const filteredStaff = staffMembers.filter(person => {
+        const matchesSearch = 
+            person.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            person.email?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesFilter = 
+            activeFilter === 'all' || 
+            person.role?.toLowerCase() === activeFilter.toLowerCase();
 
-    const displayStaff = staffMembers.length > 0 ? staffMembers : MOCK_STAFF;
+        return matchesSearch && matchesFilter;
+    });
+
+    const displayStaff = filteredStaff;
 
     return (
         <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden'>
@@ -74,7 +82,17 @@ const StaffInbox = ({
 
             {/* List Area */}
             <div className='grow flex flex-col min-h-120 md:min-h-140 overflow-y-auto no-scrollbar'>
-                {displayStaff.length > 0 ? (
+                {loading ? (
+                    <div className='flex flex-col items-center justify-center py-20 text-center px-4'>
+                        <div className='w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4'></div>
+                        <p className='text-sm text-gray-500'>Loading staff members...</p>
+                    </div>
+                ) : error ? (
+                    <div className='flex flex-col items-center justify-center py-20 text-center px-4 text-red-500'>
+                        <p className='text-sm font-bold'>Error loading staff</p>
+                        <p className='text-xs'>{error}</p>
+                    </div>
+                ) : displayStaff.length > 0 ? (
                     displayStaff.map((person) => (
                         <StaffRow 
                             key={person.id} 

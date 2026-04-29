@@ -1,6 +1,7 @@
 import { supabaseAdmin, supabasePublic } from '../config/supabase.js';
 import { humanizeError } from '../utils/errorMapper.js';
 import * as guestAuthService from '../services/guest-auth.service.js';
+import { mergePatientRecords } from '../services/admin.service.js';
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -37,6 +38,21 @@ export const register = async (req, res, next) => {
 
         // Concat for legacy/metadata support
         const full_name = `${last_name}, ${first_name} ${middle_name || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+
+        // ── NEW: Check for Stub Profile ──
+        const { data: stubProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('id, is_registered')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (stubProfile && !stubProfile.is_registered) {
+            return res.status(409).json({
+                code: 'STUB_PROFILE_EXISTS',
+                message: 'A profile with this email already exists but is not yet registered. Please verify your identity to link your account.',
+                profile_id: stubProfile.id
+            });
+        }
 
         // ── Create user via public client ──
         const { data, error } = await supabasePublic.auth.signUp({
@@ -421,6 +437,192 @@ export const upgradeGuestToUser = async (req, res, next) => {
                 role: 'patient'
             }
         });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/auth/verify-and-link-stub
+ * Body: { email, password, date_of_birth, phone, profile_id }
+ */
+export const verifyAndLinkStub = async (req, res, next) => {
+    try {
+        const { email, password, date_of_birth, phone, profile_id } = req.body;
+
+        if (!email || !password || !profile_id || (!date_of_birth && !phone)) {
+            return res.status(400).json({ error: 'Email, password, profile_id, and verification info are required.' });
+        }
+
+        // 1. Verify identity against stub profile
+        const { data: stub } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', profile_id)
+            .eq('email', email)
+            .eq('is_registered', false)
+            .single();
+
+        if (!stub) return res.status(404).json({ error: 'Stub profile not found or already registered.' });
+
+        const dobMatch = date_of_birth && stub.date_of_birth === date_of_birth;
+        const phoneMatch = phone && stub.phone === phone;
+
+        if (!dobMatch && !phoneMatch) {
+            return res.status(401).json({ error: 'Identity verification failed. Information does not match our records.' });
+        }
+
+        // 2. Create auth user
+        const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+                role: 'patient',
+                full_name: stub.full_name,
+                first_name: stub.first_name,
+                last_name: stub.last_name
+            }
+        });
+
+        if (authErr) {
+            if (authErr.message.includes('already registered')) {
+                return res.status(409).json({ error: 'An account with this email already exists.' });
+            }
+            return res.status(400).json({ error: authErr.message });
+        }
+
+        const newAuthId = authData.user.id;
+
+        // 3. Merge Stub into New Profile
+        await mergePatientRecords(profile_id, newAuthId);
+
+        // 4. Ensure NEW profile is marked as registered
+        await supabaseAdmin.from('profiles').update({ is_registered: true }).eq('id', newAuthId);
+
+        // 5. Sign in
+        const { data: loginData, error: loginErr } = await supabasePublic.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (loginErr) {
+            return res.status(201).json({ 
+                message: 'Account linked successfully! Please log in manually.',
+                user: authData.user
+            });
+        }
+
+        res.cookie('sb-access-token', loginData.session.access_token, COOKIE_OPTIONS);
+        res.cookie('sb-refresh-token', loginData.session.refresh_token, COOKIE_OPTIONS);
+
+        res.status(201).json({
+            message: 'Account linked and logged in successfully.',
+            token: loginData.session.access_token,
+            user: {
+                id: newAuthId,
+                email: authData.user.email,
+                role: 'patient'
+            }
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * GET /api/auth/setup/verify
+ * Public endpoint to check if a setup token is valid.
+ */
+export const verifySetupToken = async (req, res, next) => {
+    try {
+        const { token } = req.query;
+        if (!token) return res.status(400).json({ error: 'Token is required.' });
+
+        const { data: tokenData, error: tokenErr } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .select('*, profiles(id, full_name, email, phone, date_of_birth)')
+            .eq('token', token)
+            .single();
+
+        if (tokenErr || !tokenData) {
+            return res.status(404).json({ error: 'Invalid or expired setup link.' });
+        }
+
+        if (new Date(tokenData.expires_at) < new Date()) {
+            return res.status(410).json({ error: 'Setup link has expired.' });
+        }
+
+        res.json({
+            profile: {
+                id: tokenData.profiles.id,
+                full_name: tokenData.profiles.full_name,
+                email: tokenData.profiles.email,
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/auth/setup/complete
+ * Verify identity and set password.
+ */
+export const completeSetup = async (req, res, next) => {
+    try {
+        const { token, password, date_of_birth, phone } = req.body;
+
+        if (!token || !password || (!date_of_birth && !phone)) {
+            return res.status(400).json({ error: 'Token, password, and identity verification are required.' });
+        }
+
+        // 1. Verify token
+        const { data: tokenData, error: tokenErr } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .select('*, profiles(*)')
+            .eq('token', token)
+            .single();
+
+        if (tokenErr || !tokenData || new Date(tokenData.expires_at) < new Date()) {
+            return res.status(401).json({ error: 'Invalid or expired setup link.' });
+        }
+
+        const profile = tokenData.profiles;
+
+        // 2. Identity Gate
+        const dobMatch = date_of_birth && profile.date_of_birth === date_of_birth;
+        const phoneMatch = phone && profile.phone === phone;
+
+        if (!dobMatch && !phoneMatch) {
+            return res.status(401).json({ error: 'Identity verification failed.' });
+        }
+
+        // 3. Create Auth User
+        const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+            email: profile.email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+                role: 'patient',
+                full_name: profile.full_name,
+                first_name: profile.first_name,
+                last_name: profile.last_name
+            }
+        });
+
+        if (authErr) throw authErr;
+
+        // 4. Link & Merge
+        await mergePatientRecords(profile.id, authData.user.id);
+        await supabaseAdmin.from('profiles').update({ is_registered: true }).eq('id', authData.user.id);
+
+        // 5. Cleanup Token
+        await supabaseAdmin.from('account_setup_tokens').delete().eq('id', tokenData.id);
+
+        res.json({ message: 'Account set up successfully!' });
 
     } catch (err) {
         next(err);

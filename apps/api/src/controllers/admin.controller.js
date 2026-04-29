@@ -1,9 +1,10 @@
+import crypto from 'crypto';
 import { supabaseAdmin } from '../config/supabase.js';
 import { markNoShow } from '../services/noshow.service.js';
 import { notifyWaitlist } from '../services/waitlist.service.js';
 import { bookWalkIn } from '../services/appointment.service.js';
 import { APPOINTMENT_STATUS } from '../utils/constants.js';
-import { sendBookingSuccessEmail, sendCancellationEmail } from '../services/email-confirmation.service.js';
+import { sendBookingSuccessEmail, sendCancellationEmail, sendAccountSetupInviteEmail } from '../services/email-confirmation.service.js';
 import {
     getPendingRequests,
     approveRequest,
@@ -51,9 +52,12 @@ import {
     deactivateUser,
     getSystemHealth,
     quickRegisterPatient,
+    checkDuplicatePatient,
+    mergePatientRecords,
     getAvailableDentistsForSlot,
     reassignAppointmentToDentist,
     onboardDentistProfile,
+    getPatientProfile,
 } from '../services/admin.service.js';
 import {
     sendApprovalNotice,
@@ -977,6 +981,97 @@ export const quickRegisterPatientHandler = async (req, res, next) => {
             patient,
         });
     } catch (err) {
+        // If it's a custom error from the service
+        if (err.status) {
+            return res.status(err.status).json({ error: err.message });
+        }
+        next(err);
+    }
+};
+
+/**
+ * GET /api/admin/patients/check-duplicates
+ * Query: ?first_name=xxx&last_name=yyy&date_of_birth=zzz&phone=aaa&email=bbb
+ */
+export const checkDuplicatesHandler = async (req, res, next) => {
+    try {
+        const duplicates = await checkDuplicatePatient(req.query);
+        res.json({ duplicates, count: duplicates.length });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/admin/patients/merge
+ * Body: { source_id, target_id }
+ */
+export const mergePatientsHandler = async (req, res, next) => {
+    try {
+        const { source_id, target_id } = req.body;
+        if (!source_id || !target_id) {
+            return res.status(400).json({ error: 'source_id and target_id are required.' });
+        }
+        const result = await mergePatientRecords(source_id, target_id);
+        res.json({ message: 'Patients merged successfully.', result });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/admin/patients/:id/send-setup-link
+ */
+export const sendSetupLinkHandler = async (req, res, next) => {
+    try {
+        const profile_id = req.params.id;
+        
+        // 1. Verify profile exists and has email
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('email, full_name, is_registered')
+            .eq('id', profile_id)
+            .single();
+            
+        if (!profile) return res.status(404).json({ error: 'Patient not found.' });
+        if (!profile.email) return res.status(400).json({ error: 'Patient has no email address.' });
+        if (profile.is_registered) return res.status(400).json({ error: 'Patient is already registered.' });
+
+        // 2. Cooldown check (15 mins)
+        const { data: recentToken } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .select('created_at')
+            .eq('profile_id', profile_id)
+            .gte('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
+            .maybeSingle();
+
+        if (recentToken) {
+            return res.status(429).json({ 
+                error: 'Cooldown active. Please wait 15 minutes before resending.',
+                retry_after: new Date(new Date(recentToken.created_at).getTime() + 15 * 60 * 1000)
+            });
+        }
+
+        // 3. Generate token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+        const { error: tokenErr } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .insert({
+                profile_id,
+                token,
+                expires_at
+            });
+
+        if (tokenErr) throw tokenErr;
+
+        // 4. Trigger Email
+        const setupUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/setup-account?token=${token}`;
+        await sendAccountSetupInviteEmail(profile.email, profile.full_name, setupUrl);
+
+        res.json({ message: 'Account setup link sent successfully.', expires_at });
+    } catch (err) {
         next(err);
     }
 };
@@ -1395,6 +1490,18 @@ export const onboardDoctor = async (req, res, next) => {
             user: result.user, 
             message_detail: result.message
         });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * GET /api/admin/patients/:id
+ */
+export const getPatientHandler = async (req, res, next) => {
+    try {
+        const patient = await getPatientProfile(req.params.id);
+        res.json(patient);
     } catch (err) {
         next(err);
     }

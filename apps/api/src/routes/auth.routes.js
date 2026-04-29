@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, logout, getProfile, updateProfile, setPassword, sendGuestOTP, verifyGuestOTP, upgradeGuestToUser } from '../controllers/auth.controller.js';
+import { register, login, logout, getProfile, updateProfile, setPassword, sendGuestOTP, verifyGuestOTP, upgradeGuestToUser, verifyAndLinkStub, verifySetupToken, completeSetup } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -8,6 +8,9 @@ const router = Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/set-password', setPassword);
+router.post('/verify-and-link-stub', verifyAndLinkStub);
+router.get('/setup/verify', verifySetupToken); // NEW
+router.post('/setup/complete', completeSetup); // NEW
 
 // Guest OTP routes
 router.post('/guest/send-otp', sendGuestOTP);

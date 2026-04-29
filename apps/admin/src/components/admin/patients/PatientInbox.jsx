@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, UserPlus, Users } from 'lucide-react';
+import { Search, UserPlus, Users, GitMerge } from 'lucide-react';
 import PatientRow from './PatientRow';
 
 const FILTERS = [
@@ -17,16 +17,23 @@ const PatientInbox = ({
     activeFilter,
     onFilterChange,
     activeTab,
-    onAddClick
+    onAddClick,
+    onMergeClick,
+    loading,
+    error
 }) => {
-    // Mock data for skeleton
-    const MOCK_PATIENTS = [
-        { id: '1', full_name: 'Maria Santos', email: 'maria.santos@email.com', phone: '+63 917 123 4567', last_visit: 'Apr 12, 2026', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maria', status: 'Regular', balance: '₱ 0.00' },
-        { id: '2', full_name: 'Juan Dela Cruz', email: 'juan.dc@email.com', phone: '+63 918 765 4321', last_visit: 'Mar 28, 2026', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Juan', status: 'New', balance: '₱ 1,200.00' },
-        { id: '3', full_name: 'Isabella Garcia', email: 'isabella.g@email.com', phone: '+63 919 555 0000', last_visit: 'Feb 15, 2026', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Isabella', status: 'Restricted', balance: '₱ 0.00' },
-    ];
+    // Filter logic (Note: Search is already done in backend for this component)
+    const filteredPatients = patients.filter(patient => {
+        const matchesFilter = 
+            activeFilter === 'all' || 
+            (activeFilter === 'restricted' && patient.is_booking_restricted) ||
+            (activeFilter === 'regular' && patient.no_show_count < 3) ||
+            (activeFilter === 'new' && new Date(patient.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
 
-    const displayPatients = patients.length > 0 ? patients : MOCK_PATIENTS;
+        return matchesFilter;
+    });
+
+    const displayPatients = filteredPatients;
 
     return (
         <div className='flex-grow flex flex-col h-full bg-white dark:bg-white/[0.03] sm:rounded-xl border-t sm:border border-gray-100 dark:border-gray-800 overflow-hidden'>
@@ -45,13 +52,22 @@ const PatientInbox = ({
                             onChange={(e) => onSearchChange(e.target.value)}
                         />
                     </div>
-                    <button 
-                        onClick={onAddClick}
-                        className='hidden sm:flex items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-lg text-xs font-bold hover:bg-brand-600 transition-all active:scale-95 shrink-0'
-                    >
-                        <UserPlus size={16} />
-                        <span>Register Patient</span>
-                    </button>
+                    <div className='flex items-center gap-2'>
+                        <button 
+                            onClick={onMergeClick}
+                            className='hidden sm:flex items-center gap-2 px-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-all active:scale-95 shrink-0'
+                        >
+                            <GitMerge size={16} />
+                            <span>Merge Records</span>
+                        </button>
+                        <button 
+                            onClick={onAddClick}
+                            className='hidden sm:flex items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-lg text-xs font-bold hover:bg-brand-600 transition-all active:scale-95 shrink-0 shadow-lg shadow-brand-500/20'
+                        >
+                            <UserPlus size={16} />
+                            <span>Register Patient</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -74,7 +90,17 @@ const PatientInbox = ({
 
             {/* List Area */}
             <div className='grow flex flex-col min-h-120 md:min-h-140 overflow-y-auto no-scrollbar'>
-                {displayPatients.length > 0 ? (
+                {loading ? (
+                    <div className='flex flex-col items-center justify-center py-20 text-center px-4'>
+                        <div className='w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4'></div>
+                        <p className='text-sm text-gray-500'>Loading patients...</p>
+                    </div>
+                ) : error ? (
+                    <div className='flex flex-col items-center justify-center py-20 text-center px-4 text-red-500'>
+                        <p className='text-sm font-bold'>Error loading patients</p>
+                        <p className='text-xs'>{error}</p>
+                    </div>
+                ) : displayPatients.length > 0 ? (
                     displayPatients.map((patient) => (
                         <PatientRow 
                             key={patient.id} 
