@@ -29,8 +29,15 @@ walk-in scenarios.
 
 ### The "Stub" Profile Workflow:
 
-1. **Creation:** Admin creates a patient record with only Name, Phone Number, and optionally Date of
-   Birth. Email is omitted.
+1.  **Creation:** Staff creates a "Stub" profile (clinical record only) for walk-ins.
+2.  **Similarity Intercept (The Guard Dog):**
+    *   **Triangulation Check:** As fields are filled, the system checks for exact matches on Phone/Email AND fuzzy matches on Name/DOB to catch typos (e.g., "Jon" vs "Jonathan").
+    *   **The Intercept:** If a match is found, a "Potential Existing Record" modal displays the masked phone and DOB for staff verification.
+3.  **Email Policy (Family-First Rule):**
+    *   **Standalone Profiles:** Must have a unique email.
+    *   **Duplicate Detection:** If an entered email exists, "Create Anyway" is **disabled**. Staff must either link as a **Dependent** or use a different email.
+4.  **Late-Binding & The "DOB Gate":**
+    *   When a patient clicks an account setup link, they must pass a **"DOB Gate"** (entering their birthday to verify identity) before they can set a password. This prevents data leaks if the email was sent to the wrong person.
     - **Note in UI:** In the admin panel, refer to these as "Unregistered Patient" or "Portal
       Access: Not Set Up" instead of "Stub" to ensure clean, professional language for non-technical
       staff.

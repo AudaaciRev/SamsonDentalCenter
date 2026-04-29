@@ -59,11 +59,16 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, token }) => {
         }
     };
 
-    const handleCreatePatient = async () => {
+    const handleCreatePatient = async (primaryProfileId = null) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await api.post('/admin/walk-in/quick', formData, token);
+            const data = { ...formData };
+            if (primaryProfileId) {
+                data.primary_profile_id = primaryProfileId;
+                data.email = null; // Rule 2: Don't attach email string to dependent row
+            }
+            const response = await api.post('/admin/walk-in/quick', data, token);
             setCreatedPatient(response.patient);
             setStep('success');
             if (onPatientAdded) onPatientAdded(response.patient);
@@ -268,18 +273,43 @@ const AddPatientModal = ({ isOpen, onClose, onPatientAdded, token }) => {
                                     Go Back & Edit
                                 </button>
                                 <button 
-                                    onClick={handleCreatePatient}
-                                    disabled={loading}
-                                    className="py-3.5 bg-brand-500 text-white rounded-xl font-bold text-sm hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+                                    onClick={() => handleCreatePatient()}
+                                    disabled={loading || duplicates.some(d => d.email?.toLowerCase() === formData.email?.toLowerCase())}
+                                    className={`py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
+                                        duplicates.some(d => d.email?.toLowerCase() === formData.email?.toLowerCase())
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                                            : 'bg-brand-500 text-white hover:bg-brand-600 shadow-brand-500/20'
+                                    }`}
                                 >
                                     {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
                                     <span>Create Anyway</span>
                                 </button>
                             </div>
                             
-                            <div className="text-center">
-                                <button className="text-xs font-bold text-brand-500 hover:underline">Link as Dependent to Existing Account?</button>
-                            </div>
+                            {/* Specialized Dependent Linking Option */}
+                            {duplicates.some(d => d.email?.toLowerCase() === formData.email?.toLowerCase()) && (
+                                <div className="mt-4 p-4 bg-brand-50 dark:bg-brand-500/10 rounded-2xl border border-brand-100 dark:border-brand-500/20 text-center">
+                                    <div className="flex justify-center mb-3 text-brand-500">
+                                        <Users size={32} />
+                                    </div>
+                                    <h5 className="text-sm font-bold text-brand-900 dark:text-brand-100 mb-1">Email Already in Use</h5>
+                                    <p className="text-xs text-brand-700 dark:text-brand-300 font-medium mb-4 px-2">
+                                        The email <span className="font-bold underline">{formData.email}</span> is already associated with <strong>{duplicates.find(d => d.email?.toLowerCase() === formData.email?.toLowerCase())?.full_name}</strong>.
+                                        <br/><br/>
+                                        You cannot create a separate account. Do you want to add this patient as a <strong>dependent</strong>?
+                                    </p>
+                                    <button 
+                                        onClick={() => {
+                                            const primary = duplicates.find(d => d.email?.toLowerCase() === formData.email?.toLowerCase());
+                                            handleCreatePatient(primary?.id);
+                                        }}
+                                        className="w-full py-3 bg-brand-500 text-white rounded-xl font-bold text-sm hover:bg-brand-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
+                                    >
+                                        <Users size={18} />
+                                        <span>Yes, Link as Dependent</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 

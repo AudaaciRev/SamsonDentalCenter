@@ -618,11 +618,21 @@ export const getPatientAppointments = async (
     page = 1,
     limit = 10,
 ) => {
+    // 1. Get all profile IDs in this family (Self + Dependents)
+    const { data: familyProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .or(`id.eq.${patientId},primary_profile_id.eq.${patientId}`);
+    
+    const familyIds = (familyProfiles || []).map(p => p.id);
+    if (familyIds.length === 0) familyIds.push(patientId); // Fallback
+
     let query = supabaseAdmin
         .from('appointments')
         .select(
             `
       *,
+      patient:profiles!patient_id(full_name, first_name, last_name, relationship, primary_profile_id),
       service:services(name, duration_minutes, price),
       dentist:dentists(
         profile:profiles(full_name, first_name, last_name, middle_name, suffix)
@@ -630,7 +640,7 @@ export const getPatientAppointments = async (
     `,
             { count: 'exact' },
         )
-        .eq('patient_id', patientId);
+        .in('patient_id', familyIds);
 
     // 🌏 Philippine Time (UTC+8) — Use PH timezone for all date comparisons
     const today = getTodayPH();
@@ -689,7 +699,9 @@ export const getPatientAppointments = async (
         service: appt.service?.name,
         price: appt.service?.price,
         dentist: appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'TBD'),
-        booked_for_name: appt.booked_for_name,
+        booked_for_name: appt.booked_for_name || appt.patient?.full_name,
+        patient_name: appt.patient?.full_name,
+        relationship: appt.patient?.relationship || (appt.patient?.primary_profile_id ? 'Dependent' : 'Self'),
         is_walk_in: appt.is_walk_in,
         notes: appt.notes,
         created_at: appt.created_at,
@@ -707,13 +719,22 @@ export const getPatientAppointments = async (
 export const getPatientAppointmentStats = async (patientId) => {
     const today = getTodayPH();
 
+    // 1. Get all profile IDs in this family
+    const { data: familyProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .or(`id.eq.${patientId},primary_profile_id.eq.${patientId}`);
+    
+    const familyIds = (familyProfiles || []).map(p => p.id);
+    if (familyIds.length === 0) familyIds.push(patientId);
+
     // Run summary counts in parallel for performance
     const [upcoming, pending, rejected, completed] = await Promise.all([
         // Upcoming: Confirmed or explicitly approved and future
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
             .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED})`)
             .gte('appointment_date', today),
@@ -722,7 +743,7 @@ export const getPatientAppointmentStats = async (patientId) => {
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('status', APPOINTMENT_STATUS.PENDING)
             .gte('appointment_date', today),
             
@@ -730,14 +751,14 @@ export const getPatientAppointmentStats = async (patientId) => {
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('approval_status', APPROVAL_STATUS.REJECTED),
             
         // Completed: status is completed
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('status', APPOINTMENT_STATUS.COMPLETED)
     ]);
 

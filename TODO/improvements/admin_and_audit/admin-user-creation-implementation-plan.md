@@ -65,30 +65,31 @@ This document maps the planned "Admin User Creation Strategy" to the current cod
 ### Required Changes
 
 #### [MODIFY] `apps/admin` & `apps/secretary`
-1. **Patient Creation Form (`AddPatientModal` or equivalent)**:
-   - Call the new `checkDuplicatePatient` API before submitting.
-   - If duplicates are found, display the "Duplicate Warning Modal" with options: [View Existing Record], [Create Anyway], and [Link as Dependent].
-2. **Patient Dashboard / Security Tab**:
-   - Show "Portal Access: Not Set Up" for Stub profiles.
-   - If no email exists, block the "Send Account Setup Link" button and show a prompt to add an email.
-   - Pre-Save "Email In-Use" Check: Before saving an email to a Stub, verify it doesn't belong to an active account.
-   - Implement the "Resend Setup Link" button with UI feedback for the 15-minute cooldown.
-3. **Merge Records Utility**:
-   - Build a new UI component to select a "Source" patient and a "Target" patient to merge.
+1. **Patient Creation Form (`AddPatientModal`)**:
+   - **Similarity Intercept**: Trigger the `checkDuplicatePatient` API on blur or typing delay.
+   - **Triangulation Match**: Return exact matches (Phone/Email) and fuzzy matches (Name/DOB).
+   - **Potential Match Modal**: Display DOB and masked Phone Number for staff verification.
+   - **Strict Blocking**: If email matches an existing account, **DISABLE** "Create Anyway". Force **[Link as Dependent]**.
+2. **Merge Records Utility**:
+   - Build UI to select "Source" (duplicate) and "Target" (master).
+   - Backend logic: Migrate appointments, notes, and family links, then archive the source.
 
 #### [MODIFY] `apps/user` (Patient Portal)
-1. **The "DOB Gate" (Account Setup Link Flow)**:
-   - Create a new route `/setup-account/:token`.
-   - Before showing the password creation form, demand the Date of Birth to verify identity against the Stub profile.
-2. **The "Claim Profile" Flow (Self-Registration Interception)**:
-   - Update the signup flow: if the backend responds with `409 Conflict - Verify Identity`, route the user to a verification screen asking for DOB or Phone.
-   - Call `verifyAndLinkStub` upon submission to claim the profile.
-3. **Expired Link Error Page**:
-   - Create a clean error page indicating the 48-hour expiration rule if an invalid/expired token is used.
+1. **The "DOB Gate" Security**:
+   - In `/setup-account/:token`, demand the Date of Birth as the first step.
+   - Block password creation if DOB does not match the Stub record.
+2. **Auto-Link Transaction**:
+   - Wrap `verifyAndLinkStub` in a DB transaction with TOS/Privacy consent logging.
 
 ---
 
-## User Review Required
+## Technical Action Items
 
-- **Schema Alteration**: Modifying the `email` column in `profiles` to be nullable (or enforcing it only when `is_registered = true`) is a significant change since Supabase Auth `auth.users` requires an email. Stub users will ONLY exist in the `public.profiles` table and NOT in `auth.users` until they are claimed/activated. Is this the intended architectural separation?
-- **Auto-Linking Security**: The plan uses DOB/Phone as the secondary verification. If a staff member typos both the email AND the phone/DOB, a patient might get permanently locked out of auto-linking and require a manual Admin merge. Do you approve this strict fallback mechanism?
+- [x] Update `profiles` schema with `is_registered`, `primary_profile_id`, and `is_active`.
+- [ ] Implement fuzzy search for `checkDuplicatePatient` (Name/DOB/Phone).
+- [ ] Update `AddPatientModal` UI with the Potential Match Modal and masked data.
+- [ ] Implement the 48-hour expiration logic and single-use invalidation for setup tokens.
+- [ ] Implement 15-minute cooldown rate limit on "Resend Setup Link".
+- [ ] Build the "Merge Records" backend logic and frontend utility.
+- [ ] Implement the "DOB Gate" verification step in the Patient Portal setup flow.
+- [ ] Wrap self-registration auto-linking in a secure database transaction.

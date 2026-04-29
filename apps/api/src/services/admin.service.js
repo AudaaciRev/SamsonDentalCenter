@@ -1691,24 +1691,24 @@ export const quickRegisterPatient = async (patientData) => {
     const finalFullName = full_name || `${first_name} ${last_name}`.trim();
     console.log('Final Full Name:', finalFullName);
 
-    const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-            full_name: finalFullName,
-            first_name: first_name || null,
-            last_name: last_name || null,
-            middle_name: middle_name || null,
-            suffix: suffix || null,
-            date_of_birth: date_of_birth || null,
-            email: email || null,
-            phone: phone || null,
-            role: 'patient',
-            // is_active: true, // Removed temporarily just in case
-            is_registered: false, // Default to false for quick registration
-            created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        const { data, error } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+                full_name: finalFullName,
+                first_name: first_name || null,
+                last_name: last_name || null,
+                middle_name: middle_name || null,
+                suffix: suffix || null,
+                date_of_birth: date_of_birth || null,
+                email: email || null,
+                phone: phone || null,
+                role: 'patient',
+                primary_profile_id: patientData.primary_profile_id || null,
+                is_registered: false,
+                created_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
 
     if (error) {
         console.error('Quick registration insert failed:', error);
@@ -1725,27 +1725,58 @@ export const quickRegisterPatient = async (patientData) => {
  */
 export const checkDuplicatePatient = async (criteria) => {
     const { first_name, last_name, date_of_birth, phone, email } = criteria;
-    
-    // We want to find matches for (First Name + Last Name + DOB) OR Phone OR Email
     const conditions = [];
     
-    if (first_name && last_name && date_of_birth) {
-        conditions.push(`and(first_name.ilike.${first_name},last_name.ilike.${last_name},date_of_birth.eq.${date_of_birth})`);
+    // 1. Exact matches for Email or Phone
+    if (email) conditions.push(`email.ilike.${email}`);
+    
+    // Sanitize phone (extract digits) to catch format differences
+    if (phone) {
+        const cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.length >= 7) {
+            conditions.push(`phone.ilike.%${cleanPhone}%`);
+        } else {
+            conditions.push(`phone.eq.${phone}`);
+        }
     }
     
-    if (phone) conditions.push(`phone.eq.${phone}`);
-    if (email) conditions.push(`email.eq.${email}`);
+    // 2. Name Triangulation: First + Last Name (Fuzzy matching)
+    if (first_name && last_name) {
+        conditions.push(`and(first_name.ilike.%${first_name}%,last_name.ilike.%${last_name}%)`);
+    }
     
     if (conditions.length === 0) return [];
 
-    const { data, error } = await supabaseAdmin
+    const { data: duplicates, error } = await supabaseAdmin
         .from('profiles')
         .select('id, full_name, first_name, last_name, date_of_birth, phone, email, is_registered, role')
-        .eq('role', 'patient')
         .or(conditions.join(','));
 
     if (error) throw new AppError(error.message, 500);
-    return data || [];
+
+    // Filter results to ensure high relevance (Rule: Email match OR Phone match OR Name+DOB match)
+    const filtered = (duplicates || []).filter(d => {
+        // Email is absolute
+        if (email && d.email?.toLowerCase() === email.toLowerCase()) return true;
+        
+        // Phone digits are absolute
+        if (phone && d.phone?.replace(/\D/g, '') === phone.replace(/\D/g, '')) return true;
+
+        // Name + DOB match is absolute
+        if (first_name && last_name && date_of_birth) {
+            const nameMatch = d.first_name?.toLowerCase().includes(first_name.toLowerCase()) || 
+                             d.last_name?.toLowerCase().includes(last_name.toLowerCase());
+            const dobMatch = d.date_of_birth === date_of_birth;
+            if (nameMatch && dobMatch) return true;
+        }
+
+        // Just Name match (if no other data available)
+        if (!email && !phone && !date_of_birth && first_name && last_name) return true;
+
+        return false;
+    });
+
+    return filtered;
 };
 
 /**
@@ -1756,7 +1787,7 @@ export const checkDuplicatePatient = async (criteria) => {
  * @param {string} targetId - Profile UUID of the record to be kept
  * @returns {object} { success: true }
  */
-export const mergePatientRecords = async (sourceId, targetId) => {
+export const mergePatientRecords = async (sourceId, targetId, asDependent = false) => {
     if (sourceId === targetId) throw new AppError('Cannot merge a profile into itself.', 400);
 
     // 1. Verify both exist
@@ -1765,53 +1796,47 @@ export const mergePatientRecords = async (sourceId, targetId) => {
 
     if (!source || !target) throw new AppError('One or both profiles not found.', 404);
 
-    // 2. Perform merge in a transaction-like sequence
+    // 2. Perform merge or link
     try {
-        // Update Appointments
-        const { error: apptErr } = await supabaseAdmin
-            .from('appointments')
-            .update({ patient_id: targetId })
-            .eq('patient_id', sourceId);
-        if (apptErr) throw apptErr;
+        // Migrating all related data to the target
+        const tables = [
+            { name: 'appointments', column: 'patient_id' },
+            { name: 'treatment_notes', column: 'patient_id' },
+            { name: 'follow_ups', column: 'patient_id' },
+            { name: 'waitlist', column: 'patient_id' },
+            { name: 'notifications', column: 'user_id' }
+        ];
 
-        // Update Treatment Notes
-        const { error: notesErr } = await supabaseAdmin
-            .from('treatment_notes')
-            .update({ patient_id: targetId })
-            .eq('patient_id', sourceId);
-        if (notesErr) throw notesErr;
+        for (const table of tables) {
+            const { error } = await supabaseAdmin
+                .from(table.name)
+                .update({ [table.column]: targetId })
+                .eq(table.column, sourceId);
+            if (error) console.warn(`Note: Failed to migrate ${table.name}: ${error.message}`);
+        }
 
-        // Update Follow-ups
-        const { error: fuErr } = await supabaseAdmin
-            .from('follow_ups')
-            .update({ patient_id: targetId })
-            .eq('patient_id', sourceId);
-        if (fuErr) throw fuErr;
-
-        // Update Waitlist
-        const { error: wlErr } = await supabaseAdmin
-            .from('waitlist')
-            .update({ patient_id: targetId })
-            .eq('patient_id', sourceId);
-        if (wlErr) throw wlErr;
-
-        // Update Notifications
-        const { error: notifErr } = await supabaseAdmin
-            .from('notifications')
-            .update({ user_id: targetId })
-            .eq('user_id', sourceId);
-        if (notifErr) throw notifErr;
-
-        // Delete Source Profile
-        const { error: delErr } = await supabaseAdmin
-            .from('profiles')
-            .delete()
-            .eq('id', sourceId);
-        if (delErr) throw delErr;
+        if (asDependent) {
+            // Link as dependent instead of deleting
+            const { error: linkErr } = await supabaseAdmin
+                .from('profiles')
+                .update({ 
+                    primary_profile_id: targetId,
+                    email: null // Clear email to allow the parent's email to be the primary contact
+                })
+                .eq('id', sourceId);
+            if (linkErr) throw linkErr;
+        } else {
+            // Full Merge: Delete source
+            const { error: delErr } = await supabaseAdmin
+                .from('profiles')
+                .delete()
+                .eq('id', sourceId);
+            if (delErr) throw delErr;
+        }
 
         return { success: true };
     } catch (err) {
-        throw new AppError(`Merge failed: ${err.message}`, 500);
+        throw new AppError(`Action failed: ${err.message}`, 500);
     }
 };
 
