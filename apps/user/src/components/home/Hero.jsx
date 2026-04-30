@@ -202,16 +202,16 @@ const Hero = () => {
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Right Side Doctor Image - Transparent background */}
-                <div className='hidden lg:flex w-[45%] absolute bottom-0 right-0 xl:right-[5%] h-[90%] z-10 hero-anim pointer-events-none items-end justify-center'>
-                    {/* Doctor Image */}
-                    <img
-                        src='https://pngimg.com/uploads/doctor/doctor_PNG15988.png'
-                        alt='Professional Dentist'
-                        className='w-auto h-[95%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative z-10'
-                    />
-                </div>
+            {/* Right Side Doctor Image - Transparent background - Moved outside contentRef to remove parallax */}
+            <div className='hidden lg:flex w-[45%] absolute bottom-0 right-0 xl:right-[5%] h-[90%] z-10 hero-anim pointer-events-none items-end justify-center'>
+                {/* Doctor Image */}
+                <img
+                    src='https://pngimg.com/uploads/doctor/doctor_PNG15988.png'
+                    alt='Professional Dentist'
+                    className='w-auto h-[95%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative z-10'
+                />
             </div>
 
             {/* Wave Divider at bottom */}
