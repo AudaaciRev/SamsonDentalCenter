@@ -110,8 +110,8 @@ const Hero = () => {
                     alt='Dental Office'
                     className='w-full h-full object-cover object-center'
                 />
-                <div className='absolute inset-0 bg-black/40' />
-                <div className='absolute inset-0 bg-linear-to-r from-slate-900/70 via-slate-900/40 to-transparent' />
+                <div className='absolute inset-0 bg-black/20 backdrop-blur-[1px]' />
+                <div className='absolute inset-0 bg-linear-to-r from-slate-900/40 via-slate-900/10 to-transparent' />
             </div>
 
             <div
