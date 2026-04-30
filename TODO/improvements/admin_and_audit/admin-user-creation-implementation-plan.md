@@ -34,7 +34,10 @@ This document maps the planned "Admin User Creation Strategy" to the current cod
 #### [MODIFY] `apps\api\src\services\admin.service.js`
 - **Update `quickRegisterPatient`**:
   - Support creating a "Stub" profile (`is_registered: false`).
-  - Allow omitting the `email`.
+  - **Email Conflict Handling**: If an email is provided that already exists in the `profiles` table, the service must not throw a generic error. It should return a `CONFLICT_RESOLUTION_REQUIRED` payload containing the existing profile's name and registration status.
+  - **Conditional Processing**:
+    - If `resolution: 'LINK_DEPENDENT'`: Create the new record in `patient_profiles` (or as a dependent) linked to the existing `profile_id`.
+    - If `resolution: 'FORCE_STUB'`: Create a new standalone record in `profiles` but **nullify the email field** to prevent unique constraint violations while allowing the registration to proceed.
 - **Add `checkDuplicatePatient(firstName, lastName, dob, phone, email)`**:
   - Implement a loose matching algorithm to flag potential duplicates and return them to the frontend before creation.
 - **Add `mergePatientRecords(sourceId, targetId)`**:
@@ -68,6 +71,10 @@ This document maps the planned "Admin User Creation Strategy" to the current cod
 1. **Patient Creation Form (`AddPatientModal`)**:
    - **Similarity Intercept**: Trigger the `checkDuplicatePatient` API on blur or typing delay.
    - **Triangulation Match**: Return exact matches (Phone/Email) and fuzzy matches (Name/DOB).
+   - **The Three-Way Resolution Modal**: Implement a specialized conflict UI when the backend flags an existing email.
+     - **Option A: "Link as Dependent"**: Automatically sends the `parentId` to the backend to create a linked family record.
+     - **Option B: "Continue without Email"**: Re-submits the form to the backend with the email field stripped, creating a "Pure Stub" for the patient.
+     - **Option C: "Go Back/Edit"**: Closes the resolution view and focuses the Email input field so the staff can fix a typo or enter a different address.
    - **Potential Match Modal**: Display DOB and masked Phone Number for staff verification.
    - **Strict Blocking**: If email matches an existing account, **DISABLE** "Create Anyway". Force **[Link as Dependent]**.
 2. **Merge Records Utility**:

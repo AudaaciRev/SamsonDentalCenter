@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronRight, Calendar, User, Phone, Mail, ShieldAlert, CreditCard } from 'lucide-react';
 
 const PatientRow = ({ patient, onClick, activeTab }) => {
-    const { full_name, email, phone, last_visit, status, avatar_url, balance } = patient;
+    const { full_name, email, phone, last_visit, status, avatar_url, balance, is_registered, is_booking_restricted } = patient;
 
     const renderColumnContent = (isMobile = false) => {
         if (activeTab === 'financial') {
@@ -18,7 +18,7 @@ const PatientRow = ({ patient, onClick, activeTab }) => {
             return (
                 <div className={`flex items-center gap-1.5 font-bold text-gray-700 dark:text-gray-300 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                     <Calendar size={isMobile ? 12 : 14} className="text-brand-500"/>
-                    Last: {last_visit}
+                    Last: {last_visit || 'No visits'}
                 </div>
             );
         }
@@ -46,12 +46,14 @@ const PatientRow = ({ patient, onClick, activeTab }) => {
     return (
         <div
             onClick={onClick}
-            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:z-10 bg-white dark:bg-white/[0.02]`}
+            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:z-10 ${
+                is_booking_restricted ? 'bg-red-50/30 dark:bg-red-500/5' : 'bg-white dark:bg-white/[0.02]'
+            }`}
         >
             {/* Desktop View */}
             <div className='hidden sm:flex items-center gap-4 w-full'>
                 <div className='flex items-center gap-3 shrink-0 relative'>
-                     <span className={`w-2.5 h-2.5 rounded-full ${status === 'Regular' ? 'bg-success-500' : 'bg-amber-400'}`} title={status} />
+                     <span className={`w-2.5 h-2.5 rounded-full ${is_booking_restricted ? 'bg-red-500' : is_registered ? 'bg-success-500' : 'bg-amber-400'}`} title={status} />
                 </div>
 
                 <div className='w-48 lg:w-56 shrink-0 flex items-center gap-3'>
@@ -62,7 +64,7 @@ const PatientRow = ({ patient, onClick, activeTab }) => {
                             <User size={20} />
                         )}
                     </div>
-                    <span className={`text-sm sm:text-base truncate text-gray-900 dark:text-white font-bold`}>
+                    <span className={`text-sm sm:text-base truncate ${is_booking_restricted ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-900 dark:text-white font-bold'}`}>
                         {full_name}
                     </span>
                 </div>
@@ -70,10 +72,10 @@ const PatientRow = ({ patient, onClick, activeTab }) => {
                 <div className='w-48 lg:w-56 shrink-0 flex items-center gap-3'>
                     <p className='text-sm sm:text-base truncate'>
                         <span className={`text-gray-900 dark:text-white font-bold`}>
-                            {status} Patient
+                            {status}
                         </span>
                         <span className='text-xs sm:text-sm text-gray-400 dark:text-gray-500 font-medium ml-2'>
-                            - {email}
+                            - {email || 'No email'}
                         </span>
                     </p>
                 </div>
@@ -92,19 +94,19 @@ const PatientRow = ({ patient, onClick, activeTab }) => {
                         ) : (
                             <User size={24} />
                         )}
-                        <span className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-white dark:border-gray-900 ${status === 'Regular' ? 'bg-success-500' : 'bg-amber-500'}`} />
+                        <span className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-white dark:border-gray-900 ${is_booking_restricted ? 'bg-red-500' : is_registered ? 'bg-success-500' : 'bg-amber-500'}`} />
                     </div>
                 </div>
                 <div className='flex-grow min-w-0 flex flex-col gap-0.5 justify-center'>
                     <div className='flex justify-between items-center'>
-                        <span className={`text-sm tracking-tight truncate text-gray-900 dark:text-white font-bold`}>
+                        <span className={`text-sm tracking-tight truncate ${is_booking_restricted ? 'text-red-600 font-bold' : 'text-gray-900 dark:text-white font-bold'}`}>
                             {full_name}
                         </span>
-                        <span className='text-[10px] text-gray-400 font-medium bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded'>{status}</span>
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${is_booking_restricted ? 'bg-red-100 text-red-600' : 'bg-gray-100 dark:bg-white/5 text-gray-400'}`}>{status}</span>
                     </div>
-                    <div className='text-xs truncate text-gray-500'>{phone}</div>
+                    <div className='text-xs truncate text-gray-500'>{phone || 'No phone'}</div>
                     <div className='flex justify-between items-end mt-1'>
-                        <div className='text-[10px] text-gray-400 truncate pr-4 flex items-center gap-1'><Mail size={10}/> {email}</div>
+                        <div className='text-[10px] text-gray-400 truncate pr-4 flex items-center gap-1'><Mail size={10}/> {email || 'No email'}</div>
                         {renderColumnContent(true)}
                     </div>
                 </div>

@@ -33,9 +33,13 @@ walk-in scenarios.
 2.  **Similarity Intercept (The Guard Dog):**
     *   **Triangulation Check:** As fields are filled, the system checks for exact matches on Phone/Email AND fuzzy matches on Name/DOB to catch typos (e.g., "Jon" vs "Jonathan").
     *   **The Intercept:** If a match is found, a "Potential Existing Record" modal displays the masked phone and DOB for staff verification.
-3.  **Email Policy (Family-First Rule):**
+3.  **Email Policy (Family-First Rule & Three-Way Resolution):**
     *   **Standalone Profiles:** Must have a unique email.
-    *   **Duplicate Detection:** If an entered email exists, "Create Anyway" is **disabled**. Staff must either link as a **Dependent** or use a different email.
+    *   **Duplicate Detection:** If an entered email exists, the system blocks simple creation and presents a **Three-Way Resolution Modal**:
+        - **Option A: "Link as Dependent"**: Nest the new patient under the existing account owner.
+        - **Option B: "Continue without Email"**: Create a "Pure Stub" by stripping the email, allowing the patient record to exist without portal access for now.
+        - **Option C: "Go Back/Edit"**: Return to the form to correct typos or provide a different email.
+    *   **Strict Blocking:** "Create Anyway" with a duplicate email is strictly disabled to prevent auth-system conflicts.
 4.  **Late-Binding & The "DOB Gate":**
     *   When a patient clicks an account setup link, they must pass a **"DOB Gate"** (entering their birthday to verify identity) before they can set a password. This prevents data leaks if the email was sent to the wrong person.
     - **Note in UI:** In the admin panel, refer to these as "Unregistered Patient" or "Portal

@@ -58,7 +58,9 @@ import {
     reassignAppointmentToDentist,
     onboardDentistProfile,
     getPatientProfile,
+    updatePatientProfileData,
 } from '../services/admin.service.js';
+
 import {
     sendApprovalNotice,
     sendRejectionNotice,
@@ -1382,15 +1384,16 @@ export const getUsersHandler = async (req, res, next) => {
  */
 export const createUserHandler = async (req, res, next) => {
     try {
-        const user = await createSystemUser(req.body);
+        const result = await createSystemUser(req.body);
         res.status(201).json({
-            message: 'User created.',
-            user,
+            message: result.message,
+            user: result.user,
         });
     } catch (err) {
         next(err);
     }
 };
+
 
 /**
  * PATCH /api/admin/users/:id/role
@@ -1506,3 +1509,19 @@ export const getPatientHandler = async (req, res, next) => {
         next(err);
     }
 };
+
+/**
+ * PATCH /api/admin/patients/:id
+ */
+export const updatePatientHandler = async (req, res, next) => {
+    try {
+        const patient = await updatePatientProfileData(req.params.id, req.body);
+        res.json({
+            message: 'Patient profile updated.',
+            patient
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+

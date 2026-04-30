@@ -4,8 +4,8 @@ import PatientRow from './PatientRow';
 
 const FILTERS = [
     { id: 'all', label: 'All Patients' },
-    { id: 'regular', label: 'Regular' },
-    { id: 'new', label: 'New' },
+    { id: 'verified', label: 'Verified Accounts' },
+    { id: 'stub', label: 'Stub Profiles' },
     { id: 'restricted', label: 'Restricted' },
 ];
 
@@ -22,15 +22,19 @@ const PatientInbox = ({
     loading,
     error
 }) => {
-    // Filter logic (Note: Search is already done in backend for this component)
+    // Filter logic
     const filteredPatients = patients.filter(patient => {
-        const matchesFilter = 
-            activeFilter === 'all' || 
-            (activeFilter === 'restricted' && patient.is_booking_restricted) ||
-            (activeFilter === 'regular' && patient.no_show_count < 3) ||
-            (activeFilter === 'new' && new Date(patient.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+        const matchesSearch = 
+            patient.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            patient.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            patient.phone?.includes(searchQuery);
+        
+        let matchesFilter = true;
+        if (activeFilter === 'verified') matchesFilter = patient.is_registered === true;
+        if (activeFilter === 'stub') matchesFilter = patient.is_registered === false;
+        if (activeFilter === 'restricted') matchesFilter = patient.is_booking_restricted === true;
 
-        return matchesFilter;
+        return matchesSearch && matchesFilter;
     });
 
     const displayPatients = filteredPatients;
@@ -46,7 +50,7 @@ const PatientInbox = ({
                         </span>
                         <input
                             type='text'
-                            placeholder='Search patients by name, email, or phone...'
+                            placeholder='Search patients by name, email or phone...'
                             className='w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-white/[0.03] border-none rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-white/10 transition-all outline-none font-medium'
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
@@ -55,20 +59,21 @@ const PatientInbox = ({
                     <div className='flex items-center gap-2'>
                         <button 
                             onClick={onMergeClick}
-                            className='hidden sm:flex items-center gap-2 px-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-all active:scale-95 shrink-0'
+                            className='hidden md:flex items-center gap-2 px-4 py-3 bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-all active:scale-95 shrink-0'
                         >
                             <GitMerge size={16} />
                             <span>Merge Records</span>
                         </button>
                         <button 
                             onClick={onAddClick}
-                            className='hidden sm:flex items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-lg text-xs font-bold hover:bg-brand-600 transition-all active:scale-95 shrink-0 shadow-lg shadow-brand-500/20'
+                            className='hidden sm:flex items-center gap-2 px-4 py-3 bg-brand-500 text-white rounded-lg text-xs font-bold hover:bg-brand-600 transition-all active:scale-95 shrink-0'
                         >
                             <UserPlus size={16} />
                             <span>Register Patient</span>
                         </button>
                     </div>
                 </div>
+
 
                 {/* Filters */}
                 <div className='flex items-center gap-2 overflow-x-auto no-scrollbar pb-1'>
@@ -93,7 +98,7 @@ const PatientInbox = ({
                 {loading ? (
                     <div className='flex flex-col items-center justify-center py-20 text-center px-4'>
                         <div className='w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4'></div>
-                        <p className='text-sm text-gray-500'>Loading patients...</p>
+                        <p className='text-sm text-gray-500'>Loading patient directory...</p>
                     </div>
                 ) : error ? (
                     <div className='flex flex-col items-center justify-center py-20 text-center px-4 text-red-500'>
@@ -118,7 +123,7 @@ const PatientInbox = ({
                             No patients found
                         </h4>
                         <p className='text-sm text-gray-500 max-w-[280px]'>
-                            Try adjusting your search or filters to find what you're looking for.
+                            Try adjusting your search or filters to find the patient record.
                         </p>
                     </div>
                 )}
@@ -129,8 +134,8 @@ const PatientInbox = ({
                 <div className='flex flex-col items-center justify-center w-full max-w-md mx-auto'>
                     <div className='flex items-center justify-center w-full'>
                         <div className='flex gap-1'>
-                            {[1, 2, 3].map(n => (
-                                <button key={n} className={`w-8 h-8 rounded-lg text-xs font-bold leading-none flex items-center justify-center ${n === 1 ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-white/5'}`}>{n}</button>
+                            {[1].map(n => (
+                                <button key={n} className='w-8 h-8 rounded-lg bg-brand-500 text-white text-xs font-bold leading-none flex items-center justify-center'>{n}</button>
                             ))}
                         </div>
                     </div>

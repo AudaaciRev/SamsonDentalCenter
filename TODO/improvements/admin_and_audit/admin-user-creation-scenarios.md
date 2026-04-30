@@ -5,6 +5,15 @@ Admin Action: The secretary enters "Arthur Pendelton", his phone number, and DOB
 
 System Response: Success.
 
+STUB ACCOUNT
+STUB1, STUB1v2 -SOLUTION MERGE - SOLUTION 2 SIMILAR DETECTION
+
+GIVE EMAIL=> TYPO BY ADMIN => SEND ADMIN BEFORE CREATING PASSWORD NEED BDAY TO VERIFY
+
+CREATE ACOUNT => MERGE IF USER WANT TO MERGE
+
+
+
 Database State: Arthur is saved to the profiles table. isRegistered: false, email: null.
 
 The Result: The secretary can instantly book appointments for Arthur. His portal access remains inactive.
@@ -19,6 +28,13 @@ System Response: The database checks sarah@email.com. It finds zero matches. Suc
 Database State: Sarah is saved to the profiles table. isRegistered: false, email: sarah@email.com.
 
 The Result: Sarah is still a Stub, but the Admin UI now unlocks the "Send Setup Link" button so the clinic can invite her to the portal.
+
+EMAIL GIVE BY USER2 IS SAME AS USER1 
+DETECT BY SYSTEM
+
+OTP FOR A DEPENENCY
+EDIT AND CHANGE, ADD AS DEPENDECY, CONTINUE AS A STUB WITH NO EMAIL 
+
 
 Scenario 3: The "Identical Stub Email" (Two Stubs, One Email)
 The Situation: The next day, Sarah's husband, John, walks in. The secretary tries to create a brand new profile for John using sarah@email.com.
@@ -46,6 +62,18 @@ Scenario 5: The "Late Registration" (The Missing Scenario)
 The Situation: Sarah (from Scenario 2 and 3) finally decides to set up her portal. She goes to your staging domain (e.g., samson.synapsefrost.dev) and signs up using sarah@email.com.
 
 User Action: Sarah enters her email and verifies it via OTP.
+
+with email
+stub his1,2,3,4,
+
+without email
+stub his1,2,3,4,
+
+account1@
+account2@
+
+
+
 
 System Response: The system detects her email matches an existing Stub. It intercepts the registration and asks: "Please enter your Date of Birth to verify your identity."
 

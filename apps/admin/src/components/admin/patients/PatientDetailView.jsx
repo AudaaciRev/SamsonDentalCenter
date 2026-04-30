@@ -16,12 +16,24 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
     
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
+    const [isRestricting, setIsRestricting] = useState(false);
+
+    const [editFormData, setEditFormData] = useState({
+        full_name: '',
+        email: '',
+        phone: '',
+    });
 
     useEffect(() => {
         const fetchPatient = async () => {
             try {
                 const data = await api.get(`/admin/patients/${patientId}`, token);
                 setPatient(data);
+                setEditFormData({
+                    full_name: data.full_name || '',
+                    email: data.email || '',
+                    phone: data.phone || '',
+                });
             } catch (err) {
                 console.error('Failed to fetch patient:', err);
             } finally {
@@ -30,6 +42,46 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
         };
         if (patientId) fetchPatient();
     }, [patientId, token]);
+
+    const handleSaveProfile = async () => {
+        try {
+            const updated = await api.patch(`/admin/patients/${patientId}`, {
+                full_name: editFormData.full_name
+            }, token);
+            setPatient(prev => ({ ...prev, ...updated.patient }));
+            setIsEditModalOpen(false);
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const handleSaveContact = async () => {
+        try {
+            const updated = await api.patch(`/admin/patients/${patientId}`, {
+                email: editFormData.email,
+                phone: editFormData.phone
+            }, token);
+            setPatient(prev => ({ ...prev, ...updated.patient }));
+            setIsEditContactModalOpen(false);
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const handleToggleRestriction = async () => {
+        setIsRestricting(true);
+        try {
+            const updated = await api.patch(`/admin/patients/${patientId}/restriction`, {
+                restricted: !patient.is_booking_restricted,
+                reason: !patient.is_booking_restricted ? 'Restricted by administrator' : null
+            }, token);
+            setPatient(prev => ({ ...prev, ...updated }));
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setIsRestricting(false);
+        }
+    };
 
     const handleSendSetupLink = async () => {
         setLoadingLink(true);
@@ -132,6 +184,11 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                         <span className={`px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider ${patient.is_registered ? 'bg-success-100 text-success-600 dark:bg-success-500/10 dark:text-success-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'}`}>
                                             {patient.is_registered ? 'Verified Account' : 'Stub Profile'}
                                         </span>
+                                        {patient.is_booking_restricted && (
+                                            <span className="px-2 py-0.5 rounded-lg text-[clamp(11px,1vw,12px)] font-bold uppercase tracking-wider bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                                                Restricted
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -150,10 +207,10 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                         <div className='mt-6 pt-6 border-t border-gray-200 dark:border-gray-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
                             <div className='flex flex-wrap gap-6'>
                                 <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                    <Mail size={16} className='text-gray-400' /> {patient.email}
+                                    <Mail size={16} className='text-gray-400' /> {patient.email || 'No email set'}
                                 </div>
                                 <div className='flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 font-medium'>
-                                    <Phone size={16} className='text-gray-400' /> {patient.phone}
+                                    <Phone size={16} className='text-gray-400' /> {patient.phone || 'No phone set'}
                                 </div>
                             </div>
                             <Button
@@ -176,14 +233,14 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                             <Calendar size={14} /> Upcoming Appointment
                                         </h4>
                                         <div className='flex items-center justify-between'>
-                                            <p className='text-sm font-bold text-gray-900 dark:text-white'>{patient.next_appointment}</p>
+                                            <p className='text-sm font-bold text-gray-900 dark:text-white'>{patient.next_appointment || 'No upcoming appointments'}</p>
                                             <Button variant='ghost' className='text-[10px] font-black uppercase text-brand-600'>View Details</Button>
                                         </div>
                                     </div>
                                     <div className='p-6 rounded-2xl border border-gray-100 dark:border-gray-800'>
                                         <h4 className='text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4'>Patient Summary</h4>
                                         <p className='text-sm text-gray-500 dark:text-gray-400 leading-relaxed'>
-                                            Patient has been active since {patient.join_date}. Total of {patient.total_visits} visits recorded across all services.
+                                            Patient has been active since {new Date(patient.created_at).toLocaleDateString()}. Total of {patient.total_visits || 0} visits recorded across all services.
                                         </p>
                                     </div>
                                 </div>
@@ -191,7 +248,7 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                     <div className='p-5 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-4'>
                                         <div className='flex justify-between items-center'>
                                             <span className='text-[10px] font-bold text-gray-400 uppercase'>Outstanding</span>
-                                            <span className='text-sm font-black text-gray-900 dark:text-white'>{patient.balance}</span>
+                                            <span className='text-sm font-black text-gray-900 dark:text-white'>{patient.balance || '₱ 0.00'}</span>
                                         </div>
                                         <div className='flex justify-between items-center'>
                                             <span className='text-[10px] font-bold text-gray-400 uppercase'>Attendence</span>
@@ -207,15 +264,11 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                 <h4 className='text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2'>
                                     <HistoryIcon size={14} /> Medical & Treatment History
                                 </h4>
-                                {[1, 2].map(i => (
-                                    <div key={i} className='p-5 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-white/[0.01] flex items-center justify-between'>
-                                        <div>
-                                            <p className='text-sm font-bold text-gray-900 dark:text-white'>General Cleaning & Pasta</p>
-                                            <p className='text-[10px] text-gray-500 font-bold mt-1 uppercase'>Dr. Samson • Mar 12, 2026</p>
-                                        </div>
-                                        <Button variant='outline' size='sm' className='text-[10px] font-black uppercase'>View Note</Button>
-                                    </div>
-                                ))}
+                                <div className='p-6 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-center py-20'>
+                                    <History size={40} className='mx-auto text-gray-300 dark:text-gray-700 mb-4' />
+                                    <h4 className='text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight'>No History Found</h4>
+                                    <p className='text-xs text-gray-500 mt-2'>Treatment history will appear here once the patient completes their first visit.</p>
+                                </div>
                             </div>
                         )}
 
@@ -275,7 +328,14 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                                      <p className='text-[11px] text-red-700 dark:text-red-400 font-medium leading-relaxed mb-4'>
                                          Setting a restriction will prevent this patient from booking appointments online.
                                      </p>
-                                     <Button variant='outline' className='h-11 border-red-200 text-red-600 text-xs font-black uppercase hover:bg-red-50'>Restrict Online Booking</Button>
+                                     <Button 
+                                        variant='outline' 
+                                        onClick={handleToggleRestriction}
+                                        disabled={isRestricting}
+                                        className={`h-11 border-red-200 text-red-600 text-xs font-black uppercase hover:bg-red-50 ${patient.is_booking_restricted ? 'bg-red-500 text-white hover:bg-red-600 border-none' : ''}`}
+                                    >
+                                        {isRestricting ? <Loader2 size={16} className="animate-spin" /> : patient.is_booking_restricted ? 'Lift Booking Restriction' : 'Restrict Online Booking'}
+                                    </Button>
                                 </div>
                              </div>
                         )}
@@ -283,18 +343,22 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                 </div>
             </div>
 
-            {/* Modals Skeletons */}
+            {/* Modals */}
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className='max-w-[450px] w-full m-auto'>
                 <div className='p-8 bg-white dark:bg-gray-900 rounded-xl'>
                     <h4 className='text-lg font-black uppercase tracking-tight mb-6'>Edit Patient Data</h4>
                     <div className='space-y-4'>
                         <div className='space-y-2'>
                             <Label className='text-[10px] font-bold uppercase tracking-widest text-gray-400'>Full Name</Label>
-                            <Input defaultValue={patient.full_name} className='h-11' />
+                            <Input 
+                                value={editFormData.full_name} 
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                                className='h-11' 
+                            />
                         </div>
                         <div className='flex justify-end gap-3 pt-6'>
                             <Button variant='outline' onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-                            <Button className='bg-brand-500 text-white px-6'>Save</Button>
+                            <Button onClick={handleSaveProfile} className='bg-brand-500 text-white px-6 font-bold'>Save Changes</Button>
                         </div>
                     </div>
                 </div>
@@ -306,15 +370,23 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
                     <div className='space-y-4'>
                         <div className='space-y-2'>
                             <Label className='text-[10px] font-bold uppercase tracking-widest text-gray-400'>Email Address</Label>
-                            <Input defaultValue={patient.email} className='h-11' />
+                            <Input 
+                                value={editFormData.email} 
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                                className='h-11' 
+                            />
                         </div>
                         <div className='space-y-2'>
                             <Label className='text-[10px] font-bold uppercase tracking-widest text-gray-400'>Phone Number</Label>
-                            <Input defaultValue={patient.phone} className='h-11' />
+                            <Input 
+                                value={editFormData.phone} 
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                className='h-11' 
+                            />
                         </div>
                         <div className='flex justify-end gap-3 pt-6'>
                             <Button variant='outline' onClick={() => setIsEditContactModalOpen(false)}>Cancel</Button>
-                            <Button className='bg-brand-500 text-white px-6'>Save</Button>
+                            <Button onClick={handleSaveContact} className='bg-brand-500 text-white px-6 font-bold'>Update Contact</Button>
                         </div>
                     </div>
                 </div>
@@ -324,3 +396,4 @@ const PatientDetailView = ({ patientId, onBack, activeTab }) => {
 };
 
 export default PatientDetailView;
+

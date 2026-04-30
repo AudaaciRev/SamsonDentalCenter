@@ -65,8 +65,10 @@ import {
     getAvailableDentistsForReassignment,
     onboardDoctor,
     getPatientHandler, // NEW
+    updatePatientHandler, // NEW
     bulkUpdateSchedule,
 } from '../controllers/admin.controller.js';
+
 import { 
     getAuditLogs, 
     getAuditLogDetails 
@@ -113,6 +115,7 @@ router.get('/patients/check-duplicates', checkDuplicatesHandler); // NEW
 router.post('/patients/merge', mergePatientsHandler); // NEW
 router.post('/patients/:id/send-setup-link', sendSetupLinkHandler); // NEW
 router.get('/patients/:id', getPatientHandler); // NEW
+router.patch('/patients/:id', updatePatientHandler); // NEW
 router.get('/patients', getPatients);
 router.get('/patients/:id/history', viewPatientHistory);
 router.patch('/patients/:id/restriction', toggleRestriction);

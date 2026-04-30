@@ -406,10 +406,11 @@ export const getAllUsers = async () => {
 };
 
 /**
- * Create a new system user.
+ * Create a new system user (Staff Onboarding).
+ * Uses Supabase Invitation to create auth user and trigger profile creation.
  *
  * @param {object} userData - { email, full_name, phone, role }
- * @returns {object} Created user
+ * @returns {object} Created user/invitation info
  */
 export const createSystemUser = async (userData) => {
     const { email, full_name, phone, role } = userData;
@@ -418,37 +419,53 @@ export const createSystemUser = async (userData) => {
         throw new AppError('email, full_name, and role are required.', 400);
     }
 
-    if (!['admin', 'supervisor', 'dentist', 'patient'].includes(role)) {
-        throw { status: 400, message: 'Invalid role.' };
+    if (!['admin', 'secretary', 'receptionist'].includes(role)) {
+        throw new AppError('Invalid system role. Use specific onboarding for doctors/patients.', 400);
     }
 
-    // Check if email already exists
+    // 1. Check if profile already exists (to prevent duplicate auth invites)
     const { data: existing } = await supabaseAdmin
         .from('profiles')
-        .select('id')
+        .select('id, is_registered')
         .eq('email', email)
         .maybeSingle();
 
     if (existing) {
-        throw new AppError('Email already in use.', 409);
+        if (existing.is_registered) {
+            throw new AppError('A registered user with this email already exists.', 409);
+        }
+        // If it's a stub, we might want to promote it? 
+        // For now, let's keep it strict: System accounts must have unique emails.
+        throw new AppError('Email already in use by a patient record.', 409);
     }
 
-    const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-            email,
-            full_name,
-            phone: phone || null,
-            role,
-            is_active: true,
-            created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+    // 2. Metadata for the trigger (handle_new_user)
+    const metadata = {
+        full_name,
+        phone: phone || '',
+        role
+    };
 
-    if (error) throw new AppError(error.message, 500);
-    return data;
+    // 3. Dispatch Invitation
+    const adminUrl = process.env.ADMIN_URL || 'http://localhost:5174';
+    const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+            data: metadata,
+            redirectTo: `${adminUrl}/set-password`
+        }
+    );
+
+    if (inviteErr) {
+        throw new AppError(`Invitation failed: ${inviteErr.message}`, 500);
+    }
+
+    return {
+        user: inviteData.user,
+        message: 'Staff invitation sent successfully.'
+    };
 };
+
 
 /**
  * Change a user's role.
@@ -1113,6 +1130,46 @@ export const setPatientRestriction = async (patientId, restricted, reason = null
     if (error) throw new AppError(error.message, 500);
     return data;
 };
+
+/**
+ * Update a patient's profile information.
+ *
+ * @param {string} patientId - Profile UUID
+ * @param {object} fields - { full_name?, email?, phone?, is_booking_restricted?, ... }
+ * @returns {object} Updated profile
+ */
+export const updatePatientProfileData = async (patientId, fields) => {
+    const allowedFields = [
+        'full_name', 'first_name', 'last_name', 'middle_name', 'suffix',
+        'email', 'phone', 'date_of_birth', 'avatar_url',
+        'is_booking_restricted', 'restriction_reason'
+    ];
+
+    const updates = {};
+    Object.keys(fields).forEach(key => {
+        if (allowedFields.includes(key)) {
+            updates[key] = fields[key];
+        }
+    });
+
+    if (Object.keys(updates).length === 0) {
+        throw new AppError('No valid fields provided for update.', 400);
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', patientId)
+        .select()
+        .single();
+
+    if (error) throw new AppError(error.message, 500);
+    return data;
+};
+
 
 // ═══════════════════════════════════════════════
 // APPOINTMENT STATE CHANGES

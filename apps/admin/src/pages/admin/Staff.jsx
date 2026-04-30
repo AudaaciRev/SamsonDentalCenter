@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
 import StaffInbox from '../../components/admin/staff/StaffInbox';
 import StaffDetailView from '../../components/admin/staff/StaffDetailView';
+import AddStaffModal from '../../components/admin/staff/AddStaffModal';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../utils/api';
+import { Plus } from 'lucide-react';
 
 const Staff = () => {
     const { tab, id } = useParams();
@@ -17,28 +19,30 @@ const Staff = () => {
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    const fetchStaff = async () => {
+        if (!token) return;
+        try {
+            setLoading(true);
+            const data = await api.get('/admin/users', token);
+            // Filter out patients, show only system users
+            const filtered = (data.users || []).filter(u => 
+                ['admin', 'secretary', 'receptionist', 'doctor'].includes(u.role)
+            );
+            setStaffMembers(filtered);
+        } catch (err) {
+            console.error('Failed to fetch staff:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchStaff = async () => {
-            if (!token) return;
-            try {
-                setLoading(true);
-                const data = await api.get('/admin/users', token);
-                // Filter out patients, show only system users
-                const filtered = (data.users || []).filter(u => 
-                    ['admin', 'secretary', 'receptionist', 'doctor'].includes(u.role)
-                );
-                setStaffMembers(filtered);
-            } catch (err) {
-                console.error('Failed to fetch staff:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchStaff();
     }, [token]);
+
 
     const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
     const breadcrumbTitle = id ? `Staff ${tabLabel}` : "Staff & Reception";
@@ -69,13 +73,21 @@ const Staff = () => {
                         activeFilter={activeFilter}
                         onFilterChange={setActiveFilter}
                         activeTab={activeTab}
-                        onAddClick={() => console.log('Add Staff Member clicked')}
+                        onAddClick={() => setIsAddModalOpen(true)}
                         onStaffClick={(staffId) => navigate(`/staff/${activeTab}/${staffId}`)}
                     />
                 )}
             </div>
+
+            <AddStaffModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onStaffAdded={fetchStaff}
+                token={token}
+            />
         </div>
     );
 };
+
 
 export default Staff;
