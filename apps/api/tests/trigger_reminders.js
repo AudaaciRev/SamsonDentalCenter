@@ -22,6 +22,8 @@ async function runTestReminders() {
             console.log(await testSend24hReminder(patientAppt.id, 24));
             console.log('--- Triggering Patient 48h ---');
             console.log(await testSend24hReminder(patientAppt.id, 48));
+        } else {
+            console.log('❌ No CONFIRMED patient appointments found (patient_id is NOT null).');
         }
 
         // ── 2. Find Latest Guest Appointment ──
@@ -41,6 +43,8 @@ async function runTestReminders() {
             console.log(await testSendGuestReminder(guestAppt.id, 24));
             console.log('--- Triggering Guest 48h ---');
             console.log(await testSendGuestReminder(guestAppt.id, 48));
+        } else {
+            console.log('❌ No CONFIRMED guest appointments found (patient_id IS null).');
         }
 
         console.log('\n✨ All test reminders triggered! Check the pnpm dev console and your email.');

@@ -17,7 +17,7 @@ const Toast = ({ toast, onDismiss }) => {
 
     return createPortal(
         <div className='fixed top-[4.5rem] sm:top-24 right-4 sm:right-6 z-[9999999] flex flex-col gap-3 pointer-events-none'>
-            <div className='bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 flex gap-4 items-center shadow-lg animate-in slide-in-from-right-10 fade-in duration-500 max-w-[calc(100vw-2rem)] sm:max-w-sm'>
+            <div className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 flex gap-4 items-center shadow-lg animate-in slide-in-from-right-10 fade-in duration-500 max-w-[calc(100vw-2rem)] sm:max-w-sm'>
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isSuccess ? 'bg-emerald-500' : 'bg-red-500'}`}>
                     {isSuccess
                         ? <Check size={22} className='text-white' />
@@ -82,9 +82,9 @@ const AddDoctorModal = ({ isOpen, onClose, onAdd }) => {
         <>
             <Toast toast={toast} onDismiss={() => setToast(null)} />
             <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false} className='max-w-[640px] w-[95%] sm:w-full m-auto shadow-none'>
-            <div className='relative w-full flex flex-col rounded-2xl bg-white dark:bg-gray-950 max-h-[85vh] shadow-2xl border border-gray-100 dark:border-gray-800/50 overflow-hidden'>
+            <div className='relative w-full flex flex-col rounded-2xl bg-white dark:bg-gray-950 max-h-[85vh] shadow-2xl border border-gray-200 dark:border-gray-800/50 overflow-hidden'>
                 {/* Header - Fixed/Sticky */}
-                <div className='sticky top-0 z-20 px-8 pt-7 pb-4 shrink-0 bg-white dark:bg-gray-950 border-b border-gray-50 dark:border-gray-800/20'>
+                <div className='sticky top-0 z-20 px-8 pt-7 pb-4 shrink-0 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/20'>
                     <div className='flex items-center justify-between mb-1'>
                         <div className='flex items-center gap-2.5'>
                             <div className='bg-brand-500/10 p-1.5 rounded-lg'>
@@ -203,7 +203,7 @@ const AddDoctorModal = ({ isOpen, onClose, onAdd }) => {
                     </div>
 
                     {/* Footer Actions - Sticky */}
-                    <div className='sticky bottom-0 z-20 px-8 py-5 shrink-0 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800/50 flex flex-col sm:flex-row items-center gap-3 mt-auto'>
+                    <div className='sticky bottom-0 z-20 px-8 py-5 shrink-0 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800/50 flex flex-col sm:flex-row items-center gap-3 mt-auto'>
                         <Button 
                             variant='outline' 
                             type="button"

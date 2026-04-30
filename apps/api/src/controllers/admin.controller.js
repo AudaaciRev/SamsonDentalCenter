@@ -1,9 +1,10 @@
+import crypto from 'crypto';
 import { supabaseAdmin } from '../config/supabase.js';
 import { markNoShow } from '../services/noshow.service.js';
 import { notifyWaitlist } from '../services/waitlist.service.js';
 import { bookWalkIn } from '../services/appointment.service.js';
 import { APPOINTMENT_STATUS } from '../utils/constants.js';
-import { sendBookingSuccessEmail, sendCancellationEmail } from '../services/email-confirmation.service.js';
+import { sendBookingSuccessEmail, sendCancellationEmail, sendAccountSetupInviteEmail } from '../services/email-confirmation.service.js';
 import {
     getPendingRequests,
     approveRequest,
@@ -51,13 +52,19 @@ import {
     deactivateUser,
     getSystemHealth,
     quickRegisterPatient,
+    checkDuplicatePatient,
+    mergePatientRecords,
     getAvailableDentistsForSlot,
     reassignAppointmentToDentist,
     onboardDentistProfile,
+    getPatientProfile,
+    updatePatientProfileData,
 } from '../services/admin.service.js';
+
 import {
     sendApprovalNotice,
     sendRejectionNotice,
+    sendCancellationNotice,
 } from '../services/notification.service.js';
 
 // ═══════════════════════════════════════════════
@@ -551,7 +558,35 @@ export const getDentistByIdHandler = async (req, res, next) => {
  */
 export const updateDentistProfileHandler = async (req, res, next) => {
     try {
+        // Fetch old values before update
+        const { data: previousData } = await supabaseAdmin
+            .from('dentists')
+            .select(`
+                *,
+                profile:profiles(*)
+            `)
+            .eq('id', req.params.id)
+            .single();
+
         const updated = await updateDentistProfileData(req.params.id, req.body);
+
+        // Audit Log: UPDATE_DOCTOR_PROFILE
+        try {
+            await supabaseAdmin.from('audit_log').insert({
+                actor_id: req.user.id,
+                actor_role: req.user.role,
+                action: 'UPDATE_DOCTOR_PROFILE',
+                target_type: 'dentists',
+                target_id: req.params.id,
+                resource_type: 'dentists',
+                resource_id: req.params.id,
+                old_values: previousData,
+                new_values: req.body
+            });
+        } catch (auditErr) {
+            console.error('Audit Log failed (updateDentistProfile):', auditErr.message);
+        }
+
         res.json({ message: 'Doctor profile updated.', doctor: formatDoctorResponse(updated) });
     } catch (err) {
         next(err);
@@ -570,8 +605,56 @@ export const updateDentistServicesHandler = async (req, res, next) => {
         if (!Array.isArray(service_ids)) {
             return res.status(400).json({ error: 'service_ids must be an array of UUIDs.' });
         }
-        const updated = await replaceDentistServices(req.params.id, service_ids);
-        res.json({ message: 'Doctor services updated.', doctor: formatDoctorResponse(updated) });
+
+        // Fetch old values
+        const { data: oldServices } = await supabaseAdmin
+            .from('dentist_services')
+            .select('service_id')
+            .eq('dentist_id', req.params.id);
+
+        const { doctor, displacedAppointments } = await replaceDentistServices(req.params.id, service_ids);
+
+        // Audit Log: UPDATE_DOCTOR_SERVICES
+        try {
+            await supabaseAdmin.from('audit_log').insert({
+                actor_id: req.user.id,
+                actor_role: req.user.role,
+                action: 'UPDATE_DOCTOR_SERVICES',
+                target_type: 'dentists',
+                target_id: req.params.id,
+                resource_type: 'dentist_services',
+                resource_id: req.params.id,
+                old_values: { service_ids: (oldServices || []).map((s) => s.service_id) },
+                new_values: { service_ids },
+            });
+        } catch (auditErr) {
+            console.error('Audit Log failed (updateDentistServices):', auditErr.message);
+        }
+
+        // ── Notify displaced patients ──
+        if (displacedAppointments.length > 0) {
+            for (const appt of displacedAppointments) {
+                try {
+                    await sendCancellationNotice(appt.patient_id, {
+                        date: appt.appointment_date,
+                        start_time: appt.start_time,
+                        end_time: appt.end_time,
+                        service: appt.service?.name || 'Dental appointment',
+                    });
+                } catch (err) {
+                    console.warn(
+                        `[Realtime] Failed to notify patient ${appt.patient_id} of displacement:`,
+                        err.message,
+                    );
+                }
+            }
+        }
+
+        res.json({
+            message: 'Doctor services updated.',
+            displaced_count: displacedAppointments.length,
+            doctor: formatDoctorResponse(doctor),
+        });
     } catch (err) {
         next(err);
     }
@@ -652,7 +735,32 @@ export const bulkUpdateSchedule = async (req, res, next) => {
             overwrite = req.body.overwrite || false;
         }
 
+        // Fetch old values
+        const { data: oldSchedule } = await supabaseAdmin
+            .from('dentist_schedule')
+            .select('*')
+            .eq('dentist_id', req.params.id)
+            .order('day_of_week', { ascending: true });
+
         await setBulkSchedule(req.params.id, schedules, overwrite);
+
+        // Audit Log: UPDATE_GLOBAL_SCHEDULE
+        try {
+            await supabaseAdmin.from('audit_log').insert({
+                actor_id: req.user.id,
+                actor_role: req.user.role,
+                action: 'UPDATE_GLOBAL_SCHEDULE',
+                target_type: 'dentists',
+                target_id: req.params.id,
+                resource_type: 'dentist_schedule',
+                resource_id: req.params.id,
+                old_values: oldSchedule,
+                new_values: { schedules, overwrite }
+            });
+        } catch (auditErr) {
+            console.error('Audit Log failed (bulkUpdateSchedule):', auditErr.message);
+        }
+
         res.json({ message: 'Dentist schedule updated for the week.' });
     } catch (err) {
         next(err);
@@ -686,6 +794,23 @@ export const blockDentistAvailability = async (req, res, next) => {
             req.user.id,
             overwrite || false
         );
+
+        // Audit Log: CREATE_SCHEDULE_BLOCK
+        try {
+            await supabaseAdmin.from('audit_log').insert({
+                actor_id: req.user.id,
+                actor_role: req.user.role,
+                action: 'CREATE_SCHEDULE_BLOCK',
+                target_type: 'dentists',
+                target_id: req.params.id,
+                resource_type: 'dentist_availability_blocks',
+                resource_id: result.block.id,
+                old_values: null,
+                new_values: req.body
+            });
+        } catch (auditErr) {
+            console.error('Audit Log failed (blockDentistAvailability):', auditErr.message);
+        }
 
         res.status(201).json({
             message: `Dentist availability blocked: ${reason}`,
@@ -722,7 +847,33 @@ export const viewDentistBlocks = async (req, res, next) => {
 export const removeDentistBlock = async (req, res, next) => {
     try {
         const { blockId } = req.params;
+
+        // Fetch old values
+        const { data: oldBlock } = await supabaseAdmin
+            .from('dentist_availability_blocks')
+            .select('*')
+            .eq('id', blockId)
+            .single();
+
         await removeAvailabilityBlock(blockId);
+
+        // Audit Log: DELETE_SCHEDULE_BLOCK
+        try {
+            await supabaseAdmin.from('audit_log').insert({
+                actor_id: req.user.id,
+                actor_role: req.user.role,
+                action: 'DELETE_SCHEDULE_BLOCK',
+                target_type: 'dentists',
+                target_id: req.params.id, // The dentist ID from the route
+                resource_type: 'dentist_availability_blocks',
+                resource_id: blockId,
+                old_values: oldBlock,
+                new_values: null
+            });
+        } catch (auditErr) {
+            console.error('Audit Log failed (removeDentistBlock):', auditErr.message);
+        }
+
         res.json({ message: 'Availability block removed.' });
     } catch (err) {
         next(err);
@@ -831,6 +982,97 @@ export const quickRegisterPatientHandler = async (req, res, next) => {
             message: 'Patient quick-registered.',
             patient,
         });
+    } catch (err) {
+        // If it's a custom error from the service
+        if (err.status) {
+            return res.status(err.status).json({ error: err.message });
+        }
+        next(err);
+    }
+};
+
+/**
+ * GET /api/admin/patients/check-duplicates
+ * Query: ?first_name=xxx&last_name=yyy&date_of_birth=zzz&phone=aaa&email=bbb
+ */
+export const checkDuplicatesHandler = async (req, res, next) => {
+    try {
+        const duplicates = await checkDuplicatePatient(req.query);
+        res.json({ duplicates, count: duplicates.length });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/admin/patients/merge
+ * Body: { source_id, target_id }
+ */
+export const mergePatientsHandler = async (req, res, next) => {
+    try {
+        const { source_id, target_id } = req.body;
+        if (!source_id || !target_id) {
+            return res.status(400).json({ error: 'source_id and target_id are required.' });
+        }
+        const result = await mergePatientRecords(source_id, target_id);
+        res.json({ message: 'Patients merged successfully.', result });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * POST /api/admin/patients/:id/send-setup-link
+ */
+export const sendSetupLinkHandler = async (req, res, next) => {
+    try {
+        const profile_id = req.params.id;
+        
+        // 1. Verify profile exists and has email
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('email, full_name, is_registered')
+            .eq('id', profile_id)
+            .single();
+            
+        if (!profile) return res.status(404).json({ error: 'Patient not found.' });
+        if (!profile.email) return res.status(400).json({ error: 'Patient has no email address.' });
+        if (profile.is_registered) return res.status(400).json({ error: 'Patient is already registered.' });
+
+        // 2. Cooldown check (15 mins)
+        const { data: recentToken } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .select('created_at')
+            .eq('profile_id', profile_id)
+            .gte('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
+            .maybeSingle();
+
+        if (recentToken) {
+            return res.status(429).json({ 
+                error: 'Cooldown active. Please wait 15 minutes before resending.',
+                retry_after: new Date(new Date(recentToken.created_at).getTime() + 15 * 60 * 1000)
+            });
+        }
+
+        // 3. Generate token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+        const { error: tokenErr } = await supabaseAdmin
+            .from('account_setup_tokens')
+            .insert({
+                profile_id,
+                token,
+                expires_at
+            });
+
+        if (tokenErr) throw tokenErr;
+
+        // 4. Trigger Email
+        const setupUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/setup-account?token=${token}`;
+        await sendAccountSetupInviteEmail(profile.email, profile.full_name, setupUrl);
+
+        res.json({ message: 'Account setup link sent successfully.', expires_at });
     } catch (err) {
         next(err);
     }
@@ -1142,15 +1384,16 @@ export const getUsersHandler = async (req, res, next) => {
  */
 export const createUserHandler = async (req, res, next) => {
     try {
-        const user = await createSystemUser(req.body);
+        const result = await createSystemUser(req.body);
         res.status(201).json({
-            message: 'User created.',
-            user,
+            message: result.message,
+            user: result.user,
         });
     } catch (err) {
         next(err);
     }
 };
+
 
 /**
  * PATCH /api/admin/users/:id/role
@@ -1211,13 +1454,74 @@ export const getSystemHealthHandler = async (req, res, next) => {
  */
 export const onboardDoctor = async (req, res, next) => {
     try {
-        const dentist = await onboardDentistProfile(req.body);
+        const result = await onboardDentistProfile(req.body);
+
+        // Audit Log: CREATE_DOCTOR
+        try {
+            // Find the dentist ID (created via trigger)
+            const { data: dentist } = await supabaseAdmin
+                .from('dentists')
+                .select('id')
+                .eq('profile_id', result.user.id)
+                .single();
+
+            if (dentist) {
+                await supabaseAdmin.from('audit_log').insert({
+                    actor_id: req.user.id,
+                    actor_role: req.user.role,
+                    action: 'CREATE_DOCTOR',
+                    target_type: 'dentists',
+                    target_id: dentist.id,
+                    resource_type: 'dentists',
+                    resource_id: dentist.id,
+                    old_values: null,
+                    new_values: {
+                        email: req.body.email,
+                        first_name: req.body.first_name,
+                        last_name: req.body.last_name,
+                        specialization: req.body.specialization,
+                        tier: req.body.tier
+                    }
+                });
+            }
+        } catch (auditErr) {
+            console.error('Audit Log failed (onboardDoctor):', auditErr.message);
+        }
+
         res.status(201).json({
             message: 'Doctor onboarded successfully.',
-            user: dentist.user, 
-            message_detail: dentist.message
+            user: result.user, 
+            message_detail: result.message
         });
     } catch (err) {
         next(err);
     }
 };
+
+/**
+ * GET /api/admin/patients/:id
+ */
+export const getPatientHandler = async (req, res, next) => {
+    try {
+        const patient = await getPatientProfile(req.params.id);
+        res.json(patient);
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * PATCH /api/admin/patients/:id
+ */
+export const updatePatientHandler = async (req, res, next) => {
+    try {
+        const patient = await updatePatientProfileData(req.params.id, req.body);
+        res.json({
+            message: 'Patient profile updated.',
+            patient
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+

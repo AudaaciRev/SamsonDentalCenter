@@ -1,37 +1,93 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import PageBreadcrumb from '../../components/common/PageBreadcrumb';
+import StaffInbox from '../../components/admin/staff/StaffInbox';
+import StaffDetailView from '../../components/admin/staff/StaffDetailView';
+import AddStaffModal from '../../components/admin/staff/AddStaffModal';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../utils/api';
+import { Plus } from 'lucide-react';
 
 const Staff = () => {
     const { tab, id } = useParams();
+    const navigate = useNavigate();
+    const { token } = useAuth();
     const activeTab = tab || 'profile';
+
+    const [staffMembers, setStaffMembers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    const fetchStaff = async () => {
+        if (!token) return;
+        try {
+            setLoading(true);
+            const data = await api.get('/admin/users', token);
+            // Filter out patients, show only system users
+            const filtered = (data.users || []).filter(u => 
+                ['admin', 'secretary', 'receptionist', 'doctor'].includes(u.role)
+            );
+            setStaffMembers(filtered);
+        } catch (err) {
+            console.error('Failed to fetch staff:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStaff();
+    }, [token]);
+
+
+    const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+    const breadcrumbTitle = id ? `Staff ${tabLabel}` : "Staff & Reception";
 
     return (
         <div className='flex flex-col h-full'>
-            <PageBreadcrumb 
-                pageTitle={id ? "Staff Details" : "Staff & Reception"} 
+            <PageBreadcrumb
+                pageTitle={breadcrumbTitle}
                 parentName={id ? "Staff & Reception" : null}
                 parentPath={id ? "/staff" : null}
-                className='mb-4' 
+                className='mb-4'
             />
-            
-            <div className='grow flex items-center justify-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl bg-white dark:bg-white/[0.03] p-12 text-center'>
-                <div>
-                    <h3 className='text-lg font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight'>
-                        {activeTab} - {id ? 'Detail View' : 'Global Module'}
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto'>
-                        This staff module ({activeTab}) is responding to the route correctly. Currently under design.
-                    </p>
-                    <div className='mt-6 px-4 py-2 bg-brand-50 dark:bg-brand-500/10 rounded-lg inline-block border border-brand-100 dark:border-brand-500/20'>
-                        <span className='text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest leading-none'>
-                            Target Context: {id ? `ID # ${id}` : 'General List'}
-                        </span>
-                    </div>
-                </div>
+
+            <div className='grow flex flex-col'>
+                {id ? (
+                    <StaffDetailView
+                        id={id}
+                        activeTab={activeTab}
+                        onBack={() => navigate('/staff')}
+                    />
+                ) : (
+                    <StaffInbox
+                        staffMembers={staffMembers}
+                        loading={loading}
+                        error={error}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        activeTab={activeTab}
+                        onAddClick={() => setIsAddModalOpen(true)}
+                        onStaffClick={(staffId) => navigate(`/staff/${activeTab}/${staffId}`)}
+                    />
+                )}
             </div>
+
+            <AddStaffModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onStaffAdded={fetchStaff}
+                token={token}
+            />
         </div>
     );
 };
+
 
 export default Staff;

@@ -25,6 +25,8 @@ const DateTimeStep = ({
     const [specialists, setSpecialists] = useState([]);
     const [specialistsLoading, setSpecialistsLoading] = useState(true);
     const [specialistsError, setSpecialistsError] = useState(null);
+    const [availabilityStatus, setAvailabilityStatus] = useState(null);
+    const [statusLoading, setStatusLoading] = useState(true);
     const [showWaitlistModal, setShowWaitlistModal] = useState(false);
     const [waitlistSlot, setWaitlistSlot] = useState(null);
     // ✅ NEW: Add validation error state
@@ -106,10 +108,28 @@ const DateTimeStep = ({
                 }
             };
             fetchSpecialists();
+
+            // ✅ Check overall availability status (slots for next 90 days)
+            const checkStatus = async () => {
+                setStatusLoading(true);
+                try {
+                    let url = `/slots/service-status/${serviceId}`;
+                    if (formData?.dentist_id) {
+                        url += `?dentistId=${formData.dentist_id}`;
+                    }
+                    const data = await api.get(url);
+                    setAvailabilityStatus(data);
+                } catch (err) {
+                    console.error('Failed to check service status:', err);
+                } finally {
+                    setStatusLoading(false);
+                }
+            };
+            checkStatus();
         } else {
             setSpecialists([]);
         }
-    }, [serviceId]);
+    }, [serviceId, formData?.dentist_id]);
 
     // ✅ FIX: Use local date parts to avoid timezone shifting (e.g. UTC-8 or UTC+8 issues)
     const formatDateKey = (d) => {
@@ -478,8 +498,13 @@ const DateTimeStep = ({
 
     const hasNoSpecialists = !specialistsLoading && specialists.length === 0;
 
+    // If availabilityStatus is null AFTER loading finishes, API crashed. Treat as NO slots.
+    const hasStatusError = !statusLoading && availabilityStatus === null;
+    const hasNoSlots = (!statusLoading && availabilityStatus?.is_bookable === false) || hasStatusError;
+    const showNoAppointments = hasNoSpecialists || hasNoSlots;
+
     // ✅ Initial Loading State: Prevent flicker by showing a high-fidelity pulse skeleton
-    if (specialistsLoading && specialists.length === 0) {
+    if ((specialistsLoading || statusLoading) && (specialists.length === 0 || !availabilityStatus)) {
         return (
             <div className="flex flex-col gap-10 animate-pulse py-2">
                 {/* Header Skeleton */}
@@ -580,7 +605,7 @@ const DateTimeStep = ({
             ) : (
                 <>
                     {/* Header Section */}
-                    {!hasNoSpecialists && (
+                    {!showNoAppointments && (
                         <div className='mb-8 sm:mb-10'>
                             <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3 font-display tracking-tight uppercase'>
                                 Pick Date & Time
@@ -591,8 +616,8 @@ const DateTimeStep = ({
                         </div>
                     )}
 
-            {/* FALLBACK: No Specialists Available for this Service */}
-            {hasNoSpecialists && (
+            {/* FALLBACK: No Appointments Available for this Service */}
+            {showNoAppointments ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-[40px] shadow-theme-sm my-10">
                     <div className="w-24 h-24 bg-brand-50 dark:bg-brand-500/10 rounded-full flex items-center justify-center mb-8">
                         <CalendarX size={44} className="text-brand-500" />
@@ -603,7 +628,7 @@ const DateTimeStep = ({
                     </h3>
                     
                     <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed mb-10 text-sm md:text-base font-medium">
-                        There are no available appointments for this service right now. Please try selecting another service or contact us for assistance.
+                        {availabilityStatus?.message || "There are no available appointments for this service right now. Please try selecting another service or contact us for assistance."}
                     </p>
                     
                     <button 
@@ -614,9 +639,7 @@ const DateTimeStep = ({
                         Choose Another Service
                     </button>
                 </div>
-            )}
-
-            {!hasNoSpecialists && (
+            ) : (
                 <>
                     {/* FULL WIDTH DENTIST SELECTION */}
                     <DoctorDropdown />
@@ -651,10 +674,23 @@ const DateTimeStep = ({
                             const isPast = date < today;
                             const isToday = date.getTime() === today.getTime();
                             const isSelected = key === selectedDate;
-                            const isDisabled = isPast || isToday || date.getDay() === 0 || date > maxDate || isProcessing;
+                            
+                            // ✅ Disable dates outside of the 90 day limit or in the past
+                            let isDisabled = isPast || isToday || date > maxDate || isProcessing;
+                            
+                            // ✅ Disable dates that are not in the working days array
+                            if (availabilityStatus?.working_days?.length > 0) {
+                                if (!availabilityStatus.working_days.includes(date.getDay())) {
+                                    isDisabled = true;
+                                }
+                            } else {
+                                // Fallback check if working_days isn't loaded: disable Sunday
+                                if (date.getDay() === 0) isDisabled = true;
+                            }
+
                             if (!isCurrentMonth) return <div key={idx} className="aspect-square" />;
                             return (
-                                <button key={idx} onClick={() => !isDisabled && handleDateClick(date)} disabled={isDisabled} className={`relative flex flex-col items-center justify-center aspect-square rounded-xl transition-all duration-300 ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-105 z-10' : isDisabled ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-30 shadow-none bg-transparent border-2 border-slate-100/50 dark:border-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 text-gray-700 dark:text-gray-300 shadow-theme-xs'}`}>
+                                <button key={idx} onClick={() => !isDisabled && handleDateClick(date)} disabled={isDisabled} className={`relative flex flex-col items-center justify-center aspect-square rounded-xl transition-all duration-300 ${isSelected ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 scale-105 z-10' : isDisabled ? 'text-gray-300 dark:text-gray-600/50 cursor-not-allowed opacity-30 shadow-none bg-transparent border-2 border-slate-100/50 dark:border-gray-800/50' : 'bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 border-2 border-transparent hover:border-brand-200 dark:hover:border-brand-500/50 text-gray-700 dark:text-gray-300 shadow-theme-xs'}`}>
                                     <span className={`text-[13px] sm:text-sm font-bold ${isSelected ? 'text-white' : ''}`}>
                                         {pendingDate === key ? (
                                             <Loader2 size={16} className={`animate-spin ${isSelected ? 'text-white' : 'text-brand-500'}`} />

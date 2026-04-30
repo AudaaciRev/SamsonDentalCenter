@@ -4,6 +4,7 @@ export const Modal = ({
     isOpen,
     onClose,
     children,
+    footer,
     className = '',
     showCloseButton = true,
     isFullscreen = false,
@@ -42,10 +43,10 @@ export const Modal = ({
 
     const contentClasses = isFullscreen
         ? 'w-full h-full'
-        : 'relative w-full rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-lg max-h-[90vh] flex flex-col overflow-hidden';
+        : 'relative w-full sm:rounded-2xl rounded-t-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-lg max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden';
 
     return (
-        <div className='fixed inset-0 flex items-center justify-center p-4 overflow-y-auto modal z-[999999]'>
+        <div className='fixed inset-0 flex sm:items-center items-end justify-center sm:p-4 p-0 modal z-[999999]'>
             {!isFullscreen && (
                 <div
                     className='fixed inset-0 h-full w-full bg-black/60 backdrop-blur-md transition-all duration-300'
@@ -54,9 +55,14 @@ export const Modal = ({
             )}
             <div
                 ref={modalRef}
-                className={`${contentClasses} ${className}`}
+                className={`${contentClasses} ${className} animate-in slide-in-from-bottom sm:slide-in-from-top duration-300`}
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* Grab handle for mobile bottom sheet */}
+                <div className='flex sm:hidden items-center justify-center pt-3 pb-1'>
+                    <div className='w-12 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full' />
+                </div>
+
                 {showCloseButton && (
                     <button
                         onClick={onClose}
@@ -79,6 +85,11 @@ export const Modal = ({
                     </button>
                 )}
                 <div className='flex-1 overflow-y-auto no-scrollbar'>{children}</div>
+                {footer && (
+                    <div className='border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02]'>
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>
     );

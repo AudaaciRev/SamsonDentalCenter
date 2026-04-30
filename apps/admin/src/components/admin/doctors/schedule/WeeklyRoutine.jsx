@@ -428,7 +428,7 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
 
                 {/* Day grid */}
                 <div className='grid grid-cols-7 w-full border-t border-l border-gray-200 dark:border-gray-700'>
-                    {Array.from({ length: startingDay }).map((_, i) => <div key={`empty-${i}`} className='bg-gray-50/50 dark:bg-gray-800/10 border-r border-b border-gray-100 dark:border-gray-800 aspect-square' />)}
+                    {Array.from({ length: startingDay }).map((_, i) => <div key={`empty-${i}`} className='bg-gray-50/50 dark:bg-gray-800/10 border-r border-b border-gray-200 dark:border-gray-800 aspect-square' />)}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                         const dateNum = i + 1;
                         const dateObj = new Date(year, month, dateNum);
@@ -494,7 +494,7 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
                         );
                     })}
 
-                    {Array.from({ length: (7 - ((startingDay + daysInMonth) % 7)) % 7 }).map((_, i) => <div key={`empty-end-${i}`} className='bg-gray-50/50 dark:bg-gray-800/10 border-r border-b border-gray-100 dark:border-gray-800 aspect-square' />)}
+                    {Array.from({ length: (7 - ((startingDay + daysInMonth) % 7)) % 7 }).map((_, i) => <div key={`empty-end-${i}`} className='bg-gray-50/50 dark:bg-gray-800/10 border-r border-b border-gray-200 dark:border-gray-800 aspect-square' />)}
                 </div>
             </div>
 
@@ -601,7 +601,7 @@ const WeeklyRoutine = ({ doctor, externalBlockModalOpen, setExternalBlockModalOp
                         </div>
                     </div>
 
-                    <div className='flex items-center gap-3 pt-6 border-t border-gray-100 dark:border-gray-800 sm:justify-end'>
+                    <div className='flex items-center gap-3 pt-6 border-t border-gray-200 dark:border-gray-800 sm:justify-end'>
                         <Button variant='outline' type="button" onClick={() => setIsEditModalOpen(false)} disabled={isSaving} className='flex-1 sm:flex-none px-6 py-3.5 h-11 rounded-lg text-[14px] font-black'>Cancel</Button>
                         <Button onClick={saveWeekly} disabled={isSaving} className='flex-1 sm:flex-none px-8 py-3.5 h-11 rounded-lg text-[14px] font-black bg-gray-900 text-white min-w-[170px] dark:bg-white dark:text-gray-900 shadow-theme-xs hover:bg-gray-800 active:scale-95 transition-all'>
                             {isSaving ? 'Saving...' : 'Save Changes'}

@@ -217,7 +217,7 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                         type="date" 
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="w-full h-11 px-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none text-gray-900 dark:text-white"
+                                        className="w-full h-11 px-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none text-gray-900 dark:text-white"
                                     />
                                 </div>
                                 <div>
@@ -229,7 +229,7 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                             setDraftBlockedSlots(new Set());
                                             setDraftUnblockedSlots(new Set());
                                         }}
-                                        className="w-full h-11 px-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none text-gray-900 dark:text-white"
+                                        className="w-full h-11 px-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none text-gray-900 dark:text-white"
                                     >
                                         <option value={30}>30 Minutes</option>
                                         <option value={60}>1 Hour</option>
@@ -246,7 +246,7 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                         const isPendingBlock = draftBlockedSlots.has(time);
                                         const isPendingUnblock = draftUnblockedSlots.has(time);
                                         
-                                        let pillClass = "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:shadow-sm";
+                                        let pillClass = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:shadow-sm";
                                         let dotClass = "bg-gray-200 dark:bg-gray-700";
 
                                         if (isPendingBlock) {
@@ -281,7 +281,7 @@ const BlockTimeModal = ({ isOpen, onClose, events = [], doctor, timeBounds = { m
                                                     : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 cursor-not-allowed shadow-theme-xs";
                                                 dotClass = isAppointment ? "bg-blue-500" : "bg-red-500";
                                             } else {
-                                                pillClass = "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 cursor-not-allowed opacity-60";
+                                                pillClass = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-400 cursor-not-allowed opacity-60";
                                                 dotClass = "bg-gray-200 dark:bg-gray-700 opacity-60";
                                             }
                                         }

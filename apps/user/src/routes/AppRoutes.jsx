@@ -12,6 +12,8 @@ import ScrollToTop from './ScrollToTop';
 // Auth pages
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
+import ClaimProfilePage from '../pages/auth/ClaimProfilePage';
+import AccountSetupPage from '../pages/auth/AccountSetupPage';
 
 // Email link pages (Module 06A)
 import ConfirmAppointmentPage from '../pages/guest/ConfirmAppointmentPage';
@@ -102,6 +104,22 @@ const AppRoutes = () => {
                     element={
                         <GuestOnlyRoute redirectTo='/'>
                             <RegisterPage />
+                        </GuestOnlyRoute>
+                    }
+                />
+                <Route
+                    path='/auth/claim-profile'
+                    element={
+                        <GuestOnlyRoute redirectTo='/'>
+                            <ClaimProfilePage />
+                        </GuestOnlyRoute>
+                    }
+                />
+                <Route
+                    path='/auth/setup'
+                    element={
+                        <GuestOnlyRoute redirectTo='/'>
+                            <AccountSetupPage />
                         </GuestOnlyRoute>
                     }
                 />

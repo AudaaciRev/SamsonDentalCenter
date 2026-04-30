@@ -19,7 +19,7 @@ const DoctorSecurityDetail = ({ doctor }) => {
 
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     {/* Password Reset */}
-                    <div className='p-5 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-white/[0.02]'>
+                    <div className='p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-white/[0.02]'>
                         <div className='flex items-center gap-3 mb-4'>
                             <div className='w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400'>
                                 <Lock size={20} />
@@ -35,7 +35,7 @@ const DoctorSecurityDetail = ({ doctor }) => {
                     </div>
 
                     {/* Account Status */}
-                    <div className='p-5 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-white/[0.02]'>
+                    <div className='p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-white/[0.02]'>
                         <div className='flex items-center gap-3 mb-4'>
                             <div className='w-10 h-10 rounded-lg bg-red-100 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400'>
                                 <UserX size={20} />
@@ -51,7 +51,7 @@ const DoctorSecurityDetail = ({ doctor }) => {
                     </div>
                 </div>
 
-                <div className='mt-8 pt-6 border-t border-gray-100 dark:border-gray-800'>
+                <div className='mt-8 pt-6 border-t border-gray-200 dark:border-gray-800'>
                     <div className='flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10'>
                         <Shield className='text-amber-600 shrink-0' size={20} />
                         <p className='text-[11px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed'>

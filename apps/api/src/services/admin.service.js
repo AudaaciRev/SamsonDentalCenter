@@ -398,7 +398,7 @@ export const rejectScheduleRequest = async (requestId, supervisorId, reason) => 
 export const getAllUsers = async () => {
     const { data, error } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, email, role, is_active, created_at')
+        .select('id, full_name, email, role, created_at')
         .order('created_at', { ascending: false });
 
     if (error) throw new AppError(error.message, 500);
@@ -406,10 +406,11 @@ export const getAllUsers = async () => {
 };
 
 /**
- * Create a new system user.
+ * Create a new system user (Staff Onboarding).
+ * Uses Supabase Invitation to create auth user and trigger profile creation.
  *
  * @param {object} userData - { email, full_name, phone, role }
- * @returns {object} Created user
+ * @returns {object} Created user/invitation info
  */
 export const createSystemUser = async (userData) => {
     const { email, full_name, phone, role } = userData;
@@ -418,37 +419,53 @@ export const createSystemUser = async (userData) => {
         throw new AppError('email, full_name, and role are required.', 400);
     }
 
-    if (!['admin', 'supervisor', 'dentist', 'patient'].includes(role)) {
-        throw { status: 400, message: 'Invalid role.' };
+    if (!['admin', 'secretary', 'receptionist'].includes(role)) {
+        throw new AppError('Invalid system role. Use specific onboarding for doctors/patients.', 400);
     }
 
-    // Check if email already exists
+    // 1. Check if profile already exists (to prevent duplicate auth invites)
     const { data: existing } = await supabaseAdmin
         .from('profiles')
-        .select('id')
+        .select('id, is_registered')
         .eq('email', email)
         .maybeSingle();
 
     if (existing) {
-        throw new AppError('Email already in use.', 409);
+        if (existing.is_registered) {
+            throw new AppError('A registered user with this email already exists.', 409);
+        }
+        // If it's a stub, we might want to promote it? 
+        // For now, let's keep it strict: System accounts must have unique emails.
+        throw new AppError('Email already in use by a patient record.', 409);
     }
 
-    const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-            email,
-            full_name,
-            phone: phone || null,
-            role,
-            is_active: true,
-            created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+    // 2. Metadata for the trigger (handle_new_user)
+    const metadata = {
+        full_name,
+        phone: phone || '',
+        role
+    };
 
-    if (error) throw new AppError(error.message, 500);
-    return data;
+    // 3. Dispatch Invitation
+    const adminUrl = process.env.ADMIN_URL || 'http://localhost:5174';
+    const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+            data: metadata,
+            redirectTo: `${adminUrl}/set-password`
+        }
+    );
+
+    if (inviteErr) {
+        throw new AppError(`Invitation failed: ${inviteErr.message}`, 500);
+    }
+
+    return {
+        user: inviteData.user,
+        message: 'Staff invitation sent successfully.'
+    };
 };
+
 
 /**
  * Change a user's role.
@@ -1114,6 +1131,46 @@ export const setPatientRestriction = async (patientId, restricted, reason = null
     return data;
 };
 
+/**
+ * Update a patient's profile information.
+ *
+ * @param {string} patientId - Profile UUID
+ * @param {object} fields - { full_name?, email?, phone?, is_booking_restricted?, ... }
+ * @returns {object} Updated profile
+ */
+export const updatePatientProfileData = async (patientId, fields) => {
+    const allowedFields = [
+        'full_name', 'first_name', 'last_name', 'middle_name', 'suffix',
+        'email', 'phone', 'date_of_birth', 'avatar_url',
+        'is_booking_restricted', 'restriction_reason'
+    ];
+
+    const updates = {};
+    Object.keys(fields).forEach(key => {
+        if (allowedFields.includes(key)) {
+            updates[key] = fields[key];
+        }
+    });
+
+    if (Object.keys(updates).length === 0) {
+        throw new AppError('No valid fields provided for update.', 400);
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', patientId)
+        .select()
+        .single();
+
+    if (error) throw new AppError(error.message, 500);
+    return data;
+};
+
+
 // ═══════════════════════════════════════════════
 // APPOINTMENT STATE CHANGES
 // ═══════════════════════════════════════════════
@@ -1579,7 +1636,16 @@ export const updateDentistProfileData = async (dentistId, fields) => {
  * @returns {object} Updated dentist with new services
  */
 export const replaceDentistServices = async (dentistId, serviceIds) => {
-    // 1. Delete existing service mappings
+    // 1. Fetch current services to identify what is being removed
+    const { data: oldServices } = await supabaseAdmin
+        .from('dentist_services')
+        .select('service_id')
+        .eq('dentist_id', dentistId);
+
+    const oldServiceIds = (oldServices || []).map((s) => s.service_id);
+    const removedServiceIds = oldServiceIds.filter((id) => !serviceIds.includes(id));
+
+    // 2. Delete existing service mappings
     const { error: deleteErr } = await supabaseAdmin
         .from('dentist_services')
         .delete()
@@ -1587,17 +1653,50 @@ export const replaceDentistServices = async (dentistId, serviceIds) => {
 
     if (deleteErr) throw new AppError(deleteErr.message, 500);
 
-    // 2. Insert new mappings (skip if empty array)
+    // 3. Insert new mappings (skip if empty array)
     if (Array.isArray(serviceIds) && serviceIds.length > 0) {
         const rows = serviceIds.map((sid) => ({ dentist_id: dentistId, service_id: sid }));
-        const { error: insertErr } = await supabaseAdmin
-            .from('dentist_services')
-            .insert(rows);
+        const { error: insertErr } = await supabaseAdmin.from('dentist_services').insert(rows);
         if (insertErr) throw new AppError(insertErr.message, 500);
     }
 
-    // 3. Return fresh data
-    return getDentistById(dentistId);
+    // 4. Handle displacement if services were removed
+    let displacedAppointments = [];
+    if (removedServiceIds.length > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: affected, error: apptError } = await supabaseAdmin
+            .from('appointments')
+            .select(
+                `
+                *,
+                patient: profiles!appointments_patient_id_fkey(id, full_name, email),
+                service: services(id, name)
+            `,
+            )
+            .eq('dentist_id', dentistId)
+            .in('service_id', removedServiceIds)
+            .gte('appointment_date', today)
+            .in('status', [APPOINTMENT_STATUS.PENDING, APPOINTMENT_STATUS.CONFIRMED]);
+
+        if (!apptError && affected && affected.length > 0) {
+            displacedAppointments = affected;
+            const affectedIds = affected.map((a) => a.id);
+
+            await supabaseAdmin
+                .from('appointments')
+                .update({
+                    status: APPOINTMENT_STATUS.CANCELLED,
+                    cancellation_reason: 'SYSTEM_DISPLACED: Service no longer offered by doctor',
+                    cancelled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .in('id', affectedIds);
+        }
+    }
+
+    // 5. Return fresh data and displaced list
+    const updatedDoctor = await getDentistById(dentistId);
+    return { doctor: updatedDoctor, displacedAppointments };
 };
 
 // ═══════════════════════════════════════════════
@@ -1605,45 +1704,197 @@ export const replaceDentistServices = async (dentistId, serviceIds) => {
 // ═══════════════════════════════════════════════
 
 /**
- * Quick register a patient without authentication.
+ * Quick register a patient without authentication (Stub profile).
  * Used for walk-in patients or emergency appointments.
  *
- * @param {object} patientData - { full_name, email, phone }
+ * @param {object} patientData - { full_name, email, phone, first_name, last_name, middle_name, suffix, date_of_birth }
  * @returns {object} Created patient profile
  */
 export const quickRegisterPatient = async (patientData) => {
-    const { full_name, email, phone } = patientData;
+    const { 
+        full_name, email, phone, 
+        first_name, last_name, middle_name, suffix, 
+        date_of_birth 
+    } = patientData;
 
-    if (!full_name || !phone) {
-        throw { status: 400, message: 'full_name and phone are required.' };
+    if (!full_name && (!first_name || !last_name)) {
+        throw new AppError('Patient name is required.', 400);
     }
 
-    // Check if patient already exists by email or phone
-    const { data: existing } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .or(`email.eq.${email},phone.eq.${phone}`)
-        .maybeSingle();
-
-    if (existing) {
-        throw { status: 409, message: 'A patient with this email or phone already exists.' };
+    // Check if patient already exists by email or phone (if provided)
+    // We use separate queries to avoid complex OR filter issues
+    if (email) {
+        const { data: byEmail, error: emailErr } = await supabaseAdmin.from('profiles').select('id, full_name, is_registered').eq('email', email).maybeSingle();
+        if (emailErr) {
+            console.error('Email check error:', emailErr);
+            throw new AppError('Error checking existing email.', 500);
+        }
+        if (byEmail) {
+            throw new AppError(`A patient with email ${email} already exists.`, 409);
+        }
     }
 
-    const { data, error } = await supabaseAdmin
+    if (phone) {
+        const { data: byPhone, error: phoneErr } = await supabaseAdmin.from('profiles').select('id, full_name, is_registered').eq('phone', phone).maybeSingle();
+        if (phoneErr) {
+            console.error('Phone check error:', phoneErr);
+            throw new AppError('Error checking existing phone.', 500);
+        }
+        if (byPhone) {
+            throw new AppError(`A patient with phone ${phone} already exists.`, 409);
+        }
+    }
+
+    const finalFullName = full_name || `${first_name} ${last_name}`.trim();
+    console.log('Final Full Name:', finalFullName);
+
+        const { data, error } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+                full_name: finalFullName,
+                first_name: first_name || null,
+                last_name: last_name || null,
+                middle_name: middle_name || null,
+                suffix: suffix || null,
+                date_of_birth: date_of_birth || null,
+                email: email || null,
+                phone: phone || null,
+                role: 'patient',
+                primary_profile_id: patientData.primary_profile_id || null,
+                is_registered: false,
+                created_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+    if (error) {
+        console.error('Quick registration insert failed:', error);
+        throw new AppError(error.message, 500);
+    }
+    return data;
+};
+
+/**
+ * Check for duplicate patients based on name+DOB, phone, or email.
+ * 
+ * @param {object} criteria - { first_name, last_name, date_of_birth, phone, email }
+ * @returns {Array} List of potential duplicates
+ */
+export const checkDuplicatePatient = async (criteria) => {
+    const { first_name, last_name, date_of_birth, phone, email } = criteria;
+    const conditions = [];
+    
+    // 1. Exact matches for Email or Phone
+    if (email) conditions.push(`email.ilike.${email}`);
+    
+    // Sanitize phone (extract digits) to catch format differences
+    if (phone) {
+        const cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.length >= 7) {
+            conditions.push(`phone.ilike.%${cleanPhone}%`);
+        } else {
+            conditions.push(`phone.eq.${phone}`);
+        }
+    }
+    
+    // 2. Name Triangulation: First + Last Name (Fuzzy matching)
+    if (first_name && last_name) {
+        conditions.push(`and(first_name.ilike.%${first_name}%,last_name.ilike.%${last_name}%)`);
+    }
+    
+    if (conditions.length === 0) return [];
+
+    const { data: duplicates, error } = await supabaseAdmin
         .from('profiles')
-        .insert({
-            full_name,
-            email: email || null,
-            phone,
-            role: 'patient',
-            is_active: true,
-            created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        .select('id, full_name, first_name, last_name, date_of_birth, phone, email, is_registered, role')
+        .or(conditions.join(','));
 
     if (error) throw new AppError(error.message, 500);
-    return data;
+
+    // Filter results to ensure high relevance (Rule: Email match OR Phone match OR Name+DOB match)
+    const filtered = (duplicates || []).filter(d => {
+        // Email is absolute
+        if (email && d.email?.toLowerCase() === email.toLowerCase()) return true;
+        
+        // Phone digits are absolute
+        if (phone && d.phone?.replace(/\D/g, '') === phone.replace(/\D/g, '')) return true;
+
+        // Name + DOB match is absolute
+        if (first_name && last_name && date_of_birth) {
+            const nameMatch = d.first_name?.toLowerCase().includes(first_name.toLowerCase()) || 
+                             d.last_name?.toLowerCase().includes(last_name.toLowerCase());
+            const dobMatch = d.date_of_birth === date_of_birth;
+            if (nameMatch && dobMatch) return true;
+        }
+
+        // Just Name match (if no other data available)
+        if (!email && !phone && !date_of_birth && first_name && last_name) return true;
+
+        return false;
+    });
+
+    return filtered;
+};
+
+/**
+ * Merge two patient records (Source -> Target).
+ * Migrates appointments, treatment notes, etc., and deletes source.
+ * 
+ * @param {string} sourceId - Profile UUID of the record to be removed
+ * @param {string} targetId - Profile UUID of the record to be kept
+ * @returns {object} { success: true }
+ */
+export const mergePatientRecords = async (sourceId, targetId, asDependent = false) => {
+    if (sourceId === targetId) throw new AppError('Cannot merge a profile into itself.', 400);
+
+    // 1. Verify both exist
+    const { data: source } = await supabaseAdmin.from('profiles').select('id, is_registered').eq('id', sourceId).single();
+    const { data: target } = await supabaseAdmin.from('profiles').select('id, is_registered').eq('id', targetId).single();
+
+    if (!source || !target) throw new AppError('One or both profiles not found.', 404);
+
+    // 2. Perform merge or link
+    try {
+        // Migrating all related data to the target
+        const tables = [
+            { name: 'appointments', column: 'patient_id' },
+            { name: 'treatment_notes', column: 'patient_id' },
+            { name: 'follow_ups', column: 'patient_id' },
+            { name: 'waitlist', column: 'patient_id' },
+            { name: 'notifications', column: 'user_id' }
+        ];
+
+        for (const table of tables) {
+            const { error } = await supabaseAdmin
+                .from(table.name)
+                .update({ [table.column]: targetId })
+                .eq(table.column, sourceId);
+            if (error) console.warn(`Note: Failed to migrate ${table.name}: ${error.message}`);
+        }
+
+        if (asDependent) {
+            // Link as dependent instead of deleting
+            const { error: linkErr } = await supabaseAdmin
+                .from('profiles')
+                .update({ 
+                    primary_profile_id: targetId,
+                    email: null // Clear email to allow the parent's email to be the primary contact
+                })
+                .eq('id', sourceId);
+            if (linkErr) throw linkErr;
+        } else {
+            // Full Merge: Delete source
+            const { error: delErr } = await supabaseAdmin
+                .from('profiles')
+                .delete()
+                .eq('id', sourceId);
+            if (delErr) throw delErr;
+        }
+
+        return { success: true };
+    } catch (err) {
+        throw new AppError(`Action failed: ${err.message}`, 500);
+    }
 };
 
 // ═══════════════════════════════════════════════
@@ -1841,4 +2092,21 @@ export const reassignAppointmentToDentist = async (appointmentId, newDentistId, 
     if (updateErr) throw new AppError(updateErr.message, 500);
 
     return updated;
+};
+
+/**
+ * Get a single patient profile by ID.
+ * 
+ * @param {string} id - Profile UUID
+ * @returns {object} Profile data
+ */
+export const getPatientProfile = async (id) => {
+    const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) throw new AppError(error.message, 404);
+    return data;
 };

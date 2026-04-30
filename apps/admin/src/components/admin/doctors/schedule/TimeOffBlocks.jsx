@@ -27,7 +27,7 @@ const TimeOffBlocks = () => {
                 {blocks.map((block, i) => (
                     <div 
                         key={i}
-                        className='p-4 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-white/[0.01] hover:border-brand-500/30 transition-all group'
+                        className='p-4 rounded-xl border border-gray-200 dark:border-gray-800/80 bg-gray-50/50 dark:bg-white/[0.01] hover:border-brand-500/30 transition-all group'
                     >
                         <div className='flex items-start justify-between gap-4'>
                             <div className='space-y-1.5'>
@@ -50,7 +50,7 @@ const TimeOffBlocks = () => {
                 ))}
 
                 {blocks.length === 0 && (
-                    <div className='py-8 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl'>
+                    <div className='py-8 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl'>
                         <CalendarOff size={24} className='text-gray-300 mb-2' />
                         <p className='text-xs text-gray-500'>No active time-off blocks.</p>
                     </div>

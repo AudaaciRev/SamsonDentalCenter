@@ -4,6 +4,7 @@ import {
     getSuggestions,
     getSuggestionsPublic,
     getAvailablePublic,
+    checkServiceStatus,
 } from '../controllers/slots.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../utils/validate.js';
@@ -14,6 +15,7 @@ const router = Router();
 // Public route
 router.get('/available/public', validate(getAvailableSchema), getAvailablePublic);
 router.get('/suggest/public', validate(getSuggestionsSchema), getSuggestionsPublic);
+router.get('/service-status/:serviceId', checkServiceStatus);
 
 // Private route
 router.get('/available', validate(getAvailableSchema), requireAuth, getAvailable);

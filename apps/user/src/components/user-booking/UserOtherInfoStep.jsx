@@ -1,46 +1,116 @@
-import { useState, useEffect } from 'react';
-import { ArrowRight, UserCircle, Contact, Info, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { 
+    ChevronDown, 
+    UserCircle, 
+    Users, 
+    Plus, 
+    Mail, 
+    Phone, 
+    Contact, 
+    Check, 
+    ArrowRight,
+    Search,
+    ShieldCheck,
+    Calendar,
+    Heart,
+    Loader2
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../utils/api';
 
-const UserOtherInfoStep = ({ formData, book_for_others, onUpdate, setBookForOthersMode, onNext, onBack }) => {
-    const { user } = useAuth();
+const UserOtherInfoStep = ({ formData, onUpdate, onNext, onBack }) => {
+    const { user, token } = useAuth();
+    const [profiles, setProfiles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const [errors, setErrors] = useState({});
+    const dropdownRef = useRef(null);
 
-    // Internal state for name parts (synced with formData for "Someone Else")
-    const [nameParts, setNameParts] = useState({
-        first: formData.booked_for_first_name || '',
-        last: formData.booked_for_last_name || '',
-        middle: formData.booked_for_middle_name || '',
-        suffix: formData.booked_for_suffix_name || ''
-    });
-
-    // Update nameParts if formData changes (e.g., on back/next)
+    // Fetch profiles on mount
     useEffect(() => {
-        if (book_for_others) {
-            setNameParts({
-                first: formData.booked_for_first_name || '',
-                last: formData.booked_for_last_name || '',
-                middle: formData.booked_for_middle_name || '',
-                suffix: formData.booked_for_suffix_name || ''
+        const fetchProfiles = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get('/profiles', token);
+                setProfiles(response.profiles || []);
+            } catch (err) {
+                console.error('Failed to fetch profiles:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (token) fetchProfiles();
+    }, [token]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSelect = (profileId) => {
+        setIsOpen(false);
+        setErrors({});
+
+        if (profileId === 'myself') {
+            onUpdate({
+                patient_profile_id: '',
+                booked_for_first_name: user?.first_name || '',
+                booked_for_last_name: user?.last_name || '',
+                booked_for_middle_name: user?.middle_name || '',
+                booked_for_suffix_name: user?.suffix || '',
+                booked_for_birthday: user?.date_of_birth || '',
+                booked_for_relationship: 'Self',
+                booked_for_phone: user?.phone || ''
             });
+        } else if (profileId === 'new') {
+            onUpdate({
+                patient_profile_id: 'new',
+                booked_for_first_name: '',
+                booked_for_last_name: '',
+                booked_for_middle_name: '',
+                booked_for_suffix_name: '',
+                booked_for_birthday: '',
+                booked_for_relationship: '',
+                booked_for_phone: user?.phone || ''
+            });
+        } else {
+            const profile = profiles.find(p => p.id === profileId);
+            if (profile) {
+                onUpdate({
+                    patient_profile_id: profile.id,
+                    booked_for_first_name: profile.first_name,
+                    booked_for_last_name: profile.last_name,
+                    booked_for_middle_name: profile.middle_name,
+                    booked_for_suffix_name: profile.suffix,
+                    booked_for_birthday: profile.date_of_birth,
+                    booked_for_relationship: profile.relationship,
+                    booked_for_phone: user?.phone || ''
+                });
+            }
         }
-    }, [book_for_others, formData.booked_for_first_name, formData.booked_for_last_name, formData.booked_for_middle_name, formData.booked_for_suffix_name]);
+    };
 
     const validate = () => {
         const newErrors = {};
+        if (!formData.booked_for_first_name?.trim()) newErrors.first_name = 'Required';
+        if (!formData.booked_for_last_name?.trim()) newErrors.last_name = 'Required';
+        
+        if (formData.patient_profile_id === 'new') {
+            if (!formData.booked_for_birthday) newErrors.birthday = 'Required';
+            if (!formData.booked_for_relationship) newErrors.relationship = 'Required';
+        }
 
-        if (book_for_others) {
-            if (!nameParts.first?.trim()) newErrors.first_name = 'First name is required.';
-            if (!nameParts.last?.trim()) newErrors.last_name = 'Last name is required.';
-
-            if (formData.booked_for_phone?.trim()) {
-                const sanitizedPhone = formData.booked_for_phone.replace(/\D/g, '');
-                if (!/^\d{10,11}$/.test(sanitizedPhone)) {
-                    newErrors.phone = 'Please enter a valid phone number.';
-                }
-            } else {
-                newErrors.phone = 'Phone number is required.';
-            }
+        const phone = formData.booked_for_phone?.replace(/\D/g, '');
+        if (!phone) {
+            newErrors.phone = 'Required';
+        } else if (phone.length < 10 || phone.length > 11) {
+            newErrors.phone = 'Invalid phone number';
         }
 
         setErrors(newErrors);
@@ -51,162 +121,279 @@ const UserOtherInfoStep = ({ formData, book_for_others, onUpdate, setBookForOthe
         if (validate()) onNext();
     };
 
-    const handleFieldChange = (field, value) => {
-        onUpdate({ [field]: value });
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: undefined }));
-        }
+    const isReadOnly = formData.patient_profile_id !== 'new';
+    const currentSelection = formData.patient_profile_id === 'new' 
+        ? 'new' 
+        : (formData.patient_profile_id || 'myself');
+
+    const getSelectedLabel = () => {
+        if (currentSelection === 'myself') return 'Myself (Primary Account)';
+        if (currentSelection === 'new') return '+ Add New Family Member';
+        const p = profiles.find(p => p.id === currentSelection);
+        return p ? `${p.first_name} ${p.last_name} (${p.relationship})` : 'Select Patient';
     };
 
-    const handleNamePartChange = (part, value) => {
-        const updatedParts = { ...nameParts, [part]: value };
-        setNameParts(updatedParts);
-
-        onUpdate({
-            [`booked_for_${part}_name`]: value,
-        });
-
-        if (errors[`${part}_name`]) {
-            setErrors(prev => ({ ...prev, [`${part}_name`]: undefined }));
-        }
+    const labelClasses = "mb-1.5 block text-[11px] sm:text-[12px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none";
+    const baseInput = "h-11 w-full rounded-xl border appearance-none px-4 py-2.5 text-sm font-medium transition-all duration-200 outline-none block";
+    
+    const getInputClasses = (field) => {
+        const hasError = errors[field];
+        const shared = isReadOnly ? "bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-gray-800 text-gray-500 dark:text-white/40 cursor-not-allowed" : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500";
+        const errorState = hasError ? "border-red-500 ring-4 ring-red-500/10" : "";
+        return `${baseInput} ${shared} ${errorState}`;
     };
-
-    const getInputClasses = (fieldError) => {
-        const base = "h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-[clamp(14px,1vw,15px)] shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 transition-colors bg-white dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 font-medium";
-        if (fieldError) {
-            return `${base} border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:text-error-400 dark:border-error-500 dark:focus:border-error-800`;
-        }
-        return `${base} text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-800`;
-    };
-
-    const labelClasses = "mb-1.5 block text-[clamp(12px,0.8vw,13px)] font-bold text-gray-700 dark:text-gray-400 uppercase tracking-widest opacity-80 leading-none";
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10 sm:pb-6">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20 sm:pb-6">
             {/* Header Section */}
             <div className='mb-8 sm:mb-10'>
-                <h2 className='text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
+                <h2 className='text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2 sm:mb-3 tracking-tight uppercase'>
                     Patient Information
                 </h2>
-                <p className='text-[13px] sm:text-sm md:text-base text-gray-500 dark:text-gray-400 leading-relaxed font-medium'>
-                    Confirm who this appointment is for and provide contact details if booking on behalf of someone else.
+                <p className='text-sm md:text-base text-gray-500 dark:text-gray-400 leading-relaxed font-medium'>
+                    Choose who this appointment is for and confirm their contact details.
                 </p>
             </div>
 
-            {/* Who is it for? Custom Segmented Control */}
-            <div className='mb-8 flex items-center gap-2 bg-gray-100 dark:bg-gray-800/50 p-1.5 sm:p-2 rounded-2xl w-fit'>
+            {/* Profile Selection Dropdown */}
+            <div className='mb-10 relative' ref={dropdownRef}>
+                <label className={labelClasses}>Who are we booking for?</label>
                 <button
-                    type='button'
-                    onClick={() => setBookForOthersMode(false)}
-                    className={`px-6 py-2 sm:px-8 sm:py-2.5 rounded-xl text-[12px] sm:text-[13px] font-bold transition-all duration-300 uppercase tracking-[0.1em] ${!book_for_others
-                            ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-theme-sm ring-1 ring-black/5 dark:ring-white/5'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`w-full flex items-center justify-between p-4 bg-white dark:bg-white/[0.02] border-2 rounded-2xl transition-all shadow-theme-sm group ${
+                        isOpen ? 'border-brand-500 ring-4 ring-brand-500/10' : 'border-gray-100 dark:border-gray-800 hover:border-brand-200'
+                    }`}
                 >
-                    Myself
+                    <div className='flex items-center gap-3'>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-brand-500 transition-colors ${
+                            currentSelection === 'new' ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600' : 'bg-gray-50 dark:bg-white/5'
+                        }`}>
+                            {currentSelection === 'myself' ? <UserCircle size={24} /> : currentSelection === 'new' ? <Plus size={24} /> : <Users size={24} />}
+                        </div>
+                        <span className="text-[15px] font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight">
+                            {getSelectedLabel()}
+                        </span>
+                    </div>
+                    <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-brand-500' : ''}`} />
                 </button>
-                <button
-                    type='button'
-                    onClick={() => setBookForOthersMode(true)}
-                    className={`px-6 py-2 sm:px-8 sm:py-2.5 rounded-xl text-[12px] sm:text-[13px] font-bold transition-all duration-300 uppercase tracking-[0.1em] ${book_for_others
-                            ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-theme-sm ring-1 ring-black/5 dark:ring-white/5'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
-                >
-                    Others
-                </button>
-            </div>
 
-            {/* Premium Card Container */}
-            <div className='w-full bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-3xl shadow-theme-sm overflow-hidden'>
-                {!book_for_others ? (
-                    <section className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6">
-                            <UserCircle size={20} className="text-brand-500" />
-                            <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Account Identity</h3>
-                        </div>
-                        <div className="px-6 pb-10 sm:px-10 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                                <div><label className={labelClasses}>First Name</label><input type='text' value={user?.first_name || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"} /></div>
-                                <div><label className={labelClasses}>Last Name</label><input type='text' value={user?.last_name || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"} /></div>
-                                <div><label className={labelClasses}>Middle Name</label><input type='text' value={user?.middle_name || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"} /></div>
-                                <div><label className={labelClasses}>Suffix</label><input type='text' value={user?.suffix || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50"} /></div>
-                            </div>
-                        </div>
-                        <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6 border-t">
-                            <Contact size={20} className="text-brand-500" />
-                            <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Contact Details</h3>
-                        </div>
-                        <div className="px-6 pb-10 sm:px-10 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                                <div>
-                                    <label className={labelClasses}>Email Address</label>
-                                    <div className="relative group"><input type='email' value={user?.email || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50 pr-10"} /><Mail size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 opacity-50" /></div>
+                {isOpen && (
+                    <div className='absolute top-[calc(100%+8px)] left-0 w-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200'>
+                        <div className='max-h-[300px] overflow-y-auto p-2 scrollbar-hide'>
+                            {/* Myself Option */}
+                            <button
+                                onClick={() => handleSelect('myself')}
+                                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left mb-1 ${
+                                    currentSelection === 'myself' ? 'bg-brand-50 text-brand-600' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                                }`}
+                            >
+                                <div className='w-8 h-8 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center'>
+                                    <UserCircle size={18} />
                                 </div>
-                                <div>
-                                    <label className={labelClasses}>Phone Number</label>
-                                    <div className="relative group"><input type='tel' value={user?.phone || ''} readOnly className={getInputClasses() + " cursor-not-allowed opacity-70 bg-gray-50/50 pr-10"} /><Phone size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 opacity-50" /></div>
+                                <span className='text-sm font-black uppercase tracking-tight'>Myself (Default)</span>
+                                {currentSelection === 'myself' && <Check size={16} className='ml-auto text-brand-500' />}
+                            </button>
+
+                            {/* Saved Profiles */}
+                            {profiles.map(p => (
+                                <button
+                                    key={p.id}
+                                    onClick={() => handleSelect(p.id)}
+                                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left mb-1 ${
+                                        currentSelection === p.id ? 'bg-brand-50 text-brand-600' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                                    }`}
+                                >
+                                    <div className='w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 flex items-center justify-center'>
+                                        <Users size={18} />
+                                    </div>
+                                    <div className='flex flex-col'>
+                                        <span className='text-sm font-black uppercase tracking-tight'>{p.first_name} {p.last_name}</span>
+                                        <span className='text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest'>{p.relationship}</span>
+                                    </div>
+                                    {currentSelection === p.id && <Check size={16} className='ml-auto text-brand-500' />}
+                                </button>
+                            ))}
+
+                            <div className='h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2' />
+
+                            {/* Add New Option */}
+                            <button
+                                onClick={() => handleSelect('new')}
+                                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left ${
+                                    currentSelection === 'new' ? 'bg-brand-50 text-brand-600' : 'text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/5'
+                                }`}
+                            >
+                                <div className='w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center'>
+                                    <Plus size={18} />
                                 </div>
-                            </div>
+                                <span className='text-sm font-black uppercase tracking-tight'>Add New Family Member</span>
+                            </button>
                         </div>
-                        <div className="mx-6 sm:mx-10 mt-2 mb-10 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl p-6 sm:p-8">
-                            <div className="flex flex-col gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/20"><ShieldCheck size={22} /></div>
-                                    <h4 className="text-[14px] sm:text-base font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight">Booking for Yourself</h4>
-                                </div>
-                                <p className="text-[12px] sm:text-[14px] text-gray-600 dark:text-gray-400 leading-relaxed font-medium">Notifications will be sent to: <strong className="text-brand-600 dark:text-brand-400 break-all">{user?.email}</strong></p>
-                            </div>
-                        </div>
-                    </section>
-                ) : (
-                    <section className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6">
-                            <UserCircle size={20} className="text-brand-500" />
-                            <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Patient Details</h3>
-                        </div>
-                        <div className="px-6 pb-10 sm:px-10 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                                <div>
-                                    <label className={labelClasses}>First Name <span className='text-brand-500'>*</span></label>
-                                    <input type='text' value={nameParts.first} onChange={(e) => handleNamePartChange('first', e.target.value)} placeholder='John' className={getInputClasses(errors.first_name)} />
-                                    {errors.first_name && <p className='text-error-500 text-[10px] font-bold mt-1.5 ml-1'>{errors.first_name}</p>}
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>Last Name <span className='text-brand-500'>*</span></label>
-                                    <input type='text' value={nameParts.last} onChange={(e) => handleNamePartChange('last', e.target.value)} placeholder='Doe' className={getInputClasses(errors.last_name)} />
-                                    {errors.last_name && <p className='text-error-500 text-[10px] font-bold mt-1.5 ml-1'>{errors.last_name}</p>}
-                                </div>
-                                <div><label className={labelClasses}>Middle Name <span className="opacity-40 font-normal italic text-[9px]">(optional)</span></label><input type='text' value={nameParts.middle} onChange={(e) => handleNamePartChange('middle', e.target.value)} placeholder='Optional' className={getInputClasses()} /></div>
-                                <div><label className={labelClasses}>Suffix <span className="opacity-40 font-normal italic text-[9px]">(optional)</span></label><input type='text' value={nameParts.suffix} onChange={(e) => handleNamePartChange('suffix', e.target.value)} placeholder='Jr., III' className={getInputClasses()} /></div>
-                            </div>
-                        </div>
-                        <div className="px-6 py-6 sm:px-10 flex items-center gap-3 border-b border-gray-50 dark:border-gray-800/50 mb-6 border-t">
-                            <Contact size={20} className="text-brand-500" />
-                            <h3 className="text-sm sm:text-base font-bold text-gray-800 dark:text-white/90 uppercase tracking-widest leading-none">Contact Information</h3>
-                        </div>
-                        <div className="px-6 pb-10 sm:px-10 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                                <div>
-                                    <label className={labelClasses}>Email Address <span className='text-brand-500'>*</span></label>
-                                    <div className='h-11 w-full rounded-lg border px-4 py-2.5 text-sm bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-gray-800 text-slate-500 dark:text-white/40 flex items-center overflow-hidden'><span className="truncate">{user?.email}</span></div>
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>Phone Number <span className='text-brand-500'>*</span></label>
-                                    <div className="relative group"><input type='tel' value={formData.booked_for_phone} onChange={(e) => handleFieldChange('booked_for_phone', e.target.value)} placeholder='09171234567' className={getInputClasses(errors.phone)} /><Phone size={14} className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-400 transition-colors" /></div>
-                                    {errors.phone && <p className='text-error-500 text-[10px] font-bold mt-1.5 ml-1'>{errors.phone}</p>}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                    </div>
                 )}
             </div>
 
-            {/* Navigation Footer */}
+            {/* Form Sections */}
+            <div className='space-y-6'>
+                {/* Identity Card */}
+                <div className='bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-[32px] overflow-hidden shadow-theme-xs'>
+                    <div className='px-8 py-5 border-b border-gray-50 dark:border-gray-800/50 bg-gray-50/50 dark:bg-transparent flex items-center gap-3'>
+                        <UserCircle size={18} className="text-brand-500" />
+                        <h3 className='text-[13px] font-black text-gray-800 dark:text-white uppercase tracking-widest'>Patient Identity</h3>
+                    </div>
+                    <div className='p-8 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8'>
+                        <div>
+                            <label className={labelClasses}>First Name</label>
+                            <input 
+                                type="text" 
+                                readOnly={isReadOnly}
+                                value={formData.booked_for_first_name}
+                                onChange={(e) => onUpdate({ booked_for_first_name: e.target.value })}
+                                className={getInputClasses('first_name')}
+                                placeholder="Patient's First Name"
+                            />
+                            {errors.first_name && <p className='text-[10px] text-red-500 font-bold uppercase mt-1.5 ml-1'>{errors.first_name}</p>}
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Last Name</label>
+                            <input 
+                                type="text" 
+                                readOnly={isReadOnly}
+                                value={formData.booked_for_last_name}
+                                onChange={(e) => onUpdate({ booked_for_last_name: e.target.value })}
+                                className={getInputClasses('last_name')}
+                                placeholder="Patient's Last Name"
+                            />
+                            {errors.last_name && <p className='text-[10px] text-red-500 font-bold uppercase mt-1.5 ml-1'>{errors.last_name}</p>}
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Middle Name (Optional)</label>
+                            <input 
+                                type="text" 
+                                readOnly={isReadOnly}
+                                value={formData.booked_for_middle_name}
+                                onChange={(e) => onUpdate({ booked_for_middle_name: e.target.value })}
+                                className={getInputClasses('middle_name')}
+                                placeholder="Optional"
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Suffix (Optional)</label>
+                            <input 
+                                type="text" 
+                                readOnly={isReadOnly}
+                                value={formData.booked_for_suffix_name}
+                                onChange={(e) => onUpdate({ booked_for_suffix_name: e.target.value })}
+                                className={getInputClasses('suffix_name')}
+                                placeholder="e.g. Jr., III"
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Date of Birth</label>
+                            <div className='relative'>
+                                <input 
+                                    type="date" 
+                                    readOnly={isReadOnly}
+                                    value={formData.booked_for_birthday}
+                                    onChange={(e) => onUpdate({ booked_for_birthday: e.target.value })}
+                                    className={getInputClasses('birthday') + " pr-4"}
+                                />
+                                <Calendar size={14} className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none' />
+                            </div>
+                            {errors.birthday && <p className='text-[10px] text-red-500 font-bold uppercase mt-1.5 ml-1'>{errors.birthday}</p>}
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Relationship</label>
+                            {isReadOnly ? (
+                                <input 
+                                    type="text" 
+                                    readOnly 
+                                    value={formData.booked_for_relationship}
+                                    className={getInputClasses('relationship')}
+                                />
+                            ) : (
+                                <select 
+                                    value={formData.booked_for_relationship}
+                                    onChange={(e) => onUpdate({ booked_for_relationship: e.target.value })}
+                                    className={getInputClasses('relationship')}
+                                >
+                                    <option value="" disabled>Select Relationship</option>
+                                    <option value="Child">Child</option>
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            )}
+                            {errors.relationship && <p className='text-[10px] text-red-500 font-bold uppercase mt-1.5 ml-1'>{errors.relationship}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact Card */}
+                <div className='bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-[32px] overflow-hidden shadow-theme-xs'>
+                    <div className='px-8 py-5 border-b border-gray-50 dark:border-gray-800/50 bg-gray-50/50 dark:bg-transparent flex items-center gap-3'>
+                        <Contact size={18} className="text-brand-500" />
+                        <h3 className='text-[13px] font-black text-gray-800 dark:text-white uppercase tracking-widest'>Contact Information</h3>
+                    </div>
+                    <div className='p-8 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-8'>
+                        <div>
+                            <label className={labelClasses}>Notification Email</label>
+                            <div className='relative'>
+                                <input 
+                                    type="email" 
+                                    readOnly 
+                                    value={user?.email}
+                                    className={`${baseInput} bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-gray-800 text-gray-500 dark:text-white/40 cursor-not-allowed pr-10`}
+                                />
+                                <Mail size={14} className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none' />
+                            </div>
+                        </div>
+                        <div>
+                            <label className={labelClasses}>Contact Phone</label>
+                            <div className='relative'>
+                                <input 
+                                    type="tel" 
+                                    value={formData.booked_for_phone}
+                                    onChange={(e) => onUpdate({ booked_for_phone: e.target.value })}
+                                    className={getInputClasses('phone') + " pr-10"}
+                                    placeholder="0917 123 4567"
+                                />
+                                <Phone size={14} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${errors.phone ? 'text-red-400' : 'text-gray-300'}`} />
+                            </div>
+                            {errors.phone && <p className='text-[10px] text-red-500 font-bold uppercase mt-1.5 ml-1'>{errors.phone}</p>}
+                        </div>
+                    </div>
+                </div>
+
+                {isReadOnly && (
+                    <div className='p-6 bg-brand-50/30 dark:bg-brand-500/5 border border-brand-100/50 dark:border-brand-500/10 rounded-2xl flex items-center gap-4 animate-in fade-in duration-500'>
+                        <div className='w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/20'>
+                            <ShieldCheck size={20} />
+                        </div>
+                        <p className='text-xs font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-tight'>
+                            This profile is verified and linked to your main account. Details are handled securely.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Consistent Navigation Footer */}
             <div className='fixed bottom-0 left-0 right-0 sm:relative z-40 px-6 py-4 sm:px-0 sm:py-0 sm:mt-6 sm:pt-2 bg-white/95 dark:bg-gray-900/95 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none border-t border-gray-100 dark:border-gray-800 sm:border-t-0 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] sm:shadow-none transition-all'>
                 <div className='flex items-center gap-3 w-full sm:justify-between'>
-                    <button onClick={onBack} className='flex-1 sm:flex-none sm:min-w-[120px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[11px] sm:text-sm px-6 py-3.5 sm:px-8 transition-colors uppercase tracking-widest bg-gray-50 dark:bg-gray-800 sm:bg-transparent rounded-2xl sm:rounded-2xl border border-transparent shadow-theme-xs'>Back</button>
-                    <button onClick={handleNext} className='flex-[2] sm:flex-none sm:min-w-[240px] bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-10 sm:py-4 rounded-2xl transition-all shadow-theme-md flex items-center justify-center gap-2 sm:gap-2.5 text-[12px] sm:text-base uppercase tracking-widest'>Continue to Review<ArrowRight size={20} className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                    <button 
+                        onClick={onBack} 
+                        className='flex-1 sm:flex-none sm:min-w-[120px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-black text-[11px] sm:text-sm px-6 py-3.5 sm:px-8 transition-colors uppercase tracking-widest bg-gray-50 dark:bg-gray-800 sm:bg-transparent rounded-2xl sm:rounded-2xl border border-transparent shadow-theme-xs'
+                    >
+                        Back
+                    </button>
+                    <button 
+                        onClick={handleNext} 
+                        className='flex-[2] sm:flex-none sm:min-w-[240px] bg-brand-500 hover:bg-brand-600 active:scale-95 text-white font-black px-6 py-3.5 sm:px-10 sm:py-4 rounded-2xl transition-all shadow-theme-md flex items-center justify-center gap-2 sm:gap-2.5 text-[12px] sm:text-base uppercase tracking-widest'
+                    >
+                        Review Booking <ArrowRight size={20} className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
                 </div>
             </div>
         </div>

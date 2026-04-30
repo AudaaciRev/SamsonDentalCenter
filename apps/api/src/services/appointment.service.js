@@ -141,6 +141,8 @@ export const bookAppointmentGuest = async (
             end_time: endTime,
             status: APPOINTMENT_STATUS.PENDING,
             approval_status: APPROVAL_STATUS.PENDING,
+            patient_confirmed: true, // Already verified via OTP
+            confirmed_at: new Date().toISOString(),
             source: APPOINTMENT_SOURCE.GUEST_BOOKING,
             reschedule_count: rescheduleCount,
         })
@@ -156,10 +158,9 @@ export const bookAppointmentGuest = async (
         throw new AppError(insertError.message, 500);
     }
 
-    // ── 5. Generate confirmation token & send email ──
-    const { token } = await createConfirmationToken(appointment.id);
-    await sendGuestConfirmationEmail(guestEmail, guestName, {
-        token,
+    // ── 5. Email verified via OTP already, so we can send the SUCCESS email immediately
+    // Note: We still stay PENDING for admin approval.
+    await sendBookingRequestReceivedEmail(guestEmail, guestName, {
         date: appointment.appointment_date,
         start_time: appointment.start_time,
         service: service.name,
@@ -168,7 +169,7 @@ export const bookAppointmentGuest = async (
     return {
         booked: true,
         status: 'PENDING',
-        message: 'Appointment reserved! Please check your email to confirm your booking.',
+        message: 'Appointment reserved! Since your email is verified, we have sent your request to our team for approval.',
         appointment: {
             id: appointment.id,
             date: appointment.appointment_date,
@@ -207,7 +208,10 @@ export const bookAppointment = async (
     userSessionId = null,
     preferredDentistId = null,
     rescheduleCount = 0,
-    isPreferred = null, // ✅ Can be explicitly passed or calculated
+    isPreferred = null,
+    patientProfileId = null, // ✅ NEW: Link to a saved patient profile
+    bookedForBirthday = null,
+    bookedForRelationship = null,
 ) => {
     const finalIsPreferred = isPreferred !== null ? isPreferred : !!preferredDentistId;
     let bookedForName = null;
@@ -215,17 +219,42 @@ export const bookAppointment = async (
     let lastName = null;
     let middleName = null;
     let suffix = null;
+    let finalBookedForBirthday = null;
+    let finalBookedForRelationship = null;
 
-    if (bookedForNameParts) {
-        if (typeof bookedForNameParts === 'object') {
-            const { first, last, middle, suffix: sfx } = bookedForNameParts;
-            firstName = first;
-            lastName = last;
-            middleName = middle;
-            suffix = sfx;
-            bookedForName = `${last}, ${first} ${middle || ''} ${sfx || ''}`.replace(/\s+/g, ' ').trim();
-        } else {
-            bookedForName = bookedForNameParts;
+    if (patientProfileId) {
+        // ── A. Fetch from saved patient profile ──
+        const { data: pProfile } = await supabaseAdmin
+            .from('patient_profiles')
+            .select('*')
+            .eq('id', patientProfileId)
+            .eq('profile_id', patientId) // Ownership check
+            .single();
+
+        if (pProfile) {
+            firstName = pProfile.first_name;
+            lastName = pProfile.last_name;
+            middleName = pProfile.middle_name;
+            suffix = pProfile.suffix;
+            finalBookedForBirthday = pProfile.date_of_birth;
+            finalBookedForRelationship = pProfile.relationship;
+            bookedForName = `${lastName}, ${firstName} ${middleName || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+        }
+    } else {
+        finalBookedForBirthday = bookedForBirthday;
+        finalBookedForRelationship = bookedForRelationship;
+
+        if (bookedForNameParts) {
+            // ── B. Fallback to manual entry (Legacy/Manual) ──
+            if (typeof bookedForNameParts === 'object') {
+                firstName = bookedForNameParts.first;
+                lastName = bookedForNameParts.last;
+                middleName = bookedForNameParts.middle;
+                suffix = bookedForNameParts.suffix;
+                bookedForName = `${lastName}, ${firstName} ${middleName || ''} ${suffix || ''}`.replace(/\s+/g, ' ').trim();
+            } else {
+                bookedForName = bookedForNameParts;
+            }
         }
     }
     // ── 0. Check if patient is restricted (3+ no-shows or 3+ cancellations) ──
@@ -265,6 +294,8 @@ export const bookAppointment = async (
         lastName = lastName || patient.last_name;
         middleName = middleName || patient.middle_name;
         suffix = suffix || patient.suffix;
+        finalBookedForBirthday = finalBookedForBirthday || patient.date_of_birth;
+        finalBookedForRelationship = finalBookedForRelationship || 'Self';
         bookedForName = bookedForName || patient.full_name;
     }
 
@@ -354,6 +385,9 @@ export const bookAppointment = async (
                 last_name: lastName,
                 middle_name: middleName,
                 suffix: suffix,
+                patient_profile_id: patientProfileId, // ✅ Store the linked profile ID
+                patient_birthday: finalBookedForBirthday,
+                patient_relationship: finalBookedForRelationship,
                 // ✅ User is booking from their own account, auto-confirm their intent
                 patient_confirmed: true,
                 confirmed_at: new Date().toISOString(),
@@ -485,6 +519,9 @@ export const bookAppointment = async (
             last_name: lastName,
             middle_name: middleName,
             suffix: suffix,
+            patient_profile_id: patientProfileId, // ✅ Store the linked profile ID
+            patient_birthday: finalBookedForBirthday,
+            patient_relationship: finalBookedForRelationship,
             // ✅ User is booking from their own account, auto-confirm their intent
             patient_confirmed: true,
             confirmed_at: new Date().toISOString(),
@@ -581,11 +618,21 @@ export const getPatientAppointments = async (
     page = 1,
     limit = 10,
 ) => {
+    // 1. Get all profile IDs in this family (Self + Dependents)
+    const { data: familyProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .or(`id.eq.${patientId},primary_profile_id.eq.${patientId}`);
+    
+    const familyIds = (familyProfiles || []).map(p => p.id);
+    if (familyIds.length === 0) familyIds.push(patientId); // Fallback
+
     let query = supabaseAdmin
         .from('appointments')
         .select(
             `
       *,
+      patient:profiles!patient_id(full_name, first_name, last_name, relationship, primary_profile_id),
       service:services(name, duration_minutes, price),
       dentist:dentists(
         profile:profiles(full_name, first_name, last_name, middle_name, suffix)
@@ -593,7 +640,7 @@ export const getPatientAppointments = async (
     `,
             { count: 'exact' },
         )
-        .eq('patient_id', patientId);
+        .in('patient_id', familyIds);
 
     // 🌏 Philippine Time (UTC+8) — Use PH timezone for all date comparisons
     const today = getTodayPH();
@@ -652,7 +699,9 @@ export const getPatientAppointments = async (
         service: appt.service?.name,
         price: appt.service?.price,
         dentist: appt.dentist?.profile?.first_name ? `Dr. ${appt.dentist.profile.last_name}, ${appt.dentist.profile.first_name}` : (appt.dentist?.profile?.full_name || 'TBD'),
-        booked_for_name: appt.booked_for_name,
+        booked_for_name: appt.booked_for_name || appt.patient?.full_name,
+        patient_name: appt.patient?.full_name,
+        relationship: appt.patient?.relationship || (appt.patient?.primary_profile_id ? 'Dependent' : 'Self'),
         is_walk_in: appt.is_walk_in,
         notes: appt.notes,
         created_at: appt.created_at,
@@ -670,13 +719,22 @@ export const getPatientAppointments = async (
 export const getPatientAppointmentStats = async (patientId) => {
     const today = getTodayPH();
 
+    // 1. Get all profile IDs in this family
+    const { data: familyProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .or(`id.eq.${patientId},primary_profile_id.eq.${patientId}`);
+    
+    const familyIds = (familyProfiles || []).map(p => p.id);
+    if (familyIds.length === 0) familyIds.push(patientId);
+
     // Run summary counts in parallel for performance
     const [upcoming, pending, rejected, completed] = await Promise.all([
         // Upcoming: Confirmed or explicitly approved and future
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .or(`status.eq.${APPOINTMENT_STATUS.CONFIRMED},approval_status.eq.approved`)
             .not('status', 'in', `(${APPOINTMENT_STATUS.CANCELLED},${APPOINTMENT_STATUS.LATE_CANCEL},${APPOINTMENT_STATUS.NO_SHOW},${APPOINTMENT_STATUS.RESCHEDULED})`)
             .gte('appointment_date', today),
@@ -685,7 +743,7 @@ export const getPatientAppointmentStats = async (patientId) => {
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('status', APPOINTMENT_STATUS.PENDING)
             .gte('appointment_date', today),
             
@@ -693,14 +751,14 @@ export const getPatientAppointmentStats = async (patientId) => {
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('approval_status', APPROVAL_STATUS.REJECTED),
             
         // Completed: status is completed
         supabaseAdmin
             .from('appointments')
             .select('id', { count: 'exact', head: true })
-            .eq('patient_id', patientId)
+            .in('patient_id', familyIds)
             .eq('status', APPOINTMENT_STATUS.COMPLETED)
     ]);
 

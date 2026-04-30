@@ -98,7 +98,7 @@ const DoctorHistoryDetail = ({ doctor }) => {
                             <button onClick={() => setCurrentPage(prev => prev)} className='text-xs font-bold text-red-700 dark:text-red-300 underline'>Retry</button>
                         </div>
                     ) : history.length > 0 ? (
-                        <div className='overflow-hidden rounded-lg border border-gray-100 dark:border-gray-800'>
+                        <div className='overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800'>
                             <div className='divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-transparent'>
                                 {history.map((appt) => (
                                     <div key={appt.id} className='px-4 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors'>
@@ -126,7 +126,7 @@ const DoctorHistoryDetail = ({ doctor }) => {
                             </div>
                         </div>
                     ) : (
-                        <div className='py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl flex flex-col items-center justify-center'>
+                        <div className='py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl flex flex-col items-center justify-center'>
                             <p className='text-sm font-medium text-gray-400'>No records found for this filter.</p>
                             <button onClick={() => setActiveFilter('all')} className='text-xs font-bold text-brand-500 mt-2 hover:underline'>Clear Filters</button>
                         </div>
@@ -134,11 +134,11 @@ const DoctorHistoryDetail = ({ doctor }) => {
 
                     {/* Pagination */}
                     {pagination.pages > 1 && (
-                        <div className='mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center gap-1.5'>
+                        <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-center gap-1.5'>
                             <button 
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1 || isLoading}
-                                className='p-2 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 transition-all'
+                                className='p-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 transition-all'
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
                             </button>
@@ -166,7 +166,7 @@ const DoctorHistoryDetail = ({ doctor }) => {
                             <button 
                                 onClick={() => setCurrentPage(p => Math.min(pagination.pages, p + 1))}
                                 disabled={currentPage === pagination.pages || isLoading}
-                                className='p-2 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 transition-all'
+                                className='p-2 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-30 transition-all'
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
                             </button>
