@@ -168,9 +168,9 @@ const GalleryV2 = ({ variant = "dark", showExploreButton = false }) => {
               Dental Gallery
             </span>
           </div>
-          <h2 className="text-[clamp(1.5rem,7vw,4.5rem)] font-extrabold leading-[1.1] tracking-tight text-white m-0 max-w-[90vw] lg:max-w-[40vw]">
+          <h2 className={`text-[clamp(1.5rem,7vw,4.5rem)] font-extrabold leading-[1.1] tracking-tight ${isDark ? "text-white" : "text-slate-900"} m-0 max-w-[90vw] lg:max-w-[40vw]`}>
             <div className="overflow-hidden py-2 -my-2 whitespace-nowrap">
-              <span className="block text-white title-reveal-line">
+              <span className={`block ${isDark ? "text-white" : "text-slate-900"} title-reveal-line`}>
                 Intelligent Care.
               </span>
             </div>
@@ -184,7 +184,7 @@ const GalleryV2 = ({ variant = "dark", showExploreButton = false }) => {
             <div className="pt-8 overflow-hidden pointer-events-auto">
               <button
                 onClick={() => navigate('/services')}
-                className="inline-flex items-center space-x-2 text-white font-bold uppercase tracking-widest text-xs hover:text-sky-400 transition-colors title-reveal-line"
+                className={`inline-flex items-center space-x-2 ${isDark ? "text-white" : "text-slate-900"} font-bold uppercase tracking-widest text-xs hover:text-sky-400 transition-colors title-reveal-line`}
               >
                 <span>Explore Our Services</span>
                 <svg className="w-4 h-4 translate-y-[-1px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>

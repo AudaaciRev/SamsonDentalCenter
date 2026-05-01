@@ -89,8 +89,23 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const verifyAndLinkStub = async ({ email, password, date_of_birth, phone, profile_id }) => {
+        const data = await api.post('/auth/verify-and-link-stub', {
+            email,
+            password,
+            date_of_birth,
+            phone,
+            profile_id
+        });
+
+        localStorage.setItem('token', data.token);
+        setToken(data.token);
+        setUser(data.user);
+        return data;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, token, loading, error, login, register, logout, updateProfile }}>
+        <AuthContext.Provider value={{ user, token, loading, error, login, register, logout, updateProfile, verifyAndLinkStub }}>
             {children}
             {isSessionExpired && <SessionExpiredModal onLogout={() => {
                 logout();

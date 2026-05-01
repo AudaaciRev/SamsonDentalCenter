@@ -168,9 +168,9 @@ const UserReviewStep = ({ formData, book_for_others, onSubmit, onBack, onEdit, s
                             <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white truncate flex items-center gap-2">
                                 <User size={16} className="text-brand-500 shrink-0" />
                                 <span className="truncate">
-                                    {book_for_others 
-                                        ? `${formData.booked_for_last_name || ''}, ${formData.booked_for_first_name || ''} ${formData.booked_for_middle_name || ''} ${formData.booked_for_suffix_name || ''}`.replace(/\s+/g, ' ').trim()
-                                        : (user?.first_name ? `${user.last_name}, ${user.first_name} ${user.middle_name || ''} ${user.suffix || ''}`.replace(/\s+/g, ' ').trim() : (user?.full_name || 'Authorized User'))
+                                    {formData.booked_for_first_name 
+                                        ? `${formData.booked_for_last_name}, ${formData.booked_for_first_name} ${formData.booked_for_middle_name || ''} ${formData.booked_for_suffix_name || ''}`.replace(/\s+/g, ' ').trim()
+                                        : (user?.first_name ? `${user.last_name}, ${user.first_name}` : user?.full_name || 'Patient')
                                     }
                                 </span>
                             </p>
@@ -186,6 +186,18 @@ const UserReviewStep = ({ formData, book_for_others, onSubmit, onBack, onEdit, s
                             <div>
                                 <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Phone</p>
                                 <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2"><Phone size={16} className="text-brand-500" />{formData.booked_for_phone}</p>
+                            </div>
+                        )}
+                        {formData.booked_for_birthday && (
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Birthday</p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2"><Calendar size={16} className="text-brand-500" />{formatDate(formData.booked_for_birthday)}</p>
+                            </div>
+                        )}
+                        {formData.booked_for_relationship && (
+                            <div>
+                                <p className="mb-1 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Relationship</p>
+                                <p className="text-[15px] sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2"><User size={16} className="text-brand-500" />{formData.booked_for_relationship}</p>
                             </div>
                         )}
                     </div>

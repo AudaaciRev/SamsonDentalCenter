@@ -22,11 +22,25 @@ const RegisterPage = () => {
         setError(null);
         setLoading(true);
         try {
-            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(' ');
-            await register(email, password, fullName, phone);
+            await register(email, password, { 
+                first_name: firstName, 
+                middle_name: middleName, 
+                last_name: lastName, 
+                suffix 
+            }, phone);
             navigate('/patient/book');
         } catch (err) {
-            setError(err.message || 'Registration failed');
+            if (err.data?.code === 'STUB_PROFILE_EXISTS') {
+                navigate('/auth/claim-profile', { 
+                    state: { 
+                        email, 
+                        password,
+                        profile_id: err.data.profile_id 
+                    } 
+                });
+            } else {
+                setError(err.message || 'Registration failed');
+            }
         }
         setLoading(false);
     };

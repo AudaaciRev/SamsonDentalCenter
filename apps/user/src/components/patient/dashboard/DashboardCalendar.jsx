@@ -222,9 +222,14 @@ export default function DashboardCalendar({ appointments = [], loading = false }
                                                                     ${styles.card}
                                                                 `}
                                                             >
-                                                                <div className={`font-black truncate leading-tight text-[clamp(0.7rem,1.4vw,0.85rem)] mb-1 uppercase tracking-tight ${styles.title}`}>
+                                                                <div className={`font-black truncate leading-tight text-[clamp(0.7rem,1.4vw,0.85rem)] mb-0.5 uppercase tracking-tight ${styles.title}`}>
                                                                     {app.service?.name || app.service}
                                                                 </div>
+                                                                {(app.patient_name || app.booked_for_name) && (
+                                                                    <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1 truncate uppercase tracking-tighter">
+                                                                        For: {app.patient_name || app.booked_for_name}
+                                                                    </div>
+                                                                )}
                                                                 <div className={`font-bold truncate opacity-90 text-[clamp(0.6rem,1.2vw,0.75rem)] mb-0.5 ${styles.time}`}>
                                                                     {(() => {
                                                                         const [h, m] = app.start_time.split(':').map(Number);

@@ -21,7 +21,7 @@ const HomePage = () => {
       {/* <Promotions ref={promotionsRef} variant='light' /> */}
       {/*<HomeServices variant='light' />*/}
       <BookingSteps />
-      <GalleryV2 showExploreButton={true} />
+      <GalleryV2 variant="light" showExploreButton={true} />
       {/*<ServicesList />*/}
       {/*<Gallery variant="light" />*/}
       {/*<Portfolio variant='light' />*/}

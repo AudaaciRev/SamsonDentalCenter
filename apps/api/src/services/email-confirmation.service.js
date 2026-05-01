@@ -21,6 +21,33 @@ const getTemplate = (templateName, data) => {
 };
 
 /**
+ * Send an OTP code to a guest for pre-booking verification.
+ *
+ * @param {string} email - Guest email
+ * @param {string} name - Guest name
+ * @param {string} otpCode - 6-digit code
+ */
+export const sendOTPEmail = async (email, name, otpCode) => {
+    try {
+        const html = getTemplate('guest-otp.html', {
+            name,
+            otpCode,
+        });
+
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: `${otpCode} is your PrimeraDental verification code`,
+            html,
+        });
+        console.log(`📧 OTP email sent to ${email}`);
+    } catch (err) {
+        console.error('Failed to send OTP email:', err.message);
+        throw err; // Re-throw so the service can handle it
+    }
+};
+
+/**
  * Generate a secure confirmation token and save it to the database.
  *
  * @param {string} appointmentId - The appointment UUID
@@ -581,5 +608,35 @@ export const sendWaitlistOfferEmail = async (email, name, details) => {
         console.log(`📧 Waitlist offer email sent to ${email}`);
     } catch (err) {
         console.error('Failed to send waitlist offer email:', err.message);
+    }
+};
+
+/**
+ * Send an account setup invitation email to a Stub patient.
+ * 
+ * @param {string} email - Patient email
+ * @param {string} name - Patient name
+ * @param {string} setupUrl - The secure link with setup token
+ */
+export const sendAccountSetupInviteEmail = async (email, name, setupUrl) => {
+    try {
+        const html = getTemplate('account-setup-invite.html', {
+            name,
+            setupUrl,
+            expiryHours: 48
+        });
+
+        const result = await resend.emails.send({
+            from: process.env.EMAIL_FROM || 'Samson Dental <noreply@samsondental.com>',
+            to: email,
+            subject: 'Finish setting up your Samson Dental account',
+            html,
+        });
+        
+        console.log(`📧 Account setup invite sent to ${email}`);
+        return { success: true, result };
+    } catch (err) {
+        console.error('Failed to send account setup invite:', err.message);
+        return { success: false, error: err.message };
     }
 };

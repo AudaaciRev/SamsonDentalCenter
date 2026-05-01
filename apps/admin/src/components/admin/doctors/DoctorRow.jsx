@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Activity, ShieldCheck, Clock, Calendar, CheckSquare, Star, User } from 'lucide-react';
+import { ChevronRight, Activity, ShieldCheck, Clock, Calendar, CheckSquare, User } from 'lucide-react';
 
 const DoctorRow = ({ doctor, onClick, activeTab }) => {
     const { full_name, tier, specialization, is_active, service_count, license_number, photo_url, stats } = doctor;
@@ -30,12 +30,8 @@ const DoctorRow = ({ doctor, onClick, activeTab }) => {
                 <>
                     <div className={`flex items-center gap-4 xl:gap-8 justify-end sm:justify-start flex-grow sm:flex-grow-0 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>
                         <div className='flex items-center gap-1.5 font-bold text-gray-700 dark:text-gray-300'>
-                            <CheckSquare size={isMobile ? 12 : 14} className="text-success-500"/>
-                            {stats?.total_appointments || 0} Appts
-                        </div>
-                        <div className='flex items-center gap-1.5 font-bold text-brand-600 dark:text-brand-400'>
-                            <Star size={isMobile ? 12 : 14} className="text-brand-400 fill-current" />
-                            {stats?.rating || '0.0'}
+                            <CheckSquare size={isMobile ? 12 : 14} className="text-brand-500"/>
+                            {stats?.total_appointments || 0} Total Appts
                         </div>
                     </div>
                 </>
@@ -67,7 +63,7 @@ const DoctorRow = ({ doctor, onClick, activeTab }) => {
     return (
         <div
             onClick={onClick}
-            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-all hover:z-10 ${
+            className={`group relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 dark:border-gray-800 cursor-pointer transition-all hover:z-10 ${
                 !is_active ? 'bg-white dark:bg-white/[0.02]' : 'bg-brand-50/30 dark:bg-brand-500/5'
             }`}
         >

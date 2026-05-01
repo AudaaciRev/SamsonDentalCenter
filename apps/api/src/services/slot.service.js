@@ -121,22 +121,14 @@ export const getAvailableSlots = async (
     const serviceMatchIds = new Set((dentistsWithThisService || []).map(ds => ds.dentist_id));
 
     // Filter dentists based on Skillset Hierarchy
-    const eligibleDentists = allDentists.filter(d => {
+    const eligibleDentists = allDentists.filter((d) => {
         // Tie to a specific dentist if dentistId is provided
         if (dentistId && d.id !== dentistId) return false;
 
-        if (skilledDentistIds.has(d.id)) {
-            // ENROLLED in granular system: must have explicit match
-            return serviceMatchIds.has(d.id);
-        } else {
-            // LEGACY/FALLBACK: Match by tier
-            if (service.tier === 'general') {
-                return ['general', 'both'].includes(d.tier);
-            } else if (service.tier === 'specialized') {
-                return ['specialized', 'both'].includes(d.tier);
-            }
-            return false;
-        }
+        // NEW: STRICT Skillset Check
+        // If a doctor has explicit services mapped, they must have this specific serviceId.
+        // If a doctor has NO services mapped, they are NOT eligible (prevents "ghost" availability).
+        return serviceMatchIds.has(d.id);
     });
 
     if (!eligibleDentists || eligibleDentists.length === 0) {
@@ -207,8 +199,9 @@ export const getAvailableSlots = async (
     let apptQuery = supabaseAdmin
         .from('appointments')
         .select('id, dentist_id, start_time, end_time')
+        .in('dentist_id', dentistIds)
         .eq('appointment_date', date)
-        .not('status', 'in', '("CANCELLED","LATE_CANCEL","RESCHEDULED")');
+        .in('status', ['PENDING', 'CONFIRMED', 'COMPLETED']);
 
     if (excludeAppointmentId) {
         apptQuery = apptQuery.neq('id', excludeAppointmentId);
@@ -236,11 +229,16 @@ export const getAvailableSlots = async (
         dentist_id: a.dentist_id,
     }));
 
-    // ── 6. Generate ALL possible time slots from clinic hours (once) ──
-    // Use the first active schedule's hours as the clinic hours
-    const firstSchedule = activeSchedules[0];
-    const clinicStartTime = firstSchedule.start_time;
-    const clinicEndTime = firstSchedule.end_time;
+    // ── 6. Generate ALL possible time slots from union of schedules ──
+    const clinicStartTime = activeSchedules.reduce(
+        (min, s) => (s.start_time < min ? s.start_time : min),
+        activeSchedules[0].start_time,
+    );
+    const clinicEndTime = activeSchedules.reduce(
+        (max, s) => (s.end_time > max ? s.end_time : max),
+        activeSchedules[0].end_time,
+    );
+
     const allPossibleSlots = generateTimeSlots(clinicStartTime, clinicEndTime, durationMinutes);
 
     // ── 7. For each possible slot, count how many dentists have it available ──
@@ -284,6 +282,13 @@ export const getAvailableSlots = async (
                 return timesOverlap(slot, slotEnd, bStart, bEnd);
             });
             if (hasBlockConflict) return false;
+
+            // Check if this slot overlaps with the dentist's recurring break
+            if (schedule.break_start_time && schedule.break_end_time) {
+                if (timesOverlap(slot, slotEnd, schedule.break_start_time, schedule.break_end_time)) {
+                    return false;
+                }
+            }
 
             return true;
         });
@@ -385,10 +390,11 @@ export const findNextAvailableDate = async (
         // 1. Get service details
         const { data: service } = await supabaseAdmin
             .from('services')
-            .select('tier, name')
+            .select('tier, name, duration_minutes')
             .eq('id', serviceId)
             .single();
         if (!service) return null;
+        const durationMinutes = service.duration_minutes;
 
         // 2. Get clinic open days
         const { data: clinicSchedule } = await supabaseAdmin
@@ -398,7 +404,7 @@ export const findNextAvailableDate = async (
         const openClinicDays = new Set((clinicSchedule || []).map((d) => d.day_of_week));
         if (openClinicDays.size === 0) return null;
 
-        // 3. Get QUALIFIED active dentists for this specific service
+        // 3. Get QUALIFIED active dentists
         const { data: allDentists } = await supabaseAdmin
             .from('dentists')
             .select('id, tier')
@@ -406,74 +412,155 @@ export const findNextAvailableDate = async (
 
         if (!allDentists || allDentists.length === 0) return null;
 
-        // Skillset check (matches getAvailableSlots logic)
-        const { data: dentistsWithSkills } = await supabaseAdmin
-            .from('dentist_services')
-            .select('dentist_id');
-        const skilledIds = new Set((dentistsWithSkills || []).map(ds => ds.dentist_id));
-
         const { data: dentistsWithThisService } = await supabaseAdmin
             .from('dentist_services')
             .select('dentist_id')
             .eq('service_id', serviceId);
-        const matchIds = new Set((dentistsWithThisService || []).map(ds => ds.dentist_id));
+        const matchIds = new Set((dentistsWithThisService || []).map((ds) => ds.dentist_id));
 
-        const qualifiedDentists = allDentists.filter(d => {
+        const qualifiedDentists = allDentists.filter((d) => {
             if (dentistId && d.id !== dentistId) return false;
-            if (skilledIds.has(d.id)) {
-                return matchIds.has(d.id);
-            } else {
-                return service.tier === 'general' 
-                    ? ['general', 'both'].includes(d.tier)
-                    : ['specialized', 'both'].includes(d.tier);
-            }
+            // STRICT Skillset Check
+            return matchIds.has(d.id);
         });
 
         if (qualifiedDentists.length === 0) return null;
-        const qIds = qualifiedDentists.map(d => d.id);
+        const qIds = qualifiedDentists.map((d) => d.id);
 
-        // 4. Get days of week where these QUALIFIED dentists work
-        const { data: workingDays } = await supabaseAdmin
+        if (qIds.length === 0) return null;
+
+        // 4. Get dentist work schedules
+        const { data: workSchedules } = await supabaseAdmin
             .from('dentist_schedule')
-            .select('day_of_week')
+            .select('*')
             .eq('is_working', true)
             .in('dentist_id', qIds);
-        const openDentistDays = new Set((workingDays || []).map((d) => d.day_of_week));
 
-        // Combined intersection: skip any day where either the clinic is closed OR no dentists work
-        const allowedDays = new Set([...openClinicDays].filter((x) => openDentistDays.has(x)));
+        if (!workSchedules || workSchedules.length === 0) return null;
 
+        // 5. BATCH FETCH for next 90 days
         const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 90);
+        const endDateStr = end.toISOString().split('T')[0];
 
-        // 5. Search forward for up to 30 days (prevent timeouts)
-        for (let i = 1; i <= 30; i++) {
+        const [blocksRes, apptsRes, holdsRes] = await Promise.all([
+            supabaseAdmin
+                .from('dentist_availability_blocks')
+                .select('*')
+                .in('dentist_id', qIds)
+                .gte('block_date', startDate)
+                .lte('block_date', endDateStr),
+            supabaseAdmin
+                .from('appointments')
+                .select('id, dentist_id, appointment_date, start_time, end_time')
+                .in('dentist_id', qIds)
+                .gte('appointment_date', startDate)
+                .lte('appointment_date', endDateStr)
+                .in('status', ['PENDING', 'CONFIRMED', 'COMPLETED']),
+            supabaseAdmin
+                .from('slot_holds')
+                .select('start_time, appointment_date, service:services(duration_minutes)')
+                .gte('appointment_date', startDate)
+                .lte('appointment_date', endDateStr)
+                .eq('status', 'active')
+                .gt('expires_at', new Date().toISOString()),
+        ]);
+
+        const blocks = blocksRes.data || [];
+        const appts = apptsRes.data || [];
+        const holds = holdsRes.data || [];
+
+        // 6. Search forward
+        for (let i = 1; i <= 90; i++) {
             const nextDate = new Date(start);
             nextDate.setDate(nextDate.getDate() + i);
-
             const dayOfWeek = nextDate.getDay();
-            if (!allowedDays.has(dayOfWeek)) continue;
 
-            // ✅ Use local parts to avoid timezone shifting
-            const year = nextDate.getFullYear();
-            const month = String(nextDate.getMonth() + 1).padStart(2, '0');
-            const day = String(nextDate.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+            if (!openClinicDays.has(dayOfWeek)) continue;
 
-            try {
-                // Use skipNextSearch=true to prevent infinite loops and deep recursion
-                const result = await getAvailableSlots(
-                    dateStr,
-                    serviceId,
-                    filterSessionId,
-                    true,
-                    dentistId,
-                    excludeAppointmentId,
+            const dateStr = nextDate.toISOString().split('T')[0];
+
+            // Check each qualified dentist who works this day
+            const dailyDentists = workSchedules.filter((s) => s.day_of_week === dayOfWeek);
+            if (dailyDentists.length === 0) continue;
+
+            for (const schedule of dailyDentists) {
+                const dId = schedule.dentist_id;
+
+                // Check blocks
+                const isFullBlocked = blocks.some(
+                    (b) => b.dentist_id === dId && b.block_date === dateStr && !b.start_time,
                 );
-                if (result.total_available > 0) {
-                    return dateStr;
-                }
-            } catch (e) {
-                // Silently skip check errors for a specific day
+                if (isFullBlocked) continue;
+
+                const dailyBlocks = blocks.filter(
+                    (b) => b.dentist_id === dId && b.block_date === dateStr && b.start_time,
+                );
+                const dailyAppts = appts.filter(
+                    (a) => a.dentist_id === dId && (a.appointment_date === dateStr || a.date === dateStr),
+                );
+                const dailyHolds = holds.filter((h) => h.appointment_date === dateStr);
+
+                // Quick slot check for this doctor
+                const possible = generateTimeSlots(
+                    schedule.start_time,
+                    schedule.end_time,
+                    durationMinutes,
+                );
+
+                const hasFree = possible.some((slot) => {
+                    const slotEnd = addMinutesToTime(slot, durationMinutes);
+
+                    // Appointment conflict
+                    if (
+                        dailyAppts.some((a) => timesOverlap(slot, slotEnd, a.start_time, a.end_time))
+                    )
+                        return false;
+
+                    // Block conflict
+                    if (
+                        dailyBlocks.some((b) =>
+                            timesOverlap(slot, slotEnd, b.start_time || '00:00', b.end_time || '23:59'),
+                        )
+                    )
+                        return false;
+
+                    // Break conflict
+                    if (
+                        schedule.break_start_time &&
+                        schedule.break_end_time &&
+                        timesOverlap(
+                            slot,
+                            slotEnd,
+                            schedule.break_start_time,
+                            schedule.break_end_time,
+                        )
+                    )
+                        return false;
+
+                    // Capacity/Hold check (Global)
+                    const holdCount = dailyHolds.filter((h) =>
+                        timesOverlap(
+                            slot,
+                            slotEnd,
+                            h.start_time,
+                            addMinutesToTime(h.start_time, h.service.duration_minutes),
+                        ),
+                    ).length;
+
+                    // We need to know current possible availability for this slot across ALL doctors to accurately subtract HOLDS.
+                    // But for findNextAvailableDate, we just need to know if ONE slot is free.
+                    // So we check if (available_doctors_for_this_slot - total_holds_for_this_slot) > 0.
+                    // This is slightly complex in-memory without rebuilding the whole map.
+                    
+                    // Simple heuristic: if there's no hold, it's free. If there's a hold, skip for now.
+                    if (holdCount > 0) return false;
+
+                    return true;
+                });
+
+                if (hasFree) return dateStr;
             }
         }
     } catch (err) {
@@ -559,6 +646,70 @@ export const getSuggestedSlots = async (date, serviceId, requestedTime) => {
         same_day_alternatives: nearbySlots,
         next_days_alternatives: nextDaySlots,
         message: 'The requested slot is not available. Here are alternatives:',
+    };
+};
+/**
+ * Quick status check for a service to see if it's bookable.
+ * Used for early validation in the booking wizard.
+ */
+export const getServiceAvailabilityStatus = async (serviceId, dentistId = null) => {
+    // 1. Find qualified doctors
+    let matchIds = [];
+    if (dentistId) {
+        // Verify if this specific dentist offers the service
+        const { data: offers } = await supabaseAdmin
+            .from('dentist_services')
+            .select('service_id')
+            .eq('dentist_id', dentistId)
+            .eq('service_id', serviceId);
+        
+        if (offers && offers.length > 0) {
+            matchIds = [dentistId];
+        }
+    } else {
+        const { data: dentistsWithThisService } = await supabaseAdmin
+            .from('dentist_services')
+            .select('dentist_id')
+            .eq('service_id', serviceId);
+        matchIds = (dentistsWithThisService || []).map((ds) => ds.dentist_id);
+    }
+
+    if (matchIds.length === 0) {
+        return {
+            is_bookable: false,
+            reason: 'NO_DOCTORS',
+            message: 'No doctors currently offer this service.',
+        };
+    }
+
+    // 2. Determine Working Days for matched doctors
+    const { data: workSchedules } = await supabaseAdmin
+        .from('dentist_schedule')
+        .select('day_of_week')
+        .eq('is_working', true)
+        .in('dentist_id', matchIds);
+
+    const workingDays = workSchedules ? [...new Set(workSchedules.map(w => w.day_of_week))] : [];
+
+    // 3. Find next available date (search up to 90 days)
+    const today = new Date().toISOString().split('T')[0];
+    const nextDate = await findNextAvailableDate(today, serviceId, null, dentistId);
+
+    if (!nextDate) {
+        return {
+            is_bookable: false,
+            reason: 'NO_SLOTS',
+            message: 'This service is fully booked for the next 90 days.',
+            dentist_count: matchIds.length,
+            working_days: [],
+        };
+    }
+
+    return {
+        is_bookable: true,
+        next_available_date: nextDate,
+        dentist_count: matchIds.length,
+        working_days: workingDays,
     };
 };
 

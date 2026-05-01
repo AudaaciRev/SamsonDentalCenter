@@ -46,6 +46,21 @@ The card uses a **Horizontal Layout** to emphasize connectivity between the icon
   - Spacing: `tracking-wider mt-1`
   - Constraints: `truncate`
 
+### Standard Entity/Service Card
+Used for list items in registries (Doctors, Services, Patients).
+
+- **Mobile (Row Style)**: 
+  - Layout: `flex flex-row items-center`.
+  - Border: `border-b border-gray-200`. No side borders for edge-to-edge feel.
+  - Geometry: `rounded-none` to stack perfectly without gaps.
+  - Image: Small square (`w-14 h-14`) with `rounded-lg` and `m-4`.
+  - Accessory: Always include a `ChevronRight` on the far right to indicate navigability.
+- **Desktop (Grid Style)**:
+  - Layout: `flex-col`.
+  - Border: All-around `border border-gray-200`.
+  - Geometry: `sm:rounded-xl` (Standard Container Radius).
+  - Hover: `sm:hover:shadow-2xl sm:hover:shadow-brand-500/10` with `active:scale-95`.
+
 ## 3. Responsive Behavior
 
 ### Mobile Viewports

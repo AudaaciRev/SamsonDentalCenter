@@ -22,6 +22,7 @@ import { notifyWaitlist, joinWaitlist } from '../services/waitlist.service.js';
 import { getAvailableSlots } from '../services/slot.service.js';
 import { assignDentist } from '../services/dentist-assignment.service.js';
 import { holdSlot, releaseHold } from '../services/slot-hold.service.js';
+import * as guestAuthService from '../services/guest-auth.service.js';
 import { getTodayPH } from '../utils/timezone.js';
 import { addMinutesToTime } from '../utils/time.js';
 import { supabaseAdmin } from '../config/supabase.js';
@@ -41,7 +42,17 @@ import { APPOINTMENT_SOURCE } from '../utils/constants.js';
  */
 export const bookGuest = async (req, res, next) => {
     try {
-        const { service_id, date, time, email, phone, guestNameParts, user_session_id } = req.body;
+        const { service_id, date, time, email, phone, guestNameParts, user_session_id, verification_token } = req.body;
+
+        if (!verification_token) {
+            return res.status(403).json({ error: 'Email verification required to book as a guest.' });
+        }
+
+        // 1. Verify the token belongs to this email
+        const isVerified = await guestAuthService.validateGuestVerification(email, verification_token);
+        if (!isVerified) {
+            return res.status(403).json({ error: 'Invalid or expired verification session. Please verify your email again.' });
+        }
 
         const result = await bookAppointmentGuest(
             service_id,
@@ -105,7 +116,17 @@ export const resendConfirmation = async (req, res) => {
  */
 export const bookUser = async (req, res, next) => {
     try {
-        const { service_id, date, time, booked_for_name_parts, user_session_id, dentist_id } = req.body;
+        const { 
+            service_id, 
+            date, 
+            time, 
+            booked_for_name_parts, 
+            user_session_id, 
+            dentist_id,
+            patient_profile_id,
+            booked_for_birthday,
+            booked_for_relationship
+        } = req.body;
 
         // Check date is in the future (using Philippine Time)
         const todayPH = getTodayPH();
@@ -124,6 +145,11 @@ export const bookUser = async (req, res, next) => {
             APPOINTMENT_SOURCE.USER_BOOKING, // source
             user_session_id,                 // user_session_id
             dentist_id,                      // preferredDentistId
+            0,                               // rescheduleCount
+            null,                            // isPreferred
+            patient_profile_id,              // patientProfileId
+            booked_for_birthday,
+            booked_for_relationship
         );
 
         if (result.booked) {
@@ -167,6 +193,11 @@ export const submitWizard = async (req, res, next) => {
                     APPOINTMENT_SOURCE.USER_BOOKING, // source
                     booking.user_session_id,         // user_session_id
                     booking.dentist_id,              // preferredDentistId
+                    0,                               // rescheduleCount
+                    null,                            // isPreferred
+                    booking.patient_profile_id,      // ✅ patientProfileId
+                    booking.booked_for_name_parts?.birthday || null,
+                    booking.booked_for_name_parts?.relationship || null
                 );
             } catch (err) {
                 // If booking fails, return error and stop.
@@ -187,7 +218,10 @@ export const submitWizard = async (req, res, next) => {
                     waitlist.priority || 0,
                     waitlist.booked_for_name_parts || booking?.booked_for_name_parts || null,
                     waitlist.dentist_id || null,
-                    results.booking?.appointment?.id || null // ✅ NEW: link the bundled appointment
+                    results.booking?.appointment?.id || null, // ✅ link the bundled appointment
+                    waitlist.patient_profile_id || booking?.patient_profile_id || null, // ✅ patientProfileId
+                    waitlist.booked_for_name_parts?.birthday || booking?.booked_for_name_parts?.birthday || null,
+                    waitlist.booked_for_name_parts?.relationship || booking?.booked_for_name_parts?.relationship || null
                 );
             } catch (err) {
                 // ── ATOMICITY ROLLBACK: If waitlist fails, cancel the backup booking ──
